@@ -58,6 +58,8 @@ are release and submission gates.
 
 ### MP-02 — Deterministic Action Compiler
 
+- **Status:** Accepted — deterministic compiler implemented and validated offline; live provider
+  characterization is not applicable to this slice; MP-03 remains pending.
 - **Entry:** MP-01 produces a bounded untrusted proposal; exact domain vocabulary has been chosen.
 - **Build:** Validate and canonicalise proposals into versioned ActionIntent objects. Implement
   deterministic identity/resource resolution, date/time rules, target checks, parameter normalisation,

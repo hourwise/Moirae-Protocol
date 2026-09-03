@@ -98,3 +98,70 @@ from later implementation slices, but a change must be recorded rather than sile
   adapter-owned retries, bounds provider output and SDK turns, and returns only validated
   `AgentProposalV1` plus bounded metadata. ActionIntent, Fates admission, and all effects remain
   later-slice responsibilities.
+
+## ADR-0009 — Bind the MVP compiler to explicit locale and timezone
+
+- **Status:** Accepted for MP-02.
+- **Date:** 2026-09-03.
+- **Decision:** `CompilerContextV1` requires `locale: "en-GB"` and `timeZone: "Europe/London"`.
+- **Reason:** Date resolution must not vary by CI host, developer machine, or ambient process
+  settings. The demo's calendar semantics are deliberately fixed.
+- **Consequence:** The compiler uses explicit `Intl` formatters and timezone-aware timestamp
+  normalization. A context with another locale or timezone is rejected.
+
+## ADR-0010 — Never guess normal semantic ambiguity
+
+- **Status:** Accepted for MP-02.
+- **Date:** 2026-09-03.
+- **Decision:** Zero or multiple registry/availability matches return `NEEDS_CLARIFICATION`; the
+  compiler never selects the first array element or invents a date, identity, destination, or slot.
+- **Reason:** A valid-looking action is not safe when its trusted subject or target is unresolved.
+- **Consequence:** `subject_not_unique`, `subject_not_found`, `multiple_available_slots`,
+  `no_available_slot`, and related bounded reasons are explicit non-compiled outcomes.
+
+## ADR-0011 — Do not use an ambient clock in deterministic compilation
+
+- **Status:** Accepted for MP-02.
+- **Date:** 2026-09-03.
+- **Decision:** Compilation reads no clock, environment variable, or random source. `receivedAt` is
+  supplied through trusted context and is normalized to canonical UTC only after validation.
+- **Reason:** Compilation of identical inputs must be byte-stable and reproducible across hosts.
+- **Consequence:** Relative date resolution uses the trusted appointment/context data, never
+  `Date.now()` or machine-local timezone settings.
+
+## ADR-0012 — Scope idempotency to trusted inbound work identity
+
+- **Status:** Accepted for MP-02.
+- **Date:** 2026-09-03.
+- **Decision:** `sourceRequestId` comes only from `CompilerContextV1`, participates in canonical
+  action material, and is included in a separately domain-separated idempotency derivation.
+- **Reason:** Two separate customer requests with identical semantics must remain distinct, while
+  a retry of one inbound request must reproduce the same key.
+- **Consequence:** Same source ID and resolved action produce the same digest/key; a different
+  source ID produces a different digest and idempotency key.
+
+## ADR-0013 — Define Moirae Protocol canonicalization v1 locally
+
+- **Status:** Accepted for MP-02.
+- **Date:** 2026-09-03.
+- **Decision:** Canonical action bytes are UTF-8, compact JSON with recursively lexicographically
+  sorted object keys, preserved array order, JSON string escaping, finite JSON numbers, and no
+  whitespace. Unsupported JavaScript-only values are rejected.
+- **Reason:** MP-02 needs reproducible local action identity without asserting that Fates uses the
+  same serialization profile.
+- **Consequence:** The algorithm is named `moirae-protocol-canonicalization-v1`; a later MP-03
+  adapter must translate or recompute according to the verified Fates-native contract.
+
+## ADR-0014 — Domain-separate action digests and idempotency keys
+
+- **Status:** Accepted for MP-02.
+- **Date:** 2026-09-03.
+- **Decision:** The action digest is SHA-256 over
+  `moirae-protocol/action-intent/v1\0` followed by canonical ActionIntentCoreV1 bytes. The
+  idempotency key is SHA-256 over `moirae-protocol/idempotency/v1\0` followed by canonical JSON of
+  `{ canonicalDigest, sourceRequestId }`.
+- **Reason:** Domain markers prevent accidental reuse of one hash namespace for another and the
+  structured idempotency payload avoids ambiguous string concatenation.
+- **Consequence:** Derived `canonicalDigest` and `idempotencyKey` are excluded from their own
+  digest input. Human-readable model summary and ambiguity prose are also excluded from execution
+  material because they are explanatory, untrusted content.

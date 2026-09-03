@@ -90,3 +90,11 @@ provide the schema runtime required by the SDK peer dependency.
 MP-01 confirms the current MP-00 licensing finding: Adrasteia / Ananke have inspected license
 evidence; Horae / Mnemosyne reuse and licensing remain unresolved. MP-01 has no dependency on Horae
 or Mnemosyne implementation.
+
+## MP-02 dependency and provenance note
+
+MP-02 adds no new third-party runtime dependency. It reuses the exact `zod@4.5.4` runtime already
+recorded for MP-01. Canonicalization uses the Node.js `node:crypto` built-in for SHA-256 and the
+explicit `Intl`/`Date` platform APIs; no date parser, network client, LLM, or Fates package was
+added. The action compiler and ActionIntentV1 are new Moirae Protocol contracts, not copied Fates
+source and not claimed to be Adrasteia/Fates-native.

@@ -84,6 +84,60 @@ conversation are created per logical invocation. The default MP-01 test harness 
 model that emits the real SDK structured-output stream shape; that model is test-only and is not
 live inference evidence.
 
+## MP-02 deterministic compiler boundary
+
+MP-02 adds a pure compiler between the untrusted proposal and any future authority adapter:
+
+```text
+UNTRUSTED AgentProposalV1
+        + trusted CompilerContextV1
+        |
+        v
+Moirae Protocol Action Compiler
+  strict validation
+  registry resolution
+  explicit en-GB / Europe-London time rules
+  canonicalization v1
+  digest and source-scoped idempotency
+        |
+        +--> COMPILED → ActionIntentV1
+        +--> NEEDS_CLARIFICATION → bounded reason
+        +--> REJECTED → structural/impossible compilation reason
+```
+
+`CompilerContextV1` is the source of trusted requester, principal, registry, availability,
+recipient, timestamp, locale, timezone, and evidence-reference material. The compiler never accepts
+`bookingId`, resource identity, principal identity, or verified recipient identity from proposal
+prose. It resolves those values only through the supplied context and registries.
+
+`ActionIntentV1` is a Moirae Protocol canonical contract, not an Adrasteia or Fates-native schema.
+It is exact action material but remains unauthorised. MP-02 does not call an LLM, Strands, Ananke,
+Horae, or Mnemosyne; it does not execute effects or make `ALLOW`, `REQUIRE_APPROVAL`, or `DENY`
+decisions. A `COMPILED` result means only that Moirae Protocol safely constructed deterministic
+action material.
+
+### AgentProposalV1 to ActionIntentV1 mapping
+
+The compiler does not copy proposal fields into trusted action material. It resolves each semantic
+claim against the explicit `CompilerContextV1` and either emits a bounded exact value or returns
+`NEEDS_CLARIFICATION`:
+
+| Untrusted proposal field | Deterministic compiler treatment                                                                                                                                                                | ActionIntentV1 consequence                                                                                            |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `subjectReference`       | Match only the supported semantic phrase, then resolve it through the trusted requester, appointment, and resource registries.                                                                  | Resolved booking/resource identity, or `subject_not_found` / `subject_not_unique`.                                    |
+| `temporalExpression`     | Accept the supported `Monday afternoon` expression only, calculate the next Monday from the trusted appointment date in London, and filter the trusted availability snapshot.                   | Exact trusted slot timestamp, or `temporal_expression_ambiguous`, `no_available_slot`, or `multiple_available_slots`. |
+| `recipientReference`     | For appointment details, ignore proposal redirection and use the verified requester contact. For an explicit export target, validate the exact email syntax and classify it from trusted facts. | Exact target address/classification; no classification is an authorization decision.                                  |
+| `requestedChange`        | Use only as semantic input to select the action-specific deterministic branch; it is not an identity or command source.                                                                         | Typed parameters derived from trusted records and supported expressions.                                              |
+| `summary`                | Preserve no summary text in the compiled action core. It is explanatory model prose and is never parsed for authority or IDs.                                                                   | No ActionIntent field, digest material, authority, or execution capability.                                           |
+| `confidenceOrAmbiguity`  | Treat the label/note as an input signal only. It cannot override registry results or grant permission.                                                                                          | May motivate a clarification path; never changes principal, authority, or effect access.                              |
+| `unresolvedFields`       | Treat the list as a signal about missing semantic interpretation, not as trusted facts or resolution instructions.                                                                              | Does not supply IDs, dates, recipients, credentials, authority, or execution material.                                |
+
+The compiler's trusted `sourceRequestId`, `agentPrincipalId`, requester/customer identity,
+timestamps, registry entries, and evidence references originate in host-supplied context. Therefore
+`ActionIntentV1` is deterministic action material only:
+
+> **AgentProposalV1 != ActionIntentV1, and ActionIntentV1 != authority.**
+
 ## Responsibility matrix
 
 | Boundary / owner                   | Responsibilities                                                                                                                                                                                                           | Explicit non-responsibilities                                                             |
@@ -170,7 +224,7 @@ The system must remain useful if either stretch component is deferred.
 ## MP-00 exclusions
 
 There are no real routine, consequential, or forbidden effects in this slice. There are no Fates
-authority calls, Horae or Mnemosyne dependencies, effect adapters, browser approvals, credentials,
-background queues, or production security claims. The three MP-01 fixture classes stop at an
-untrusted semantic proposal. The remaining placeholders exist only to make the future workspace
-and checks explicit.
+authority calls, Horae or Mnemosyne implementation dependencies, effect adapters, browser approvals,
+credentials, background queues, or production security claims. MP-01 proposals now stop at the
+MP-02 deterministic compiler; a compiled ActionIntent is still not authority. The remaining
+placeholders exist only to make the future workspace and checks explicit.

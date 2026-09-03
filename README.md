@@ -30,9 +30,11 @@ The governing thesis is:
 
 ## Current status
 
-This repository currently contains documentation and a minimal TypeScript workspace scaffold only.
-The first implementation slice is MP-01: a real Strands capability spike that produces bounded
-structured proposals with no real effects and no Fates authority. See [docs/BUILD_PLAN.md](docs/BUILD_PLAN.md).
+The repository now contains the accepted MP-01 real Strands capability spike and MP-02 deterministic
+compiler. MP-01 produces bounded untrusted structured proposals; MP-02 resolves them against
+explicit trusted context into canonical `ActionIntentV1` material or a clarification/rejection.
+No real effects or Fates authority are implemented. MP-01 live inference remains explicitly
+`BLOCKED_CREDENTIALS`. See [docs/BUILD_PLAN.md](docs/BUILD_PLAN.md).
 
 The project is intended to become `https://github.com/hourwise/Moirae-Protocol`; the remote was not
 created during MP-00 because GitHub credentials were invalid and API access was unavailable. The
@@ -61,16 +63,16 @@ apps/
   web/                 future human product experience
   host/                future host-side orchestration and secrets boundary
 packages/
-  action-contracts/    future versioned ActionIntent contracts
-  action-compiler/     future deterministic validation/canonicalisation
-  strands-agent/      future Strands integration
+  action-contracts/    versioned Moirae Protocol ActionIntent contracts
+  action-compiler/     deterministic validation, resolution, and canonicalisation
+  strands-agent/       narrow real Strands semantic-proposal adapter
   fates-adapter/      future verified Fates boundary
   effect-adapters/    future bounded effect implementations
-  test-fixtures/      future synthetic integration fixtures
+  test-fixtures/      synthetic MP-01/MP-02 integration fixtures
 docs/                  eligibility, architecture, threat model, decisions, and plan
 ```
 
-The package directories intentionally contain placeholders only. No implementation code has been
+The Fates and effect-adapter directories remain placeholders. No implementation code has been
 copied from The Fates or any other pre-existing project.
 
 ## Local validation
@@ -82,9 +84,9 @@ npm ci
 npm run check
 ```
 
-`npm run check` runs typechecking, linting, formatting verification, placeholder tests, and the
-TypeScript build. Later slices will add meaningful deterministic, integration, adversarial, and live
-tests without weakening the MP-00 trust boundary.
+`npm run check` runs typechecking, linting, formatting verification, deterministic/adversarial and
+synthetic integration tests, and the TypeScript build. Live MP-01 inference is a separate bounded
+command and reports missing credentials rather than substituting a mock result.
 
 ## Provenance and licence
 
@@ -95,5 +97,5 @@ not claimed as compatible until a later, read-only-informed adapter review verif
 contract and licensing position.
 
 Read [docs/HACKATHON_REQUIREMENTS.md](docs/HACKATHON_REQUIREMENTS.md) for the current event
-requirements and [docs/INVARIANTS.md](docs/INVARIANTS.md) for the provisional security and
-governance invariants.
+requirements and [docs/INVARIANTS.md](docs/INVARIANTS.md) for the security and governance
+invariants.
