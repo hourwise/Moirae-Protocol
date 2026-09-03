@@ -88,6 +88,8 @@ are release and submission gates.
 ### MP-04 — Governed effect execution
 
 - **Entry:** MP-03 proves authority outcomes and exact binding material.
+- **Design status:** MP-04D design/readiness is complete; Horae is classified
+  `NEEDS_BOUNDED_EXTENSION`. MP-04 runtime implementation has not started.
 - **Build:** Implement bounded synthetic demo adapters and Horae/effect accounting. Require a single
   canonical ActionIntent and explicit authority for each effect attempt.
 - **Exit:** ALLOW can produce one bounded receipt; DENY produces none; duplicate/replayed delivery

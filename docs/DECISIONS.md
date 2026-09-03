@@ -180,3 +180,22 @@ from later implementation slices, but a change must be recorded rather than sile
 - **Consequence:** MP-03 can be tested offline against the exact accepted Ananke build without
   modifying or vendoring Fates source. A future generalized administrative profile requires a new
   versioned Fates acceptance; this fixture-bound adapter cannot infer new operations or values.
+
+## ADR-0016 — Horae requires a bounded Fates execution handoff for MP-04
+
+- **Status:** Accepted as MP-04D design direction; runtime implementation not started.
+- **Date:** 2026-09-03.
+- **Decision:** Use Ananke as the sole owner of admission, approval validity, native action hashing,
+  and approval consumption. Use Horae as the sole owner of durable execution records, cross-process
+  claim arbitration, and recovery orchestration. The eventual executor must remain behind a
+  claim-aware Ananke execution choke point, with effect truth represented by a bounded
+  `CONFIRMED`/`ABSENT`/`UNKNOWN` receipt boundary.
+- **Reason:** The inspected Horae checkpoint (`68508f5c37e1cb3b244116d45fa267e689a6e75c`) has useful
+  durable dispatch and recovery behavior, but its public binding does not carry the complete accepted
+  Ananke authority envelope or a claim-aware execution handoff. Current `Gateway.execute(...)`
+  consumes approval after executor invocation and cannot by itself provide atomic composition with a
+  Horae claim.
+- **Consequence:** Horae is classified `NEEDS_BOUNDED_EXTENSION`, and accepted Ananke requires a
+  bounded claim-aware execution/consumption slice before MP-04 runtime implementation. The
+  FATES-005D ledger model is retained as conceptual prior art only. Mnemosyne is excluded from MP-04.
+  Sol remains the user-facing model; Luna remains backend/internal only.

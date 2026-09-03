@@ -56,6 +56,20 @@ agent prompt says it should hold.
 - The evidence is offline integration evidence against the pinned accepted Ananke checkpoint; no
   external effect, provider call, Firecracker run, Horae, or Mnemosyne path is involved.
 
+## MP-04D design invariants (not runtime evidence)
+
+- MP-I20: The native Fates action hash is distinct from the Moirae `canonicalDigest` and
+  `idempotencyKey`; neither Moirae value grants authority.
+- MP-I21: A future Horae durable claim must bind the complete native operation, authority, principal,
+  context, scope, purpose, and request/correlation material; a generic task ID is insufficient.
+- MP-I22: An effect outcome that cannot be proven `CONFIRMED` or `ABSENT` is `UNKNOWN` and blocks
+  blind redispatch.
+- MP-I23: Sol is the future user-facing/frontend/judge model and Luna is backend/internal only; neither
+  model may bypass deterministic Moirae and Fates governance.
+
+These are design requirements recorded by `docs/MP-04_DURABLE_EXECUTION_DESIGN.md`; they are not
+claims that MP-04 execution has been implemented or tested.
+
 ## Fail-closed default
 
 If a proposal or ActionIntent is malformed, a target is unknown, a canonical digest cannot be

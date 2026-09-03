@@ -229,6 +229,41 @@ Ananke action hash is recomputed by Ananke. `ADMITTED` is not execution, and all
 carry `executorInvoked=false` and `effectExecuted=false`. The current profile is intentionally
 fixed to the synthetic MP-02 fixture; it is not a generalized production API.
 
+### MP-04D durable execution design boundary
+
+MP-04D is a design/readiness slice only. The proposed next boundary is:
+
+```text
+validated MP-03 ADMITTED result
+        + independently authenticated Fates context
+        + exact native action/approval material
+        |
+        v
+Horae durable execution claim bound to the complete Fates material
+        |
+        v
+claim-aware Ananke execution choke point
+        |
+        v
+future bounded effect receipt/reconciliation
+        |
+        v
+CONFIRMED | ABSENT | UNKNOWN → explicit recovery
+```
+
+The inspected Horae candidate provides useful durable dispatch and recovery primitives but is
+`NEEDS_BOUNDED_EXTENSION`: its current public binding does not include the complete native Ananke
+action/approval/context envelope or a claim-aware Fates handoff. Ananke remains the owner of
+admission, approval validity, and approval consumption; Horae owns durable claim arbitration; the
+effect boundary owns effect truth. MP-04D adds no runtime integration, effects, providers, or
+Mnemosyne dependency. See `docs/MP-04_DURABLE_EXECUTION_DESIGN.md` for the crash matrix and proposed
+envelope.
+
+Future user-facing work must use Sol as the visible frontend, interaction, demo, and judge model.
+Luna may remain a hidden backend/internal reasoning model. Neither model may bypass the deterministic
+Moirae compiler, independent Fates authentication, Ananke governance, or Horae's single dispatch
+choke point.
+
 ### MVP critical path
 
 1. Strands receives an administrative request and returns a bounded proposal.
