@@ -1,0 +1,48 @@
+flowchart LR
+    request[Incoming work] --> strands
+
+    subgraph interpretation[Untrusted interpretation boundary]
+        strands[Strands Agent<br/>understands, gathers context,<br/>drafts, proposes]
+        proposal[Untrusted<br/>Proposed Action]
+        strands --> proposal
+    end
+
+    proposal --> compiler
+    subgraph deterministic[Deterministic Moirae Protocol boundary]
+        compiler[Action Compiler<br/>validate, resolve, canonicalise,<br/>classify, digest]
+        intent[Canonical ActionIntent]
+        compiler --> intent
+    end
+
+    intent --> fates
+    subgraph governance[Independent governance boundary]
+        fates[The Fates]
+        adrasteia[Adrasteia<br/>portable representation]
+        ananke[Ananke<br/>policy and authority]
+        horae[Horae<br/>bounded dispatch coordination]
+        mnemosyne[Mnemosyne<br/>optional provenanced context]
+        fates --- adrasteia
+        fates --- ananke
+        fates --- horae
+        fates -. optional .-> mnemosyne
+    end
+
+    fates --> allow[ALLOW]
+    fates --> approval[REQUIRES_APPROVAL]
+    fates --> deny[DENY]
+
+    approval --> human[Human decision]
+    human --> fresh[Fresh execution authority]
+    allow --> bounded[Bounded effect adapter]
+    fresh --> bounded
+    bounded --> receipt[EffectReceipt]
+    deny --> none[Zero effect]
+
+    host[Host-side secrets and connectors] -. encloses .-> bounded
+
+    classDef trust fill:#f7f7f7,stroke:#555,color:#111;
+    classDef governanceNode fill:#fff4cc,stroke:#9a6b00,color:#111;
+    classDef effect fill:#e8f5e9,stroke:#2e7d32,color:#111;
+    class strands,proposal trust;
+    class fates,adrasteia,ananke,horae,mnemosyne governanceNode;
+    class bounded,receipt effect;
