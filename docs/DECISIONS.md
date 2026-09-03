@@ -199,3 +199,20 @@ from later implementation slices, but a change must be recorded rather than sile
   bounded claim-aware execution/consumption slice before MP-04 runtime implementation. The
   FATES-005D ledger model is retained as conceptual prior art only. Mnemosyne is excluded from MP-04.
   Sol remains the user-facing model; Luna remains backend/internal only.
+
+## ADR-0017 — MP-04 coordinates sealed native Fates boundaries
+
+- **Status:** Implementation candidate; independent acceptance pending.
+- **Date:** 2026-09-03.
+- **Decision:** Implement MP-04 as a narrow Protocol coordinator over the exact accepted Ananke
+  FATES-007A and Horae FATES-007A structural ports. Let Ananke construct and validate native
+  execution authority and remain the only executor choke point; let Horae create and arbitrate the
+  durable intent/claim and own recovery state. Preserve native `CONFIRMED`, `ABSENT`, and `UNKNOWN`
+  semantics, with `UNKNOWN` never authorising redispatch.
+- **Reason:** Copying native Fates identity, approval, claim, or receipt algorithms into Moirae would
+  create overlapping security owners and would make MP-04's apparent integration unverifiable. The
+  accepted pair now exposes the minimum claim-aware boundary needed for real offline composition.
+- **Consequence:** MP-04 accepts only structured MP-03 `ADMITTED` material and explicit trusted
+  context/time. It has no production effect adapter, credentials, network path, Mnemosyne dependency,
+  or model-to-executor path. Its durability claim is limited to one host and local cross-process
+  filesystem state. A separate independent acceptance/seal slice must inspect this implementation.

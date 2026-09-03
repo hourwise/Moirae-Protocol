@@ -1,0 +1,32 @@
+{
+  "profile": "moirae-protocol-mp04-fates-v1",
+  "status": "implementation-candidate",
+  "canonicalization": "json-object-keys-sorted-utf8-sha256-for-evidence-only",
+  "adrasteia": {
+    "sha": "a1c01bf9e6f9d6a126cfdcc1acfacd488b214210"
+  },
+  "ananke": {
+    "ref": "ananke-fates-007a-claim-aware-execution-v0.1.0-protocol-1.4.0",
+    "tagObject": "9fb9fc4d8183db64aa37f0a4e167fdf41ca856e5",
+    "sha": "114063e03332af3389fe805193e88a62111d9323"
+  },
+  "horae": {
+    "ref": "horae-fates-007a-claim-aware-execution-v0.1.0-protocol-1.4.0",
+    "tagObject": "59763d34644567c59d1041b3acef24efc5a1d072",
+    "sha": "aa296b420fbcf578089ca66dc03f6d09d9b06f00",
+    "runtimeSha": "7b24cb0af083e505bd2dc9fa55c6c3387f849131"
+  },
+  "fatesIntegrationEvidence": {
+    "commit": "3c7b1f9916833728882e71f79a7276e9a806f808",
+    "runtimeDependency": false
+  },
+  "mnemosyne": {
+    "status": "not-required"
+  },
+  "scope": {
+    "host": "single-host",
+    "filesystem": "local-durable-cross-process",
+    "distributedConsensus": false,
+    "externalEffects": false
+  }
+}

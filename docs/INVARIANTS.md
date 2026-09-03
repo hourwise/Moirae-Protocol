@@ -1,8 +1,8 @@
 # Security and Governance Invariants
 
 These invariants were frozen as design requirements for MP-00. MP-02 provides implementation
-evidence for the deterministic compiler rows below, and MP-03 now provides authority-admission
-evidence. Effect execution remains out of scope.
+evidence for the deterministic compiler rows below, MP-03 provides authority-admission evidence,
+and MP-04 provides bounded synthetic durable-execution evidence. No production effect is included.
 
 | ID     | Invariant                                                                                          |
 | ------ | -------------------------------------------------------------------------------------------------- |
@@ -56,19 +56,29 @@ agent prompt says it should hold.
 - The evidence is offline integration evidence against the pinned accepted Ananke checkpoint; no
   external effect, provider call, Firecracker run, Horae, or Mnemosyne path is involved.
 
-## MP-04D design invariants (not runtime evidence)
+## MP-04 durable execution evidence
 
 - MP-I20: The native Fates action hash is distinct from the Moirae `canonicalDigest` and
-  `idempotencyKey`; neither Moirae value grants authority.
-- MP-I21: A future Horae durable claim must bind the complete native operation, authority, principal,
+  `idempotencyKey`; neither Moirae value grants authority. Covered by the MP-04 boundary and real
+  integration tests.
+- MP-I21: The Horae durable claim binds the complete native operation, authority, principal,
   context, scope, purpose, and request/correlation material; a generic task ID is insufficient.
 - MP-I22: An effect outcome that cannot be proven `CONFIRMED` or `ABSENT` is `UNKNOWN` and blocks
-  blind redispatch.
-- MP-I23: Sol is the future user-facing/frontend/judge model and Luna is backend/internal only; neither
-  model may bypass deterministic Moirae and Fates governance.
+  blind redispatch. The restart/reconciliation tests prove `UNKNOWN -> CONFIRMED` without a second
+  executor invocation and preserve persistent `UNKNOWN` when reconciliation cannot decide.
+- MP-I23: Sol is the user-facing/frontend/judge model and Luna is backend/internal only; neither
+  model may bypass deterministic Moirae and Fates governance. MP-04 adds no model or direct-effect
+  path.
+- MP-I24: Only an MP-03 `ADMITTED` result can construct an MP-04 authority handoff; waiting,
+  rejected, boundary-failure, caller-hash, caller-claim, and model-prose inputs fail closed.
+- MP-I25: Executor invocation is not effect confirmation. Only a validated native receipt or
+  authoritative reconciliation can produce `CONFIRMED`; `ABSENT` requires authoritative negative
+  evidence.
+- MP-I26: MP-04 durable guarantees are limited to one host and local cross-process filesystem
+  arbitration; it does not claim distributed consensus or multi-host exactly-once execution.
 
-These are design requirements recorded by `docs/MP-04_DURABLE_EXECUTION_DESIGN.md`; they are not
-claims that MP-04 execution has been implemented or tested.
+The implementation and test evidence are recorded in `docs/MP-04_DURABLE_EXECUTION.md` and
+`tests/mp04-durable-execution.test.ts`. Independent acceptance remains a separate task.
 
 ## Fail-closed default
 

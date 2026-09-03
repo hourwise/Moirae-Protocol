@@ -264,6 +264,38 @@ Luna may remain a hidden backend/internal reasoning model. Neither model may byp
 Moirae compiler, independent Fates authentication, Ananke governance, or Horae's single dispatch
 choke point.
 
+### MP-04 durable governed execution coordinator
+
+MP-04 implements the bounded handoff described by MP-04D against the independently sealed Fates
+pair:
+
+```text
+validated MP-03 ADMITTED result
+        + exact ActionIntent/context
+        |
+        v
+Ananke constructs native GovernedExecutionAuthorityV1
+        |
+        v
+Horae creates durable intent and owner/generation claim
+        |
+        v
+Ananke executeClaimed() -> one registered synthetic adapter
+        |
+        v
+validated receipt/reconciliation
+        |
+        +--> CONFIRMED
+        +--> ABSENT
+        +--> UNKNOWN -> recovery required; never blind redispatch
+```
+
+The Protocol coordinator owns no native hash, approval, claim, executor, or effect-truth
+algorithm. It validates the MP-03 handoff, delegates to structural Ananke/Horae ports, and returns
+sanitized evidence. The local routing index is evidence only and cannot override the native Horae
+record. The implementation is synthetic/offline and bounded to one host with local durable
+cross-process arbitration. See `docs/MP-04_DURABLE_EXECUTION.md`.
+
 ### MVP critical path
 
 1. Strands receives an administrative request and returns a bounded proposal.

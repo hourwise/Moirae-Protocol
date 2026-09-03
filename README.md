@@ -30,11 +30,14 @@ The governing thesis is:
 
 ## Current status
 
-The repository now contains the accepted MP-01 real Strands capability spike and MP-02 deterministic
-compiler. MP-01 produces bounded untrusted structured proposals; MP-02 resolves them against
-explicit trusted context into canonical `ActionIntentV1` material or a clarification/rejection.
-No real effects or Fates authority are implemented. MP-01 live inference remains explicitly
-`BLOCKED_CREDENTIALS`. See [docs/BUILD_PLAN.md](docs/BUILD_PLAN.md).
+The repository contains the accepted MP-01 real Strands capability spike, MP-02 deterministic
+compiler, MP-03 fixture-bound Fates admission adapter, and the MP-04 Protocol-side durable governed
+execution coordinator ready for independent acceptance. MP-01 produces bounded untrusted structured
+proposals; MP-02 resolves them against explicit trusted context into canonical `ActionIntentV1`
+material; MP-03 asks accepted Ananke for admission; MP-04 coordinates the accepted Ananke/Horae
+claim-aware path using synthetic offline effects only. No production effect or provider is
+implemented. MP-01 live inference remains explicitly `BLOCKED_CREDENTIALS`. See
+[docs/BUILD_PLAN.md](docs/BUILD_PLAN.md) and [docs/MP-04_DURABLE_EXECUTION.md](docs/MP-04_DURABLE_EXECUTION.md).
 
 The project is intended to become `https://github.com/hourwise/Moirae-Protocol`; the remote was not
 created during MP-00 because GitHub credentials were invalid and API access was unavailable. The
@@ -66,7 +69,8 @@ packages/
   action-contracts/    versioned Moirae Protocol ActionIntent contracts
   action-compiler/     deterministic validation, resolution, and canonicalisation
   strands-agent/       narrow real Strands semantic-proposal adapter
-  fates-adapter/      future verified Fates boundary
+  fates-adapter/      verified MP-03 Fates admission boundary
+  execution-coordinator/  MP-04 durable governed execution coordination
   effect-adapters/    future bounded effect implementations
   test-fixtures/      synthetic MP-01/MP-02 integration fixtures
 docs/                  eligibility, architecture, threat model, decisions, and plan

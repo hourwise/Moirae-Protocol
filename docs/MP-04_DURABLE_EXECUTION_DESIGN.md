@@ -1,6 +1,8 @@
 # MP-04D — Durable Execution Boundary Design and Horae Readiness
 
-**Status:** Design/readiness only. No MP-04 runtime implementation is included.
+**Status:** Historical MP-04D design/readiness record. The bounded Protocol implementation that
+follows this design is documented separately in `docs/MP-04_DURABLE_EXECUTION.md`; this record is
+preserved as the design input and is not an acceptance seal.
 
 **Decision:** `MP-04 DESIGN READY — HORAE NEEDS_BOUNDED_EXTENSION`
 
@@ -9,8 +11,9 @@
 **Model-facing invariant:** `SOL_FRONTEND_LUNA_BACKEND_RECORDED`
 
 This document records the independent design review following accepted MP-03. It defines the
-minimum trusted execution architecture that must be implemented and separately accepted before any
-real effect adapter is introduced. It does not add Horae, Ananke, Mnemosyne, provider, frontend, or
+minimum trusted execution architecture that was subsequently implemented as a synthetic/offline
+Protocol coordinator and must still be independently accepted before any real effect adapter is
+introduced. The design review itself added no Horae, Ananke, Mnemosyne, provider, frontend, or
 execution code to Moirae Protocol.
 
 ## 1. Inspection baseline

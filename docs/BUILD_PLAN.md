@@ -88,14 +88,17 @@ are release and submission gates.
 ### MP-04 — Governed effect execution
 
 - **Entry:** MP-03 proves authority outcomes and exact binding material.
-- **Design status:** MP-04D design/readiness is complete; Horae is classified
-  `NEEDS_BOUNDED_EXTENSION`. MP-04 runtime implementation has not started.
-- **Build:** Implement bounded synthetic demo adapters and Horae/effect accounting. Require a single
-  canonical ActionIntent and explicit authority for each effect attempt.
-- **Exit:** ALLOW can produce one bounded receipt; DENY produces none; duplicate/replayed delivery
-  does not multiply effects; failures are recorded without widening permission.
-- **Tests:** Replay/idempotency; concurrency; effect-call counting; receipt binding; retry/failure
-  behavior; synthetic then integration evidence.
+- **Status:** Protocol-side durable governed execution coordinator implemented; ready for independent
+  acceptance against the exact sealed Ananke/Horae dependency set.
+- **Build:** Coordinate the accepted MP-03 admission, native Ananke authority construction, Horae
+  durable intent/claim, claim-aware Ananke execution, and native receipt/reconciliation. Require a
+  single canonical ActionIntent and explicit authority for each effect attempt.
+- **Exit:** ADMITTED can produce one bounded synthetic receipt; non-admitted outcomes produce none;
+  duplicate/replayed delivery does not multiply effects; UNKNOWN blocks redispatch; failures are
+  recorded without widening permission.
+- **Tests:** Replay/idempotency; claim and context tampering; effect-call counting; receipt binding;
+  UNKNOWN restart/reconciliation; ABSENT; persistent UNKNOWN; three-action MP-01 → MP-04 offline
+  integration evidence.
 - **Forbidden:** Unbounded connectors; credential injection; implicit retries that re-use authority;
   treating a receipt as a new authority.
 
