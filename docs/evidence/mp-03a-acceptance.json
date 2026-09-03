@@ -1,0 +1,119 @@
+{
+  "profile": "moirae-protocol-mp03a-fates-admission-v1",
+  "decision": "ACCEPTED",
+  "classification": "ACCEPTED FIXTURE-BOUND MP-03 ADAPTER",
+  "acceptedAt": "2026-09-03",
+  "candidate": {
+    "sha": "ad841c81237d445f71f427af88d93482fe629779",
+    "parentSha": "8469f30e943425d59698fb174d21a034941307cb",
+    "treeSha": "3f901472371b0bb8be92bf657b0746f14896c5ef"
+  },
+  "dependencyTrustSet": {
+    "ananke": {
+      "tag": "ananke-fates-006b-mp03-admission-v0.1.0-protocol-1.4.0",
+      "annotatedTagObjectSha": "6425d4b34fba62ab60381a4a2237786d0d6173ad",
+      "peeledSha": "6bf8902c55c4f3f7593a987582b50783c8a7b5a0",
+      "fates006aProvenanceSha": "fc318663cbed3072128355fb3697e7f2b47f5f11",
+      "license": "MIT"
+    },
+    "adrasteia": {
+      "sha": "a1c01bf9e6f9d6a126cfdcc1acfacd488b214210",
+      "license": "MIT"
+    }
+  },
+  "nativeHashFixtures": {
+    "SEND_APPOINTMENT_DETAILS": "8242ac8739064472391409bca7792a6804227a6ef56f9ffa8c8ffdc05b28899e",
+    "RESCHEDULE_APPOINTMENT": "fcc5ae5a5bc6f8b2b8756f2cb283ae008769c6bf2e4af3a060f144f3dc978eaa",
+    "TRANSMIT_CUSTOMER_CONTACT_DIRECTORY": "af6fcf84b5cc498138649111cc1810c2e32145ac9d1cd99136ac045e9e24af84"
+  },
+  "hashReproduction": {
+    "method": "Accepted Ananke runtime-core nativeAdmissionActionHash path, which delegates to the native hashAuthorizedEffect path.",
+    "propertyOrderIndependent": true,
+    "moiraeCanonicalDigestUsedAsNativeHash": false,
+    "callerSuppliedNativeHashAccepted": false
+  },
+  "baselineAdmissions": [
+    {
+      "action": "SEND_APPOINTMENT_DETAILS",
+      "nativeDecision": "REQUIRE_APPROVAL",
+      "mpStatus": "WAITING_FOR_APPROVAL",
+      "executorInvoked": false,
+      "effectExecuted": false,
+      "executionAuditEvents": 0
+    },
+    {
+      "action": "RESCHEDULE_APPOINTMENT",
+      "nativeDecision": "REQUIRE_APPROVAL",
+      "mpStatus": "WAITING_FOR_APPROVAL",
+      "executorInvoked": false,
+      "effectExecuted": false,
+      "executionAuditEvents": 0
+    },
+    {
+      "action": "TRANSMIT_CUSTOMER_CONTACT_DIRECTORY",
+      "nativeDecision": "REQUIRE_APPROVAL",
+      "mpStatus": "WAITING_FOR_APPROVAL",
+      "executorInvoked": false,
+      "effectExecuted": false,
+      "executionAuditEvents": 0
+    }
+  ],
+  "approvedAdmission": {
+    "action": "TRANSMIT_CUSTOMER_CONTACT_DIRECTORY",
+    "nativeDecision": "ALLOW",
+    "mpStatus": "ADMITTED",
+    "approvalUsed": false,
+    "repeatedAdmissionValid": true,
+    "executorInvoked": false,
+    "effectExecuted": false,
+    "executionAuditEvents": 0
+  },
+  "integration": {
+    "offline": true,
+    "syntheticModel": true,
+    "realStrandsAgentMachinery": true,
+    "mp02Compiler": true,
+    "realAcceptedAnankeGatewayAdmit": true,
+    "supportedActionsExercised": 3,
+    "networkCalls": 0,
+    "externalEffects": 0
+  },
+  "validation": {
+    "freshCheckout": "workspace-local normalized checkout at candidate SHA",
+    "npmCi": {
+      "packagesAdded": 430,
+      "packagesAudited": 439,
+      "vulnerabilities": 0
+    },
+    "moiraeTestFiles": 4,
+    "moiraeTests": 86,
+    "mp03Tests": 37,
+    "mp02Tests": 32,
+    "mp01Tests": 15,
+    "mp00Tests": 2,
+    "anankeTestFiles": 30,
+    "anankeTests": 287,
+    "anankeFocusedAdmissionTests": 20,
+    "gitDiffCheck": true,
+    "secretPatternScan": "NO_HIGH_CONFIDENCE_SECRET_MATCHES",
+    "trackedSecretFileScan": "NONE"
+  },
+  "isolation": {
+    "horaeIntegrated": false,
+    "mnemosyneIntegrated": false,
+    "firecrackerFrozenTag": "fates-005a-firecracker-r7-integration-frozen",
+    "firecrackerFrozenTagObjectSha": "f817d98b222b4ddf417ace68384fa16b3f0c6aff",
+    "firecrackerFrozenPeeledSha": "c117a5c1d8744d7847447f86492d1f30a26d319c",
+    "firecrackerAttempt007": "UNUSED",
+    "moiraeConsoleUnchanged": true,
+    "executorInvocations": 0,
+    "effectExecutions": 0
+  },
+  "dependencyAdvisoryStatus": "KNOWN_DEPENDENCY_ADVISORIES — NOT FULLY ASSESSED",
+  "acceptanceTag": {
+    "name": "moirae-protocol-mp03-fates-admission-v0.1.0",
+    "type": "annotated",
+    "targetSha": "ad841c81237d445f71f427af88d93482fe629779",
+    "publication": "LOCAL_ONLY_REMOTE_PUBLICATION_PENDING"
+  }
+}
