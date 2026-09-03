@@ -1,0 +1,39 @@
+{
+  "slice": "MP-01",
+  "inspectedAt": "2026-09-03",
+  "sdk": "@strands-agents/sdk",
+  "sdkVersion": "1.16.0",
+  "schema": "AgentProposalV1Schema",
+  "success": {
+    "method": "Agent.invoke(request, { structuredOutputSchema })",
+    "resultFieldUsed": "structuredOutput",
+    "validation": "AgentProposalV1Schema.parse(result.structuredOutput)",
+    "fixtureCoverage": [
+      "routine-appointment-details",
+      "confirmed-friday-reschedule",
+      "bulk-contact-send",
+      "three hostile inputs"
+    ]
+  },
+  "malformedOutput": {
+    "syntheticProviderBehavior": "assistant prose without the SDK structured-output tool call",
+    "observedErrorType": "StructuredOutputError",
+    "adapterBehavior": "propagates the SDK failure; does not parse arbitrary prose"
+  },
+  "retryBehavior": {
+    "adapterSetting": "retryStrategy: null",
+    "observedAdapterCallsForMalformedProse": 2,
+    "moiraeRetries": 0,
+    "note": "The SDK supports retry strategies, but MP-01 disables them in this bounded adapter. The SDK's structured-output protocol made a second model turn to request structured output before throwing; this is not a Moirae retry."
+  },
+  "agentResultFields": {
+    "used": ["structuredOutput", "stopReason"],
+    "notExposed": ["messages", "invocationState", "metrics", "raw Agent object"]
+  },
+  "conversationState": {
+    "design": "one fresh SDK Agent per logical invocation",
+    "regressionEvidence": "two fixture calls created two model instances; each saw one user request only"
+  },
+  "provider": "mock/synthetic",
+  "credentials": "not applicable; no network or inference service used"
+}

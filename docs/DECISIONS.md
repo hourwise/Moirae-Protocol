@@ -78,3 +78,23 @@ from later implementation slices, but a change must be recorded rather than sile
 - **Reason:** The event requires a new project and disclosure of incorporated pre-existing work.
 - **Consequence:** Later integration must cite exact repository, branch/tag, commit, license, and
   public surface evidence. Any unresolved item is recorded as TBD.
+
+## ADR-0008 — Use the real Strands TypeScript SDK only for semantic proposals
+
+- **Status:** Accepted for MP-01.
+- **Date:** 2026-09-03.
+- **Decision:** Use the exact `@strands-agents/sdk@1.16.0` dependency from the current
+  `strands-agents/harness-sdk` monorepo. Configure Strands behind a narrow adapter and require
+  Zod structured output as `AgentProposalV1`.
+- **Reason:** The current official TypeScript SDK supports `Agent` construction/invocation and
+  Zod-backed structured output on Node.js 20+. The repository uses Node.js >=22. The model is useful
+  for semantic interpretation, but its output remains untrusted and must not be an authority or
+  execution source.
+- **Provider boundary:** The adapter accepts a small Bedrock/OpenAI provider configuration and
+  never accepts or exposes credential material. Bedrock is the live default; OpenAI-compatible
+  endpoints are an optional officially supported configuration. A synthetic model exists only in
+  tests and is labelled `mock/synthetic`.
+- **Consequence:** MP-01 creates one fresh Strands `Agent` per logical invocation, disables
+  adapter-owned retries, bounds provider output and SDK turns, and returns only validated
+  `AgentProposalV1` plus bounded metadata. ActionIntent, Fates admission, and all effects remain
+  later-slice responsibilities.

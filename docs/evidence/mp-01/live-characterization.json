@@ -1,0 +1,17 @@
+{
+  "slice": "MP-01",
+  "status": "BLOCKED_CREDENTIALS",
+  "inspectedAt": "2026-09-03",
+  "sdk": "@strands-agents/sdk",
+  "sdkVersion": "1.16.0",
+  "provider": "bedrock",
+  "modelId": "global.anthropic.claude-sonnet-4-6",
+  "requestCount": 0,
+  "fixtures": ["routine-appointment-details", "confirmed-friday-reschedule", "bulk-contact-send"],
+  "schemaValidProposals": 0,
+  "proposals": [],
+  "metrics": [],
+  "errorType": "ModelError",
+  "credentials": "not recorded",
+  "notes": "The bounded live smoke reached the real Strands Bedrock model boundary but stopped because credentialed provider access was unavailable. No error text or credentials were recorded. Offline tests and TypeScript compilation provide the remaining characterization."
+}

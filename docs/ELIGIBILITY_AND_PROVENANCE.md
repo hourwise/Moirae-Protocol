@@ -73,3 +73,20 @@ Accordingly, remote existence and public/private status remain unverified rather
 - Fates code modified or committed: **none**.
 - Fates contracts claimed compatible: **no**; all adapters remain future work.
 - Fates licensing suitable for future incorporation: **not fully established**; see the table above.
+
+## MP-01 third-party dependency provenance
+
+MP-01 added the following third-party hackathon dependency during this project:
+
+| Package               | Exact version                                     | License    | Upstream                                                                                           | Date added | Purpose                                                                                     |
+| --------------------- | ------------------------------------------------- | ---------- | -------------------------------------------------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------- |
+| `@strands-agents/sdk` | `1.16.0` (exact; resolved in `package-lock.json`) | Apache-2.0 | [Strands harness-sdk monorepo](https://github.com/strands-agents/harness-sdk/tree/main/strands-ts) | 2026-09-03 | Real TypeScript Agent invocation and Zod structured output for untrusted semantic proposals |
+
+The archived `strands-agents/sdk-typescript` repository was not used as the source of new code;
+current TypeScript development is in the harness-sdk monorepo. The SDK is not pre-existing Fates
+work and no Fates implementation was copied. The direct `zod@4.5.4` dependency is present to
+provide the schema runtime required by the SDK peer dependency.
+
+MP-01 confirms the current MP-00 licensing finding: Adrasteia / Ananke have inspected license
+evidence; Horae / Mnemosyne reuse and licensing remain unresolved. MP-01 has no dependency on Horae
+or Mnemosyne implementation.

@@ -55,6 +55,35 @@ The Fates
 The critical invariant is: **Strands must never be an authority source.** The model may propose
 what should happen, but it must not determine whether the real-world effect is authorised.
 
+## MP-01 Strands boundary
+
+MP-01 implements the first arrow only with the real `@strands-agents/sdk@1.16.0` TypeScript SDK:
+
+```text
+Administrative language
+        |
+        v
+Real Strands Agent with Zod structured output
+        |
+        v
+UNTRUSTED AgentProposalV1
+        |
+        v
+STOP
+```
+
+`AgentProposalV1` contains semantic claims such as a request category, human wording for a subject,
+an unparsed temporal expression, a recipient reference, a summary, ambiguity, and unresolved
+fields. It contains no authority, approval, credential, resolved identity, execution, effect, or
+receipt field. Strict schema validation rejects fields outside this contract. In particular:
+
+> **AgentProposalV1 != ActionIntent**
+
+The adapter does not call Fates, Horae, Mnemosyne, or any effect adapter. A fresh Strands Agent and
+conversation are created per logical invocation. The default MP-01 test harness uses a synthetic
+model that emits the real SDK structured-output stream shape; that model is test-only and is not
+live inference evidence.
+
 ## Responsibility matrix
 
 | Boundary / owner                   | Responsibilities                                                                                                                                                                                                           | Explicit non-responsibilities                                                             |
@@ -140,6 +169,8 @@ The system must remain useful if either stretch component is deferred.
 
 ## MP-00 exclusions
 
-There are no real routine, consequential, or forbidden flows in this slice. There are no Fates
-authority calls, effect adapters, browser approvals, credentials, background queues, or production
-security claims. The placeholders exist only to make the future workspace and checks explicit.
+There are no real routine, consequential, or forbidden effects in this slice. There are no Fates
+authority calls, Horae or Mnemosyne dependencies, effect adapters, browser approvals, credentials,
+background queues, or production security claims. The three MP-01 fixture classes stop at an
+untrusted semantic proposal. The remaining placeholders exist only to make the future workspace
+and checks explicit.

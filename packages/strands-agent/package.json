@@ -2,5 +2,9 @@
   "name": "@moirae/strands-agent",
   "version": "0.0.0",
   "private": true,
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "@strands-agents/sdk": "1.16.0",
+    "zod": "4.5.4"
+  }
 }
