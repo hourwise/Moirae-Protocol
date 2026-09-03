@@ -8,6 +8,90 @@
     "parentSha": "8469f30e943425d59698fb174d21a034941307cb",
     "treeSha": "3f901472371b0bb8be92bf657b0746f14896c5ef"
   },
+  "mp02Integrity": {
+    "sourceRequestId": "REQUEST-MP02-DETAILS-001",
+    "trustedContextTimestamp": "2026-09-03T11:00:00.000Z",
+    "recomputedAndMatched": true,
+    "tamperCasesRejected": [
+      "action parameters",
+      "principal",
+      "requester",
+      "resource",
+      "target",
+      "evidence references",
+      "source request ID",
+      "arbitrary caller object"
+    ],
+    "fixtureIntents": {
+      "SEND_APPOINTMENT_DETAILS": {
+        "canonicalDigest": "b77168f6e6b587886971c04f9933c8c14a019048a5dd06f73e8ac940c16b8fb8",
+        "idempotencyKey": "6a08c089b5b3178fcbbdc6a2b5ba8139a624843a94fad235fe2f28e718cd8320"
+      },
+      "RESCHEDULE_APPOINTMENT": {
+        "canonicalDigest": "36007a3b4bf7a353f568eecb9ade29a146cfea0bd651319c50404dd4aa7ea089",
+        "idempotencyKey": "893734cc00e1d7ca04470b6c7f9821eaa942a47bbadb4b487a6e60f70661ed09"
+      },
+      "TRANSMIT_CUSTOMER_CONTACT_DIRECTORY": {
+        "canonicalDigest": "27df12c8f406fc1c3bdd575c553e64be0bb250e576eaaaeaf096f96b73db8310",
+        "idempotencyKey": "a41d58eaf54dd27fd506b10d3713cfc94a1d8050cf8d630700db7b1f69cb84f6"
+      }
+    }
+  },
+  "authenticatedContext": {
+    "workloadPrincipal": "moirae-administrative-workload-v1",
+    "actingPrincipal": "moirae-administrative-agent-v1",
+    "representedPrincipal": "moirae-requester-CUSTOMER-001",
+    "tenant": "moirae-mp02-fixture-tenant",
+    "runtime": "ananke",
+    "runtimeInstance": "ananke-mp03-fixture-instance-001",
+    "session": "session-mp03-fixture-001",
+    "requestId": "REQUEST-MP02-DETAILS-001",
+    "correlationId": "CORRELATION-MP03-001",
+    "causationId": "CAUSATION-MP03-001",
+    "policyVersion": "builtin:0.1.0",
+    "purpose": "registered per operation",
+    "trustedContextTimestamp": "2026-09-03T11:00:00.000Z",
+    "admissionNow": "2026-09-03T12:00:00.000Z"
+  },
+  "registeredOperationBindings": {
+    "server": "moirae.administrative",
+    "version": "1.0.0",
+    "operations": {
+      "SEND_APPOINTMENT_DETAILS": {
+        "tool": "moirae.administrative.send_appointment_details",
+        "arguments": {
+          "bookingId": "BOOKING-001",
+          "recipientAddress": "alex@example.test",
+          "templateId": "appointment-details-v1"
+        },
+        "resourceScope": "appointment-details:BOOKING-001",
+        "purpose": "appointment.details.disclosure"
+      },
+      "RESCHEDULE_APPOINTMENT": {
+        "tool": "moirae.administrative.reschedule_appointment",
+        "arguments": {
+          "bookingId": "BOOKING-001",
+          "currentStart": "2026-09-04T13:00:00.000Z",
+          "proposedStart": "2026-09-07T14:00:00.000Z",
+          "timeZone": "Europe/London"
+        },
+        "resourceScope": "appointment:BOOKING-001",
+        "purpose": "appointment.reschedule"
+      },
+      "TRANSMIT_CUSTOMER_CONTACT_DIRECTORY": {
+        "tool": "moirae.administrative.transmit_customer_contact_directory",
+        "arguments": {
+          "directoryResourceId": "RESOURCE-CONTACT-DIRECTORY-001",
+          "recipientAddress": "personal-address@example.test",
+          "exportFormat": "csv"
+        },
+        "resourceScope": "customer-contact-directory",
+        "purpose": "customer-directory.external-export"
+      }
+    },
+    "dynamicDiscovery": false,
+    "genericFallback": false
+  },
   "dependencyTrustSet": {
     "ananke": {
       "tag": "ananke-fates-006b-mp03-admission-v0.1.0-protocol-1.4.0",
@@ -62,6 +146,7 @@
     "action": "TRANSMIT_CUSTOMER_CONTACT_DIRECTORY",
     "nativeDecision": "ALLOW",
     "mpStatus": "ADMITTED",
+    "nativeActionHash": "af6fcf84b5cc498138649111cc1810c2e32145ac9d1cd99136ac045e9e24af84",
     "approvalUsed": false,
     "repeatedAdmissionValid": true,
     "executorInvoked": false,
