@@ -121,6 +121,7 @@
       "action": "SEND_APPOINTMENT_DETAILS",
       "nativeDecision": "REQUIRE_APPROVAL",
       "mpStatus": "WAITING_FOR_APPROVAL",
+      "nativeActionHash": "8242ac8739064472391409bca7792a6804227a6ef56f9ffa8c8ffdc05b28899e",
       "executorInvoked": false,
       "effectExecuted": false,
       "executionAuditEvents": 0
@@ -129,6 +130,7 @@
       "action": "RESCHEDULE_APPOINTMENT",
       "nativeDecision": "REQUIRE_APPROVAL",
       "mpStatus": "WAITING_FOR_APPROVAL",
+      "nativeActionHash": "fcc5ae5a5bc6f8b2b8756f2cb283ae008769c6bf2e4af3a060f144f3dc978eaa",
       "executorInvoked": false,
       "effectExecuted": false,
       "executionAuditEvents": 0
@@ -137,6 +139,7 @@
       "action": "TRANSMIT_CUSTOMER_CONTACT_DIRECTORY",
       "nativeDecision": "REQUIRE_APPROVAL",
       "mpStatus": "WAITING_FOR_APPROVAL",
+      "nativeActionHash": "af6fcf84b5cc498138649111cc1810c2e32145ac9d1cd99136ac045e9e24af84",
       "executorInvoked": false,
       "effectExecuted": false,
       "executionAuditEvents": 0
@@ -147,6 +150,8 @@
     "nativeDecision": "ALLOW",
     "mpStatus": "ADMITTED",
     "nativeActionHash": "af6fcf84b5cc498138649111cc1810c2e32145ac9d1cd99136ac045e9e24af84",
+    "approvalReferenceDomain": "Ananke ApprovalGrant.id returned by the synthetic local Gateway",
+    "approvalStatus": "approved",
     "approvalUsed": false,
     "repeatedAdmissionValid": true,
     "executorInvoked": false,
@@ -198,6 +203,7 @@
   "acceptanceTag": {
     "name": "moirae-protocol-mp03-fates-admission-v0.1.0",
     "type": "annotated",
+    "annotatedTagObjectSha": "d2ae9289df3341af3c7e0ae8c182bd38763f2a52",
     "targetSha": "ad841c81237d445f71f427af88d93482fe629779",
     "publication": "LOCAL_ONLY_REMOTE_PUBLICATION_PENDING"
   }
