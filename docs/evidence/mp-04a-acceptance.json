@@ -1,0 +1,155 @@
+{
+  "profile": "moirae-protocol-mp04a-acceptance-v1",
+  "status": "accepted",
+  "candidate": {
+    "branch": "codex/mp04a-r1-doc-contract-fix",
+    "terminalSha": "5a073ab23755912c669a205cf18c430cecf6423f",
+    "terminalTree": "3cfbab9088a54cdbe0f57169ec896d115803bdc1",
+    "terminalParent": "53ab3eae8bce6d26a18498c204ea416d90c3c236",
+    "runtimeSha": "efe75cef3cfbab4a319e7a979b90ffe0d2004e4d",
+    "absentCoverageCommit": "53ab3eae8bce6d26a18498c204ea416d90c3c236",
+    "documentationRemediationSha": "5a073ab23755912c669a205cf18c430cecf6423f"
+  },
+  "acceptanceTag": {
+    "ref": "moirae-protocol-mp04-durable-governed-execution-v0.1.0",
+    "tagObject": "8cb48023b98a62604d88dfecfac0c7b4400a80aa",
+    "peeledSha": "5a073ab23755912c669a205cf18c430cecf6423f"
+  },
+  "acceptedMp03": {
+    "ref": "moirae-protocol-mp03-fates-admission-v0.1.0",
+    "tagObject": "d2ae9289df3341af3c7e0ae8c182bd38763f2a52",
+    "peeledSha": "ad841c81237d445f71f427af88d93482fe629779"
+  },
+  "dependencies": {
+    "adrasteiaSha": "a1c01bf9e6f9d6a126cfdcc1acfacd488b214210",
+    "ananke": {
+      "ref": "ananke-fates-007a-claim-aware-execution-v0.1.0-protocol-1.4.0",
+      "tagObject": "9fb9fc4d8183db64aa37f0a4e167fdf41ca856e5",
+      "sha": "114063e03332af3389fe805193e88a62111d9323"
+    },
+    "horae": {
+      "ref": "horae-fates-007a-claim-aware-execution-v0.1.0-protocol-1.4.0",
+      "tagObject": "59763d34644567c59d1041b3acef24efc5a1d072",
+      "terminalSha": "aa296b420fbcf578089ca66dc03f6d09d9b06f00",
+      "runtimeSha": "7b24cb0af083e505bd2dc9fa55c6c3387f849131"
+    },
+    "lockSha256": "CD7ABB5F8AFBD5C72195838C8E564993937B1A3AB5B1DB66B62A083282C141E6",
+    "fatesIntegrationEvidence": "3c7b1f9916833728882e71f79a7276e9a806f808",
+    "mnemosyne": "not-integrated"
+  },
+  "nativeFraming": {
+    "algorithm": "sha256(utf8(domain + LF + canonical JSON))",
+    "delimiter": "LF",
+    "delimiterByte": "0x0A",
+    "nulDelimiter": false,
+    "domains": [
+      "fates-007a/durable-execution/v1",
+      "fates-007a/authority-instance/v1",
+      "fates-007a/claim/v1",
+      "fates-007a/effect-receipt/v1",
+      "fates-007a/checksum/v1"
+    ]
+  },
+  "fixtures": [
+    {
+      "action": "SEND_APPOINTMENT_DETAILS",
+      "result": "CONFIRMED",
+      "executorInvocations": 1,
+      "replayInvocations": 0,
+      "terminalReload": true
+    },
+    {
+      "action": "RESCHEDULE_APPOINTMENT",
+      "result": "CONFIRMED",
+      "executorInvocations": 1,
+      "replayInvocations": 0,
+      "terminalReload": true
+    },
+    {
+      "action": "TRANSMIT_CUSTOMER_CONTACT_DIRECTORY",
+      "result": "CONFIRMED",
+      "executorInvocations": 1,
+      "replayInvocations": 0,
+      "terminalReload": true
+    }
+  ],
+  "unknownRecovery": {
+    "initialResult": "UNKNOWN",
+    "initialExecutorInvocations": 1,
+    "coordinatorRecreated": true,
+    "redispatchAttempted": false,
+    "reconciliationResult": "CONFIRMED",
+    "finalExecutorInvocations": 1,
+    "durableIdentityUnchanged": true,
+    "nativeActionUnchanged": true
+  },
+  "persistentUnknown": {
+    "initialResult": "UNKNOWN",
+    "recoveryResult": "UNKNOWN",
+    "executorInvocations": 1,
+    "redispatchAttempted": false,
+    "fabricatedAbsent": false,
+    "fabricatedConfirmed": false
+  },
+  "absent": {
+    "transition": "UNKNOWN -> ABSENT",
+    "executorInvocations": 1,
+    "automaticRetry": false,
+    "terminalReplay": false,
+    "newAttemptRequiresFreshAuthorityAndClaim": true
+  },
+  "security": {
+    "nonAdmittedStatesRejected": true,
+    "callerAuthorityMaterialRejected": true,
+    "callerClaimMaterialRejected": true,
+    "callerReceiptMaterialRejected": true,
+    "modelProseCannotChangeExecution": true,
+    "staleCopiedAndTamperedClaimsRejected": true,
+    "executorReturnAloneIsNotConfirmed": true
+  },
+  "validation": {
+    "cleanInstall": "430 packages added; 439 audited",
+    "npmAuditVulnerabilities": 0,
+    "mp04Focused": "13/13",
+    "mp03Focused": "37/37",
+    "mp02Focused": "32/32",
+    "fullProtocol": "99/99",
+    "typecheck": true,
+    "lintZeroWarnings": true,
+    "build": true,
+    "diffCheck": true,
+    "secretScan": "clean",
+    "formatting": {
+      "classification": "PRE_EXISTING_LINE_ENDING_CONFIGURATION_MISMATCH",
+      "defaultRepositoryCheck": "baseline LF/CRLF mismatch reported",
+      "nativeCrlfCheck": "passed in fresh Windows checkout",
+      "touchedDocument": "passed under native checkout policy"
+    },
+    "runtimeTreeComparison": "packages/ and tests/ byte-identical across terminal candidate commits"
+  },
+  "scope": {
+    "supported": [
+      "local durable filesystem",
+      "single host",
+      "cross-process arbitration",
+      "checksummed state",
+      "atomic replacement",
+      "restart recovery"
+    ],
+    "notClaimed": [
+      "distributed consensus",
+      "multi-host exactly-once",
+      "network partition tolerance",
+      "arbitrary power-loss proof"
+    ]
+  },
+  "invariants": {
+    "solLuna": "SOL_FRONTEND_LUNA_BACKEND_PRESERVED",
+    "mnemosyne": "MNEMOSYNE_NOT_INTEGRATED",
+    "fixtureScope": "ACCEPTED FIXTURE-BOUND MP-04 DURABLE EXECUTION",
+    "syntheticOnly": true,
+    "firecrackerRef": "c117a5c1d8744d7847447f86492d1f30a26d319c",
+    "attempt007Used": false,
+    "consoleHead": "893ef94fa0dfad3606bd83e8b46351210cfc0d51"
+  }
+}
