@@ -722,7 +722,7 @@ describeReal("MP-04 real Strands → MP-03 → Fates → Horae integration", () 
       persistent.cleanup();
     }
 
-    const absent = await createRealHarness(anankeModule, horaeModule, "absent");
+    const absent = await createRealHarness(anankeModule, horaeModule, "unknown");
     try {
       const action = "TRANSMIT_CUSTOMER_CONTACT_DIRECTORY" as const;
       const intent = await compileThroughRealStrands(action);
@@ -735,14 +735,23 @@ describeReal("MP-04 real Strands → MP-03 → Fates → Horae integration", () 
         owner: "mp04-absent-process",
         provenance: MP04_DEPENDENCY_PROVENANCE,
       });
-      const uncertain = await coordinator.executeAdmittedAction({
+      const unknownResult = await coordinator.executeAdmittedAction({
         intent,
         admission: admitted,
         authenticatedContext: context,
         now: NOW,
       });
-      expect(uncertain.status).toBe("ABSENT");
+      expect(unknownResult.status).toBe("UNKNOWN");
+      absent.setMode("absent");
+      const reconciled = await coordinator.recoverActionExecution({
+        durableExecutionId: unknownResult.durableExecutionId,
+        intent,
+        authenticatedContext: context,
+        now: NOW,
+      });
+      expect(reconciled.status).toBe("ABSENT");
       expect(absent.counts.execute).toBe(1);
+      expect(absent.counts.reconcile).toBe(1);
       const replay = await coordinator.executeAdmittedAction({
         intent,
         admission: admitted,
@@ -751,6 +760,7 @@ describeReal("MP-04 real Strands → MP-03 → Fates → Horae integration", () 
       });
       expect(replay.status).toBe("ABSENT");
       expect(absent.counts.execute).toBe(1);
+      expect(replay.evidence.redispatchAttempted).toBe(false);
     } finally {
       absent.cleanup();
     }
