@@ -23,7 +23,9 @@ function requiredPath(name) {
 }
 
 function git(root, args) {
-  return execFileSync("git", ["-C", root, ...args], { encoding: "utf8" }).trim();
+  return execFileSync("git", ["-c", `safe.directory=${root}`, "-C", root, ...args], {
+    encoding: "utf8",
+  }).trim();
 }
 
 function assertEqual(label, actual, expected) {
@@ -34,7 +36,16 @@ function assertEqual(label, actual, expected) {
 
 function assertAncestor(root, ancestor, descendant, label) {
   try {
-    execFileSync("git", ["-C", root, "merge-base", "--is-ancestor", ancestor, descendant]);
+    execFileSync("git", [
+      "-c",
+      `safe.directory=${root}`,
+      "-C",
+      root,
+      "merge-base",
+      "--is-ancestor",
+      ancestor,
+      descendant,
+    ]);
   } catch {
     throw new Error(`${label} is not an ancestor of ${descendant}`);
   }
