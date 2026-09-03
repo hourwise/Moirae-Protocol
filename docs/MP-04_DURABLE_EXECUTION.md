@@ -91,13 +91,16 @@ Ananke constructs the authority envelope. MP-04 does not copy the Fates hashing 
 accepted native durable identity is domain-separated as:
 
 ```text
-fates-007a/durable-execution/v1\0 + canonical JSON of
+"fates-007a/durable-execution/v1" + "\n" + canonical JSON of
 {
   requestIdentity, nativeActionHash, operation, authenticatedContext,
   resourceScope, purpose, policyVersion, argumentsDigest, targetDigest,
   effectAdapter
 }
 ```
+
+The `"\n"` delimiter is one LF byte (`0x0A`), not a NUL byte (`0x00`). This is the
+native Ananke/Horae framing; MP-04 does not implement or substitute the algorithm.
 
 The native result is `fates-execution:sha256:<digest>`. A renewed approval may change the separate
 authority-instance digest while the same unexecuted trusted effect retains this durable identity.
