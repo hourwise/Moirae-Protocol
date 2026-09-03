@@ -1,0 +1,81 @@
+{
+  "profile": "moirae-protocol-mp04b-public-reproducibility-v1",
+  "status": "post-acceptance-hardening",
+  "protocol": {
+    "mp04AcceptanceTag": {
+      "ref": "moirae-protocol-mp04-durable-governed-execution-v0.1.0",
+      "tagObject": "8cb48023b98a62604d88dfecfac0c7b4400a80aa",
+      "target": "5a073ab23755912c669a205cf18c430cecf6423f"
+    },
+    "mp04AcceptanceEvidence": "bf7799740325f5421ccc8299108080bb05670cd7",
+    "mp04bHardeningCommit": "3a76e43",
+    "ciWorkflow": ".github/workflows/ci.yml"
+  },
+  "fates": {
+    "adrasteia": {
+      "sha": "a1c01bf9e6f9d6a126cfdcc1acfacd488b214210"
+    },
+    "ananke": {
+      "ref": "ananke-fates-007a-claim-aware-execution-v0.1.0-protocol-1.4.0",
+      "tagObject": "9fb9fc4d8183db64aa37f0a4e167fdf41ca856e5",
+      "target": "114063e03332af3389fe805193e88a62111d9323"
+    },
+    "horae": {
+      "ref": "horae-fates-007a-claim-aware-execution-v0.1.0-protocol-1.4.0",
+      "tagObject": "59763d34644567c59d1041b3acef24efc5a1d072",
+      "runtime": "7b24cb0af083e505bd2dc9fa55c6c3387f849131",
+      "target": "aa296b420fbcf578089ca66dc03f6d09d9b06f00"
+    },
+    "integrationEvidence": {
+      "ref": "evidence/fates-007b-claim-aware-execution-acceptance",
+      "sha": "3c7b1f9916833728882e71f79a7276e9a806f808"
+    }
+  },
+  "requiredRealFatesMode": {
+    "command": "npm run test:mp04:required",
+    "missingRoots": "failure, not skip",
+    "publicOnlyRuns": 5,
+    "testsPerRun": 13,
+    "totalTests": 65,
+    "result": "passed"
+  },
+  "publicOnlyReproduction": {
+    "source": "public GitHub repositories only; retained local Fates worktrees were not used",
+    "sealedRefVerification": "passed",
+    "protocolCheck": {
+      "testFiles": 5,
+      "tests": 99,
+      "result": "passed"
+    },
+    "typecheck": "passed",
+    "lint": "passed",
+    "formatCheck": "passed",
+    "build": "passed",
+    "dependencyInstall": "passed",
+    "protocolAudit": "0 vulnerabilities",
+    "anankeAudit": "3 moderate, 6 high",
+    "horaeAudit": "3 moderate, 5 high, 1 critical"
+  },
+  "hardening": {
+    "eolPolicy": {
+      "file": ".gitattributes",
+      "text": "auto",
+      "eol": "lf",
+      "classification": "PROSPECTIVE_CROSS_PLATFORM_POLICY"
+    },
+    "fatesCheckoutIsolation": ".fates/ excluded from Protocol lint and format scans",
+    "runtimeSemanticsChanged": false,
+    "productionProviderAdded": false,
+    "mnemosyne": "MNEMOSYNE_NOT_INTEGRATED",
+    "syntheticOnly": true,
+    "storageScope": "single-host local durable filesystem with cross-process arbitration"
+  },
+  "safetyIsolation": {
+    "solLuna": "SOL_FRONTEND_LUNA_BACKEND_PRESERVED",
+    "firecrackerRef": "fates-005a-firecracker-r7-integration-frozen",
+    "firecrackerTarget": "c117a5c1d8744d7847447f86492d1f30a26d319c",
+    "attempt007": "unused",
+    "firecrackerLifecycle": "not executed",
+    "consoleHead": "893ef94fa0dfad3606bd83e8b46351210cfc0d51"
+  }
+}
