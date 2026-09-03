@@ -1,8 +1,8 @@
 # Security and Governance Invariants
 
-These invariants were frozen as design requirements for MP-00. MP-02 now provides implementation
-evidence for the deterministic compiler rows below; authority and effect invariants remain
-unproven until their later slices.
+These invariants were frozen as design requirements for MP-00. MP-02 provides implementation
+evidence for the deterministic compiler rows below, and MP-03 now provides authority-admission
+evidence. Effect execution remains out of scope.
 
 | ID     | Invariant                                                                                          |
 | ------ | -------------------------------------------------------------------------------------------------- |
@@ -43,8 +43,22 @@ agent prompt says it should hold.
   requester, invalid recipient, and missing resource tests.
 - Evidence is synthetic/offline; no live provider or Fates call is involved.
 
+## MP-03 admission evidence
+
+- MP-I01, MP-I04, MP-I10, MP-I11, MP-I15, and MP-I17 are extended by
+  `tests/mp03-fates-admission.test.ts`: hostile authority strings, invalid context, strict mapping,
+  and MP-02 digest tampering fail before native admission.
+- MP-I05, MP-I06, MP-I07, and MP-I08 are exercised through the accepted Ananke profile's real
+  native hash and approval binding. Admission does not consume one-use approvals.
+- MP-I09 is demonstrated as admission-only: a deliberately throwing executor remains uncalled and
+  native audit contains no `TOOL_EXECUTED` event.
+- MP-03 uses explicit trusted time and distinguishes `BOUNDARY_FAILURE` from native policy results.
+- The evidence is offline integration evidence against the pinned accepted Ananke checkpoint; no
+  external effect, provider call, Firecracker run, Horae, or Mnemosyne path is involved.
+
 ## Fail-closed default
 
-If a proposal is malformed, a target is unknown, a canonical digest cannot be reproduced, authority
-evidence is stale or unavailable, or the effect adapter cannot prove the exact binding, the host must
-produce no effect. The user-facing result may explain the block, but explanation is not authority.
+If a proposal or ActionIntent is malformed, a target is unknown, a canonical digest cannot be
+reproduced, the accepted fixture mapping/context/hash is unavailable or mismatched, or a later effect
+adapter cannot prove the exact binding, the host must produce no effect. The user-facing result may
+explain the block, but explanation is not authority.

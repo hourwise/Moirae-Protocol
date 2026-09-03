@@ -203,6 +203,32 @@ claim should be added.
 
 ## MVP and stretch boundaries
 
+### MP-03 implemented admission boundary
+
+MP-03 now inserts a strict adapter between the MP-02 `ActionIntentV1` and the accepted Ananke
+runtime:
+
+```text
+ActionIntentV1 + independently authenticated native context + explicit now
+        |
+        v
+exact fixture-bound Moirae → Fates mapping
+        |
+        v
+accepted Ananke Gateway.admit(...)
+        |
+        v
+native hash + policy/approval evaluation + ADMISSION_EVALUATED
+        |
+        v
+validated MP-03 authority result → STOP
+```
+
+The adapter preserves MP-02 `canonicalDigest` and `idempotencyKey` as Moirae evidence only. The
+Ananke action hash is recomputed by Ananke. `ADMITTED` is not execution, and all result variants
+carry `executorInvoked=false` and `effectExecuted=false`. The current profile is intentionally
+fixed to the synthetic MP-02 fixture; it is not a generalized production API.
+
 ### MVP critical path
 
 1. Strands receives an administrative request and returns a bounded proposal.
@@ -223,8 +249,9 @@ The system must remain useful if either stretch component is deferred.
 
 ## MP-00 exclusions
 
-There are no real routine, consequential, or forbidden effects in this slice. There are no Fates
-authority calls, Horae or Mnemosyne implementation dependencies, effect adapters, browser approvals,
-credentials, background queues, or production security claims. MP-01 proposals now stop at the
-MP-02 deterministic compiler; a compiled ActionIntent is still not authority. The remaining
-placeholders exist only to make the future workspace and checks explicit.
+There are no real routine, consequential, or forbidden effects in this slice. MP-03 performs native
+Fates admission only; it has no effect adapter or execution path. There are no Horae or Mnemosyne
+implementation dependencies, browser approvals, credentials, background queues, or production
+security claims. MP-01 proposals still stop at the MP-02 deterministic compiler; MP-03 separately
+asks accepted Fates what it would permit, then stops. The remaining placeholders exist only to make
+future execution and context work explicit.

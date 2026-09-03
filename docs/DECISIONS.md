@@ -165,3 +165,18 @@ from later implementation slices, but a change must be recorded rather than sile
 - **Consequence:** Derived `canonicalDigest` and `idempotencyKey` are excluded from their own
   digest input. Human-readable model summary and ambiguity prose are also excluded from execution
   material because they are explanatory, untrusted content.
+
+## ADR-0015 — Keep MP-03 as an injected native admission port
+
+- **Status:** Accepted for MP-03.
+- **Date:** 2026-09-03.
+- **Decision:** Moirae Protocol owns the exact fixture-bound mapping and result boundary, while the
+  accepted Ananke `Gateway.admit(...)` is supplied through a narrow `FatesAdmissionGateway` port.
+  The adapter requires independently authenticated native context and exact pinned dependency
+  provenance.
+- **Reason:** The accepted Ananke runtime is a private monorepo whose authority and canonical hash
+  engines must remain in Ananke. Copying them into Moirae would create a second security boundary;
+  a structural port preserves native policy, approval, audit, and execution separation.
+- **Consequence:** MP-03 can be tested offline against the exact accepted Ananke build without
+  modifying or vendoring Fates source. A future generalized administrative profile requires a new
+  versioned Fates acceptance; this fixture-bound adapter cannot infer new operations or values.

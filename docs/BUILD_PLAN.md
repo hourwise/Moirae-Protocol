@@ -80,8 +80,10 @@ are release and submission gates.
   fails closed; DENY has zero effect calls.
 - **Tests:** Synthetic adapter tests; integration tests against the selected checkpoint; malformed and
   unavailable authority; outcome mapping; zero-call DENY.
+- **Status:** Implemented as a bounded fixture profile on the MP-03 branch; acceptance evidence is
+  offline and targets the exact accepted Ananke dependency.
 - **Forbidden:** Copying Fates implementation; bypassing Ananke; treating UI, memory, or Strands as
-  fallback authority; effect execution unless a narrowly required integration proof is reviewed.
+  fallback authority; effect execution; generalizing the accepted fixture without a new profile.
 
 ### MP-04 — Governed effect execution
 

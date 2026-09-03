@@ -1,8 +1,13 @@
 # MP-03 Fates admission mapping
 
-This is a read-only preparation document for MP-03. It records what was inspected and what still
-needs an adapter decision. It does not claim that `ActionIntentV1` is Fates-compatible, and it does
-not import, copy, call, or modify either inspected checkout.
+Implementation status: the bounded adapter described by this preparation record is now implemented
+in `packages/fates-adapter/src/index.ts`. See [MP-03 Fates admission adapter](MP-03_FATES_ADMISSION.md)
+for the exact accepted dependency, profile, API, and validation evidence.
+
+This document records the original read-only preparation and the resulting narrow adapter decision.
+`ActionIntentV1` remains a Moirae contract rather than a Fates-native schema. MP-03 imports no Fates
+source and does not modify the inspected checkouts; it consumes the accepted Ananke runtime through
+an injected `Gateway.admit(...)` boundary.
 
 Inspection date: **2026-09-03**.
 
@@ -153,10 +158,9 @@ The safest initial shape is a narrow service/HTTP or package adapter owned by Mo
 5. returns a bounded, independently validated authority result and evidence references;
 6. keeps all effect execution outside the MP-03 admission adapter.
 
-Source reuse is not selected in MP-02. Adrasteia and Ananke may be candidates only after the exact
-artifact, license, and adapter ownership are re-verified at MP-03. A service boundary may reduce
-source-coupling and licensing risk, but it does not reduce the need to verify authentication,
-binding, freshness, and decision semantics.
+MP-03 selected a package boundary with injected native Ananke ownership. The exact accepted artifact,
+license, authentication binding, freshness, approval, hashing, and decision semantics are recorded
+in `docs/evidence/mp-03-fates-dependency-lock.json` and the dedicated MP-03 document.
 
 ## Licensing boundary
 

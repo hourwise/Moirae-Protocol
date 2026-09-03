@@ -1,0 +1,15 @@
+{
+  "profile": "moirae-protocol-mp03-fates-v1",
+  "status": "accepted-dependency-pinned",
+  "ananke": {
+    "ref": "ananke-fates-006b-mp03-admission-v0.1.0-protocol-1.4.0",
+    "annotatedTagObjectSha": "6425d4b34fba62ab60381a4a2237786d0d6173ad",
+    "sha": "6bf8902c55c4f3f7593a987582b50783c8a7b5a0",
+    "fates006aBoundarySha": "fc318663cbed3072128355fb3697e7f2b47f5f11",
+    "license": "MIT"
+  },
+  "adrasteia": {
+    "sha": "a1c01bf9e6f9d6a126cfdcc1acfacd488b214210",
+    "license": "MIT"
+  }
+}

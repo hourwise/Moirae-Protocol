@@ -98,3 +98,19 @@ recorded for MP-01. Canonicalization uses the Node.js `node:crypto` built-in for
 explicit `Intl`/`Date` platform APIs; no date parser, network client, LLM, or Fates package was
 added. The action compiler and ActionIntentV1 are new Moirae Protocol contracts, not copied Fates
 source and not claimed to be Adrasteia/Fates-native.
+
+## MP-03 accepted Fates dependency note
+
+MP-03 adds no copied Fates source. Its package boundary consumes the independently accepted Ananke
+profile through an injected native admission gateway. The exact lock is
+`docs/evidence/mp-03-fates-dependency-lock.json`:
+
+- Ananke tag `ananke-fates-006b-mp03-admission-v0.1.0-protocol-1.4.0`, peeled SHA
+  `6bf8902c55c4f3f7593a987582b50783c8a7b5a0`, FATES-006A boundary
+  `fc318663cbed3072128355fb3697e7f2b47f5f11`, MIT;
+- Runtime Contracts / Adrasteia SHA `a1c01bf9e6f9d6a126cfdcc1acfacd488b214210`, MIT.
+
+The MP-03 profile is fixture-bound to the current MP-02 synthetic material and is not a generalized
+production administrative API. Native Fates action hashes, approval decisions, and admission audit
+records remain Ananke-owned. MP-03 does not add Horae or Mnemosyne, does not execute effects, and
+does not alter the frozen Firecracker/FATES-005A or Moirae Console contest state.
