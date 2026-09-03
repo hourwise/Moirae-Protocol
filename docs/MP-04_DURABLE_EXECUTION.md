@@ -1,7 +1,8 @@
 # MP-04 — Durable Governed Execution Coordinator
 
-**Status:** Implementation complete; ready for independent acceptance. This document describes the
-Protocol-side coordinator only. It is not an MP-04 acceptance seal.
+**Status:** Independently accepted and sealed as
+`moirae-protocol-mp04-durable-governed-execution-v0.1.0`. This document describes the Protocol-side
+coordinator only; the acceptance evidence is recorded separately.
 
 **Profile:** `moirae-protocol-mp04-fates-v1`
 

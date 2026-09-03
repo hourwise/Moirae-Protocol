@@ -80,16 +80,16 @@ are release and submission gates.
   fails closed; DENY has zero effect calls.
 - **Tests:** Synthetic adapter tests; integration tests against the selected checkpoint; malformed and
   unavailable authority; outcome mapping; zero-call DENY.
-- **Status:** Implemented as a bounded fixture profile on the MP-03 branch; acceptance evidence is
-  offline and targets the exact accepted Ananke dependency.
+- **Status:** Accepted as a bounded fixture profile; acceptance evidence is offline and targets the
+  exact accepted Ananke dependency.
 - **Forbidden:** Copying Fates implementation; bypassing Ananke; treating UI, memory, or Strands as
   fallback authority; effect execution; generalizing the accepted fixture without a new profile.
 
 ### MP-04 — Governed effect execution
 
 - **Entry:** MP-03 proves authority outcomes and exact binding material.
-- **Status:** Protocol-side durable governed execution coordinator implemented; ready for independent
-  acceptance against the exact sealed Ananke/Horae dependency set.
+- **Status:** Protocol-side durable governed execution coordinator independently accepted and sealed
+  as `moirae-protocol-mp04-durable-governed-execution-v0.1.0` against the exact Ananke/Horae pair.
 - **Build:** Coordinate the accepted MP-03 admission, native Ananke authority construction, Horae
   durable intent/claim, claim-aware Ananke execution, and native receipt/reconciliation. Require a
   single canonical ActionIntent and explicit authority for each effect attempt.

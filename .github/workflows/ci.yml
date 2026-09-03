@@ -12,6 +12,10 @@ permissions:
 jobs:
   check:
     runs-on: ubuntu-latest
+    env:
+      FATES_ANANKE_ROOT: ${{ github.workspace }}/.fates/ananke
+      FATES_HORAE_ROOT: ${{ github.workspace }}/.fates/horae
+      FATES_ADRASTEIA_ROOT: ${{ github.workspace }}/.fates/adrasteia
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -19,4 +23,35 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Checkout sealed Ananke
+        uses: actions/checkout@v4
+        with:
+          repository: hourwise/Project-Ananke
+          ref: ananke-fates-007a-claim-aware-execution-v0.1.0-protocol-1.4.0
+          path: .fates/ananke
+          fetch-depth: 0
+      - name: Checkout sealed Horae
+        uses: actions/checkout@v4
+        with:
+          repository: hourwise/Project-Horae
+          ref: horae-fates-007a-claim-aware-execution-v0.1.0-protocol-1.4.0
+          path: .fates/horae
+          fetch-depth: 0
+      - name: Checkout pinned Adrasteia
+        uses: actions/checkout@v4
+        with:
+          repository: hourwise/Project-Adrasteia
+          ref: a1c01bf9e6f9d6a126cfdcc1acfacd488b214210
+          path: .fates/adrasteia
+          fetch-depth: 0
+      - name: Install and build sealed Ananke
+        working-directory: .fates/ananke
+        run: npm ci && npm run build
+      - name: Install and build sealed Horae
+        working-directory: .fates/horae
+        run: npm ci && npm run build
+      - name: Verify sealed public Fates refs
+        run: npm run verify:sealed-fates
+      - name: Run mandatory real-Fates MP-04 integration
+        run: npm run test:mp04:required
       - run: npm run check

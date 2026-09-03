@@ -202,7 +202,7 @@ from later implementation slices, but a change must be recorded rather than sile
 
 ## ADR-0017 — MP-04 coordinates sealed native Fates boundaries
 
-- **Status:** Implementation candidate; independent acceptance pending.
+- **Status:** Accepted and sealed as `moirae-protocol-mp04-durable-governed-execution-v0.1.0`.
 - **Date:** 2026-09-03.
 - **Decision:** Implement MP-04 as a narrow Protocol coordinator over the exact accepted Ananke
   FATES-007A and Horae FATES-007A structural ports. Let Ananke construct and validate native
@@ -215,4 +215,5 @@ from later implementation slices, but a change must be recorded rather than sile
 - **Consequence:** MP-04 accepts only structured MP-03 `ADMITTED` material and explicit trusted
   context/time. It has no production effect adapter, credentials, network path, Mnemosyne dependency,
   or model-to-executor path. Its durability claim is limited to one host and local cross-process
-  filesystem state. A separate independent acceptance/seal slice must inspect this implementation.
+  filesystem state. Independent acceptance evidence is recorded in
+  `docs/evidence/mp-04a-acceptance.json`.

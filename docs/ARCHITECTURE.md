@@ -231,7 +231,8 @@ fixed to the synthetic MP-02 fixture; it is not a generalized production API.
 
 ### MP-04D durable execution design boundary
 
-MP-04D is a design/readiness slice only. The proposed next boundary is:
+MP-04D recorded the design/readiness boundary that was subsequently implemented and accepted as
+MP-04. The original proposed boundary is retained here as design provenance:
 
 ```text
 validated MP-03 ADMITTED result
@@ -251,13 +252,13 @@ future bounded effect receipt/reconciliation
 CONFIRMED | ABSENT | UNKNOWN → explicit recovery
 ```
 
-The inspected Horae candidate provides useful durable dispatch and recovery primitives but is
-`NEEDS_BOUNDED_EXTENSION`: its current public binding does not include the complete native Ananke
-action/approval/context envelope or a claim-aware Fates handoff. Ananke remains the owner of
-admission, approval validity, and approval consumption; Horae owns durable claim arbitration; the
-effect boundary owns effect truth. MP-04D adds no runtime integration, effects, providers, or
-Mnemosyne dependency. See `docs/MP-04_DURABLE_EXECUTION_DESIGN.md` for the crash matrix and proposed
-envelope.
+At the MP-04D checkpoint, the inspected Horae candidate was classified `NEEDS_BOUNDED_EXTENSION`;
+the accepted MP-04 implementation later supplied the complete native Ananke authority/context
+envelope and claim-aware Fates handoff. The ownership decision remains: Ananke owns admission,
+approval validity, and approval consumption; Horae owns durable claim arbitration; the effect
+boundary owns effect truth. MP-04D added no runtime integration, effects, providers, or Mnemosyne
+dependency. See `docs/MP-04_DURABLE_EXECUTION_DESIGN.md` for the historical crash matrix and
+proposed envelope.
 
 Future user-facing work must use Sol as the visible frontend, interaction, demo, and judge model.
 Luna may remain a hidden backend/internal reasoning model. Neither model may bypass the deterministic
@@ -267,7 +268,7 @@ choke point.
 ### MP-04 durable governed execution coordinator
 
 MP-04 implements the bounded handoff described by MP-04D against the independently sealed Fates
-pair:
+pair and is sealed as `moirae-protocol-mp04-durable-governed-execution-v0.1.0`:
 
 ```text
 validated MP-03 ADMITTED result

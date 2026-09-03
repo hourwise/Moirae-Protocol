@@ -77,8 +77,9 @@ agent prompt says it should hold.
 - MP-I26: MP-04 durable guarantees are limited to one host and local cross-process filesystem
   arbitration; it does not claim distributed consensus or multi-host exactly-once execution.
 
-The implementation and test evidence are recorded in `docs/MP-04_DURABLE_EXECUTION.md` and
-`tests/mp04-durable-execution.test.ts`. Independent acceptance remains a separate task.
+The implementation and test evidence are recorded in `docs/MP-04_DURABLE_EXECUTION.md`,
+`tests/mp04-durable-execution.test.ts`, and `docs/evidence/mp-04a-acceptance.json`. MP-04 is
+independently accepted and sealed as `moirae-protocol-mp04-durable-governed-execution-v0.1.0`.
 
 ## Fail-closed default
 

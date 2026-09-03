@@ -32,16 +32,17 @@ The governing thesis is:
 
 The repository contains the accepted MP-01 real Strands capability spike, MP-02 deterministic
 compiler, MP-03 fixture-bound Fates admission adapter, and the MP-04 Protocol-side durable governed
-execution coordinator ready for independent acceptance. MP-01 produces bounded untrusted structured
+execution coordinator independently accepted and sealed as
+`moirae-protocol-mp04-durable-governed-execution-v0.1.0`. MP-01 produces bounded untrusted structured
 proposals; MP-02 resolves them against explicit trusted context into canonical `ActionIntentV1`
 material; MP-03 asks accepted Ananke for admission; MP-04 coordinates the accepted Ananke/Horae
 claim-aware path using synthetic offline effects only. No production effect or provider is
-implemented. MP-01 live inference remains explicitly `BLOCKED_CREDENTIALS`. See
+implemented, and MP-05 has not started. MP-01 live inference remains explicitly
+`BLOCKED_CREDENTIALS`. See
 [docs/BUILD_PLAN.md](docs/BUILD_PLAN.md) and [docs/MP-04_DURABLE_EXECUTION.md](docs/MP-04_DURABLE_EXECUTION.md).
 
-The project is intended to become `https://github.com/hourwise/Moirae-Protocol`; the remote was not
-created during MP-00 because GitHub credentials were invalid and API access was unavailable. The
-local repository remains independent and is not a fork.
+The project is publicly maintained at `https://github.com/hourwise/Moirae-Protocol`. The local
+repository remains independent and is not a fork.
 
 ## Architecture at a glance
 
@@ -76,8 +77,9 @@ packages/
 docs/                  eligibility, architecture, threat model, decisions, and plan
 ```
 
-The Fates and effect-adapter directories remain placeholders. No implementation code has been
-copied from The Fates or any other pre-existing project.
+The Fates admission adapter and execution coordinator are implemented as bounded Protocol
+boundaries. The effect-adapter directory remains a future placeholder; no production provider or
+effect is implemented, and no implementation code has been copied from The Fates.
 
 ## Local validation
 
@@ -90,7 +92,9 @@ npm run check
 
 `npm run check` runs typechecking, linting, formatting verification, deterministic/adversarial and
 synthetic integration tests, and the TypeScript build. Live MP-01 inference is a separate bounded
-command and reports missing credentials rather than substituting a mock result.
+command and reports missing credentials rather than substituting a mock result. CI additionally runs
+`npm run test:mp04:required`, which fails rather than skips when the sealed Ananke/Horae roots are
+missing.
 
 ## Provenance and licence
 

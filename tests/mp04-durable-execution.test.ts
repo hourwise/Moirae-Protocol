@@ -61,6 +61,12 @@ type Action = keyof typeof MP03_PROFILE;
 
 const acceptedAnankeRoot = process.env.FATES_ANANKE_ROOT;
 const acceptedHoraeRoot = process.env.FATES_HORAE_ROOT;
+const requireRealFates = process.env.MP04_REQUIRE_REAL_FATES === "1";
+if (requireRealFates && (!acceptedAnankeRoot || !acceptedHoraeRoot)) {
+  throw new Error(
+    "MP04_REQUIRE_REAL_FATES=1 requires FATES_ANANKE_ROOT and FATES_HORAE_ROOT; refusing to skip sealed integration",
+  );
+}
 const describeReal = acceptedAnankeRoot && acceptedHoraeRoot ? describe : describe.skip;
 
 function compilerContext(sourceRequestId = "REQUEST-MP02-DETAILS-001"): CompilerContextV1 {
