@@ -4,33 +4,38 @@ These invariants were frozen as design requirements for MP-00. MP-02 provides im
 evidence for the deterministic compiler rows below, MP-03 provides authority-admission evidence,
 and MP-04 provides bounded synthetic durable-execution evidence. No production effect is included.
 
-| ID     | Invariant                                                                                          |
-| ------ | -------------------------------------------------------------------------------------------------- |
-| MP-I01 | LLM/Strands output is always untrusted input.                                                      |
-| MP-I02 | Strands cannot directly invoke an effectful connector.                                             |
-| MP-I03 | Agent-generated destinations cannot bypass deterministic target validation.                        |
-| MP-I04 | Agent-generated credentials, authority objects, or approval claims are ignored.                    |
-| MP-I05 | Every effectful operation must bind to one canonical ActionIntent.                                 |
-| MP-I06 | Human approval must bind to the exact action, principal, and parameters approved.                  |
-| MP-I07 | Changing action parameters invalidates prior authority.                                            |
-| MP-I08 | Duplicate or replayed requests must not multiply effects.                                          |
-| MP-I09 | DENY must produce zero effect calls.                                                               |
-| MP-I10 | Malformed, unavailable, or unverifiable authority must fail closed.                                |
-| MP-I11 | Content or prompt injection must not be able to create authority.                                  |
-| MP-I12 | Memory/context may influence understanding but cannot create permission.                           |
-| MP-I13 | The browser/UI must not be an authority source.                                                    |
-| MP-I14 | Secrets remain host-side.                                                                          |
-| MP-I15 | A canonical ActionIntent is not authority and does not encode a governance decision.               |
-| MP-I16 | The Action Compiler has no LLM, network, credential, clock, random, or effect path.                |
-| MP-I17 | Principal, requester, booking, recipient, resource, and timestamp facts come from trusted context. |
-| MP-I18 | Ambiguous registry or availability resolution produces clarification rather than a guess.          |
-| MP-I19 | Canonical digest input excludes derived digest fields and explanatory model prose.                 |
-| MP-I27 | A human decision authorises one exact native action, never a task or future mutation.              |
-| MP-I28 | Browser/UI state is presentation and decision transport only; it cannot mint authority.            |
-| MP-I29 | Human approval requires a trusted host-authenticated operator/session, not caller identity text.   |
-| MP-I30 | Approval decision races are durable compare-and-set transitions with one terminal winner.          |
-| MP-I31 | Approval expiry, rejection, revocation, corruption, and restart ambiguity fail closed.             |
-| MP-I32 | Re-approval does not create a second durable effect identity.                                      |
+| ID     | Invariant                                                                                               |
+| ------ | ------------------------------------------------------------------------------------------------------- |
+| MP-I01 | LLM/Strands output is always untrusted input.                                                           |
+| MP-I02 | Strands cannot directly invoke an effectful connector.                                                  |
+| MP-I03 | Agent-generated destinations cannot bypass deterministic target validation.                             |
+| MP-I04 | Agent-generated credentials, authority objects, or approval claims are ignored.                         |
+| MP-I05 | Every effectful operation must bind to one canonical ActionIntent.                                      |
+| MP-I06 | Human approval must bind to the exact action, principal, and parameters approved.                       |
+| MP-I07 | Changing action parameters invalidates prior authority.                                                 |
+| MP-I08 | Duplicate or replayed requests must not multiply effects.                                               |
+| MP-I09 | DENY must produce zero effect calls.                                                                    |
+| MP-I10 | Malformed, unavailable, or unverifiable authority must fail closed.                                     |
+| MP-I11 | Content or prompt injection must not be able to create authority.                                       |
+| MP-I12 | Memory/context may influence understanding but cannot create permission.                                |
+| MP-I13 | The browser/UI must not be an authority source.                                                         |
+| MP-I14 | Secrets remain host-side.                                                                               |
+| MP-I15 | A canonical ActionIntent is not authority and does not encode a governance decision.                    |
+| MP-I16 | The Action Compiler has no LLM, network, credential, clock, random, or effect path.                     |
+| MP-I17 | Principal, requester, booking, recipient, resource, and timestamp facts come from trusted context.      |
+| MP-I18 | Ambiguous registry or availability resolution produces clarification rather than a guess.               |
+| MP-I19 | Canonical digest input excludes derived digest fields and explanatory model prose.                      |
+| MP-I27 | A human decision authorises one exact native action, never a task or future mutation.                   |
+| MP-I28 | Browser/UI state is presentation and decision transport only; it cannot mint authority.                 |
+| MP-I29 | Human approval requires a trusted host-authenticated operator/session, not caller identity text.        |
+| MP-I30 | Approval decision races are durable compare-and-set transitions with one terminal winner.               |
+| MP-I31 | Approval expiry, rejection, revocation, corruption, and restart ambiguity fail closed.                  |
+| MP-I32 | Re-approval does not create a second durable effect identity.                                           |
+| MP-I33 | Queue delivery, visibility, worker claims, retry eligibility, and activity records are not authority.   |
+| MP-I34 | A prior MP-03 admission or human approval cannot authorize a mutated or stale ActionIntent.             |
+| MP-I35 | Queue redelivery and worker concurrency cannot multiply an effect; MP-04 remains the effect-once owner. |
+| MP-I36 | MP-04 UNKNOWN/recovery state blocks blind redispatch and requires native reconciliation.                |
+| MP-I37 | Sol is the user-facing model and Luna is backend/internal; neither may bypass MP/Fates governance.      |
 
 ## Evidence expectation
 
@@ -131,3 +136,13 @@ If a proposal or ActionIntent is malformed, a target is unknown, a canonical dig
 reproduced, the accepted fixture mapping/context/hash is unavailable or mismatched, or a later effect
 adapter cannot prove the exact binding, the host must produce no effect. The user-facing result may
 explain the block, but explanation is not authority.
+
+## MP-06A design/readiness evidence
+
+`docs/MP-06_BACKGROUND_WORK_LOOP_DESIGN.md` and
+`docs/evidence/mp-06a-background-loop-readiness.json` define the proposed queue/worker contract.
+They are design evidence only: no queue or worker runtime exists in this slice. The design
+preserves MP-I15, MP-I20 through MP-I32 and adds MP-I33 through MP-I37. Future MP-06 acceptance must
+provide synthetic/integration evidence for queue replay, worker concurrency, crash/retry,
+approval waiting/expiry, DENY zero calls, activity consistency, and the `EFFECT_COUNT <= 1`
+invariant within the accepted local MP-04 durability scope.

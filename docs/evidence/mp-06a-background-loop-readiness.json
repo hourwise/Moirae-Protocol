@@ -1,0 +1,61 @@
+{
+  "profile": "moirae-protocol-mp06a-background-loop-readiness-v1",
+  "status": "design-ready",
+  "runtimeImplemented": false,
+  "runtimeChanged": false,
+  "acceptance": {
+    "mp06Opened": true,
+    "mp06aComplete": true,
+    "mp06RuntimeNotImplemented": true,
+    "mp06Accepted": false,
+    "nextSlice": "MP-06B — deterministic local queue/worker core"
+  },
+  "baseline": {
+    "remote": "https://github.com/hourwise/Moirae-Protocol.git",
+    "remoteMain": "e264538c6c88a12afc3c1cddd0761e37d41d0974",
+    "mp05AcceptanceTag": "mp-05-accepted-v1",
+    "mp05AcceptanceTagObject": "b71da9db867d363cf61ba6b491dd6f968f1821d6",
+    "acceptedTerminal": "e264538c6c88a12afc3c1cddd0761e37d41d0974",
+    "acceptedTree": "5ece9b4a9311000f3263253f934d214991acd1c7"
+  },
+  "branch": {
+    "name": "codex/mp06a-background-loop-readiness",
+    "parent": "e264538c6c88a12afc3c1cddd0761e37d41d0974"
+  },
+  "authorityModel": {
+    "queueDeliveryIsAuthority": false,
+    "queueVisibilityIsAuthority": false,
+    "workerClaimIsAuthority": false,
+    "retryEligibilityIsAuthority": false,
+    "priorAdmissionIsFreshExecutionAuthority": false,
+    "priorApprovalAuthorizesMutation": false,
+    "mp04OwnsDurableEffectClaim": true,
+    "unknownAllowsBlindRedispatch": false
+  },
+  "identityDomains": [
+    "workId",
+    "sourceRequestId",
+    "actionIntentDigest",
+    "actionIntentIdempotencyKey",
+    "deliveryId",
+    "workerClaimId",
+    "nativeActionHash",
+    "approvalId",
+    "approvalDecisionId",
+    "durableExecutionId",
+    "providerIdempotencyToken"
+  ],
+  "proposedSlices": [
+    "MP-06B — deterministic local queue/worker core",
+    "MP-06C — concurrency, crash, and retry hardening",
+    "MP-06D — MP-05 approval waiting/recovery integration",
+    "MP-06E — independent MP-06 acceptance"
+  ],
+  "boundaries": {
+    "horae": "post-authority MP-04 durable execution only",
+    "mnemosyne": "not-required-for-mp06a",
+    "solLuna": "SOL_FRONTEND_LUNA_BACKEND_PRESERVED",
+    "firecracker": "not-invoked; Attempt 007 unused",
+    "console": "not-modified"
+  }
+}

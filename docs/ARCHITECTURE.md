@@ -337,6 +337,45 @@ only: native FATES-008 remains the approval authority, fresh MP-03 admission gat
 the structured browser envelope cannot supply identity, time, hashes, grants, claims, or effect
 truth. This is an implementation candidate, not an acceptance claim.
 
+### MP-06A background work loop design/readiness boundary
+
+MP-06A is a design-only milestone. Its contract is recorded in
+`docs/MP-06_BACKGROUND_WORK_LOOP_DESIGN.md` and
+`docs/evidence/mp-06a-background-loop-readiness.json`; no queue, worker, timer, provider, or
+effect runtime is added.
+
+The future logical flow is:
+
+```text
+immutable ActionIntent reference
+        |
+        v
+bounded queue delivery and scheduling claim
+        |
+        v
+current/fresh MP-03 admission
+        +--> REQUIRE_APPROVAL -> durable MP-05 presentation/wait/recovery
+        +--> DENY/blocked -> durable activity, zero MP-04 calls
+        `--> ALLOW -> accepted MP-04 durable governed continuation
+                             |
+                             v
+                         effect truth / recovery
+```
+
+Queue delivery, visibility, worker claims, retry eligibility, activity records, and prior
+admission observations are not authority. MP-04 remains the sole durable effect claim and
+claim-aware executor boundary; MP-06 must not add a second effect lock or redispatch an
+`UNKNOWN` effect. A queue redelivery retains the logical work identity but obtains a new delivery
+identity, and must revalidate the immutable ActionIntent and current authority chain.
+
+The initial backend recommendation is a deterministic local queue port/test backend with no new
+dependency. A cloud queue is a future adapter, not an authority source. MP-06A is not an MP-06
+acceptance and does not start MP-06B.
+
+Future user-facing work must use Sol as the visible frontend/judge/demo model; Luna may remain a
+backend/internal reasoning model only. Neither model may select worker ownership, retry, approval,
+authority, or effect state.
+
 ### MVP critical path
 
 1. Strands receives an administrative request and returns a bounded proposal.

@@ -276,3 +276,22 @@ from later implementation slices, but a change must be recorded rather than sile
   presentation digests are display-integrity evidence only. Browser fields, model text, Sol, Luna,
   and Protocol memory cannot create approval or execution authority. `UNKNOWN` remains non-retry,
   and synthetic-only integration remains bounded to the accepted local Fates scope.
+
+## ADR-0021 — MP-06 starts with a non-authoritative queue contract
+
+- **Status:** Accepted for MP-06A design/readiness; runtime not implemented.
+- **Date:** 2026-09-04.
+- **Decision:** Keep queue delivery, visibility, worker claims, retry eligibility, and activity
+  records operational and non-authoritative. Every delivery must reload or verify one immutable
+  MP-02 `ActionIntentV1`, obtain current/fresh MP-03 admission, use MP-05 for approval-required
+  work, and enter the accepted MP-04 coordinator for any effect path. MP-04/Horae remains the sole
+  durable effect-claim and recovery owner.
+- **Reason:** A queue is at-least-once scheduling infrastructure, not a policy engine. Reusing a
+  cached `ALLOW`, human approval, or activity flag after a crash or mutation would bypass the
+  accepted Fates boundaries. Adding a second execution lock would create competing owners for
+  exactly-once semantics.
+- **Consequence:** MP-06B should begin with a deterministic local queue/worker port and no new
+  queue dependency. It must preserve separate work, delivery, worker-claim, authority, approval,
+  and effect identities; route `UNKNOWN` to MP-04 recovery; never auto-approve; and make no cloud,
+  distributed-consensus, or production-effect claim. `MNEMOSYNE_NOT_REQUIRED_FOR_MP06A` and
+  `SOL_FRONTEND_LUNA_BACKEND_PRESERVED` remain binding.
