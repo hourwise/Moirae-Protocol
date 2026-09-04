@@ -1,6 +1,6 @@
-# MP-05I — Fixture-Bound Human Approval Runtime
+# MP-05G — Approved Recovery Semantic Rebinding Remediation
 
-**Status:** `MP-05 IMPLEMENTATION CANDIDATE — NOT YET ACCEPTED`.
+**Status:** `MP-05G REMEDIATION COMPLETE — READY FOR MP-05 RE-ACCEPTANCE`; `MP-05 NOT ACCEPTED`.
 
 This slice composes the accepted MP-03 admission adapter, the accepted MP-04 durable execution
 coordinator, and the sealed FATES-008 Ananke approval boundary. It does not add a product UI,
@@ -58,6 +58,21 @@ preparation and recovery. Only that re-read may establish decision identity, sta
 integrity, presentation binding, semantic binding, and permission to perform fresh MP-03 admission.
 An embedded response `grant`, if present, is retained only as non-authoritative transport material;
 missing, malformed, unavailable, revoked, or inconsistent durable truth never falls back to it.
+
+### Approved recovery semantic binding
+
+A native-valid approved durable record is necessary but not sufficient for recovery. Before
+executable continuation, the durable approval must also be semantically rebound to the exact
+Moirae `ActionIntent`, authenticated context, and original MP-03 admission material. Native
+integrity and presentation binding remain separate predicates: a record that is self-consistent in
+the native FATES-008 domain is not authority for a semantically different Moirae action.
+
+Every approved continuation route enforces the same binding invariant. Both normal
+`submitDecision()` approval continuation and `recoverOrRefresh()` approved recovery validate the
+native record's operation, executable arguments, execution context, request/approval identity,
+presentation requirements, and MP-03 action-domain material before a fresh executable MP-03
+admission and the existing MP-04 handoff. Recovery does not treat caller-supplied mutations,
+copied IDs, presentation data, or derived hashes as authority.
 
 ### Dual native hash domains
 

@@ -1,0 +1,336 @@
+{
+  "profile": "mp-05g-recovery-semantic-rebinding",
+  "classification": "MP-05G REMEDIATION COMPLETE — READY FOR MP-05 RE-ACCEPTANCE",
+  "acceptance": {
+    "mp05Accepted": false,
+    "runtimeImplementedAsCandidate": true,
+    "acceptanceTagCreated": false,
+    "mainPromotion": false,
+    "nextAction": "Independently rerun MP-05 acceptance from the beginning against the exact MP-05G terminal. Do not inherit a PASS from MP-05E or MP-05F."
+  },
+  "startingState": {
+    "repository": "D:\\Users\\fleur\\Moirae Protocol",
+    "rejectedBranch": "codex/mp05e-post-decision-durable-reread",
+    "rejectedTerminal": "be286555e24cbf569a8b7b0e564bfda13431d352",
+    "rejectedTree": "ae8676faf9799d35d833ff92569c59804debe06f",
+    "runtimeRemediationParent": "63cf7c9d8562072697602f3ce36e40efd96ee83a",
+    "previousRejectedAncestor": "c6fba9826e056891d94ff5df5bb6d68f3be75b16",
+    "freshWorktree": "D:\\Users\\fleur\\Moirae Protocol\\.worktrees\\mp05g-recovery-semantic-rebinding",
+    "remediationBranch": "codex/mp05g-recovery-semantic-rebinding",
+    "baselineVerified": true
+  },
+  "mp05fRejectionPreservation": {
+    "independentReacceptanceBranch": "codex/mp05f-independent-reacceptance",
+    "terminal": "be286555e24cbf569a8b7b0e564bfda13431d352",
+    "tree": "ae8676faf9799d35d833ff92569c59804debe06f",
+    "remoteRejectedBranch": "origin/codex/mp05e-post-decision-durable-reread",
+    "remoteTerminal": "be286555e24cbf569a8b7b0e564bfda13431d352",
+    "acceptanceTagPresent": false,
+    "mainlinePromotion": false,
+    "priorWorktreesPreserved": true
+  },
+  "dependencyProvenance": {
+    "ananke": {
+      "tag": "ananke-fates-008a-durable-human-approval-v0.1.0-protocol-1.4.0",
+      "tagObject": "0fa08f78f27e2f79c895402f3f53a8aada5837b4",
+      "terminal": "b888d61adf180d33e2ae2e61d276cb9b0f13bd12",
+      "runtime": "c89b83de40ed0275969fe3931220f440bf082aa3"
+    },
+    "horae": {
+      "tag": "horae-fates-007a-claim-aware-execution-v0.1.0-protocol-1.4.0",
+      "tagObject": "59763d34644567c59d1041b3acef24efc5a1d072",
+      "terminal": "aa296b420fbcf578089ca66dc03f6d09d9b06f00",
+      "runtime": "7b24cb0af083e505bd2dc9fa55c6c3387f849131"
+    },
+    "adrasteia": "a1c01bf9e6f9d6a126cfdcc1acfacd488b214210",
+    "fates008AcceptanceEvidence": {
+      "branch": "codex/fates-008h-acceptance-evidence",
+      "commit": "cc889456dc16a908041d8d70425438ad56d483c8"
+    },
+    "source": "docs/evidence/mp-05-fates-dependency-lock.json",
+    "mutableDevelopmentBranchesUsed": false
+  },
+  "preFixExploitReproduction": {
+    "baseline": "be286555e24cbf569a8b7b0e564bfda13431d352",
+    "action": "SEND_APPOINTMENT_DETAILS",
+    "mutation": "durable approved recipientAddress changed while original ActionIntent remained unchanged",
+    "nativeRecord": [
+      "structurally valid",
+      "approved with a valid UUID decisionId",
+      "presentation binding present",
+      "native action hash and presentation binding recomputed from the forged native material",
+      "internally self-consistent under the supplied derivation function"
+    ],
+    "preFixObservation": {
+      "recoverOrRefresh": "continued",
+      "freshMp03Admission": 1,
+      "mp04Continuation": 1,
+      "syntheticEffectCalls": 1
+    },
+    "preFixTest": "tests/mp05-human-approval.test.ts — initial red reproduction run before production edit",
+    "postFixObservation": {
+      "normalizedErrorCode": "NATIVE_APPROVAL_INVALID",
+      "normalizedMessage": "Native approval is not exactly bound to the MP-03 ActionIntent and context.",
+      "freshMp03Admission": 0,
+      "mp04Continuation": 0,
+      "horaeExecution": 0,
+      "syntheticEffectCalls": 0
+    }
+  },
+  "rootCause": {
+    "normalApprovedPath": "submitDecision() -> readNativeApproval() -> assertExactBinding() -> decision/status/decisionId checks -> continueApproved()",
+    "recoveryApprovedPathBeforeFix": "recoverOrRefresh() -> readNativeApproval() -> requireDecisionId() -> continueApproved()",
+    "missingPredicate": "assertExactBinding(native, intent, context, waiting-equivalent, false) was absent from the approved recovery branch",
+    "affectedFile": "packages/human-approval/src/index.ts",
+    "semanticBridgeReused": true
+  },
+  "runtimeCommit": {
+    "sha": "b61ce64a672c749a97f459ab4fe5fa50b7e252bc",
+    "tree": "3912dfb6dcaf6149ea68a6da3a7c07e50f8f886e",
+    "parent": "be286555e24cbf569a8b7b0e564bfda13431d352",
+    "message": "fix(protocol): rebind approved recovery to action intent",
+    "changedFiles": ["packages/human-approval/src/index.ts", "tests/mp05-human-approval.test.ts"]
+  },
+  "remediationInvariant": [
+    "verified native durable approval",
+    "native integrity",
+    "presentation binding",
+    "exact semantic binding to ActionIntent executable arguments and authenticated context",
+    "exact MP-03 native action-domain material",
+    "valid native approved status and stable decisionId",
+    "fresh MP-03 executable admission",
+    "existing MP-04 continuation only after all predicates pass"
+  ],
+  "approvedRecoveryOrdering": "recoverOrRefresh() -> trusted time -> readNativeApproval() -> parseNativeApproval() -> assertNativeIntegrity() -> shared assertExactBinding() -> requireDecisionId() -> fresh MP-03 admission -> continueApproved() -> existing MP-04",
+  "mutationResults": {
+    "threeActionSemanticMatrix": {
+      "SEND_APPOINTMENT_DETAILS": ["bookingId", "recipientAddress", "templateId"],
+      "RESCHEDULE_APPOINTMENT": ["bookingId", "currentStart", "proposedStart", "timeZone"],
+      "TRANSMIT_CUSTOMER_CONTACT_DIRECTORY": [
+        "directoryResourceId",
+        "recipientAddress",
+        "exportFormat"
+      ],
+      "result": "all self-consistent native records rejected before admission and execution; effect calls 0"
+    },
+    "contextPrincipalMatrix": [
+      "authenticated workload",
+      "acting agent principal",
+      "requester/customer identity",
+      "tenant",
+      "runtime identity",
+      "runtime instance identity",
+      "session identity",
+      "purpose",
+      "policy identity",
+      "resource scope"
+    ],
+    "operationMatrix": ["server", "tool", "version"],
+    "result": "all mismatches fail closed with zero effect"
+  },
+  "crossActionSubstitution": {
+    "cases": [
+      "SEND_APPOINTMENT_DETAILS approval -> RESCHEDULE_APPOINTMENT recovery",
+      "TRANSMIT_CUSTOMER_CONTACT_DIRECTORY approval -> SEND_APPOINTMENT_DETAILS recovery"
+    ],
+    "result": "NATIVE_APPROVAL_INVALID before admission; effect 0"
+  },
+  "coupledSemanticCorruption": {
+    "mutations": ["recipientAddress", "bookingId"],
+    "nativeHashesRecomputed": true,
+    "result": "native integrity passed its own domain check, shared semantic binding rejected the different Moirae action; effect 0"
+  },
+  "presentationBinding": {
+    "wrongPresentationOnly": "native integrity rejected",
+    "matchingPresentationDifferentSemantic": "shared semantic binding rejected",
+    "bothCorrupted": "native integrity rejected",
+    "separateFromSemanticBinding": true
+  },
+  "decisionIdentity": {
+    "validDecisionId": "recovered and preserved",
+    "missingDecisionId": "NATIVE_APPROVAL_INVALID before admission",
+    "changedValidDecisionId": "durable native identity is returned unchanged; no Protocol-generated replacement",
+    "copiedDecisionId": "not synthesized or trusted from caller material; native durable identity remains the source of truth"
+  },
+  "failurePreservation": {
+    "expired": "EXPIRED, zero effect",
+    "revoked": "STALE, zero effect",
+    "consumed": "STALE, zero effect",
+    "nativeNotFound": "STALE_PRESENTATION, zero effect",
+    "invalidNativeRecord": "NATIVE_APPROVAL_INVALID, zero effect",
+    "storageReadFailure": "NATIVE_APPROVAL_INVALID, zero effect",
+    "freshAdmissionRejected": "BOUNDARY_FAILURE / admission_not_executable, no MP-04 or effect"
+  },
+  "normalSubmitDecisionRegression": {
+    "forgedDecisionReturnedGrant": "ignored; verified durable truth executed legitimate action once",
+    "forgedPostDecisionDurableRecord": "BOUNDARY_FAILURE, effect 0",
+    "missingDurableReread": "no embedded-grant fallback, effect 0",
+    "durableReadError": "BOUNDARY_FAILURE, effect 0",
+    "revokeBetweenDecisionAndReread": "durable revoked truth wins, effect 0",
+    "normalPathPreserved": true
+  },
+  "continuationPathAudit": {
+    "before": [
+      {
+        "entry": "submitDecision APPROVE",
+        "nativeIntegrity": true,
+        "presentationBinding": true,
+        "semanticBinding": true,
+        "decisionStatusValidation": true,
+        "freshMp03": true
+      },
+      {
+        "entry": "recoverOrRefresh APPROVED",
+        "nativeIntegrity": true,
+        "presentationBinding": "native integrity only",
+        "semanticBinding": false,
+        "decisionStatusValidation": "decisionId only before continuation",
+        "freshMp03": true
+      }
+    ],
+    "after": [
+      {
+        "entry": "submitDecision APPROVE",
+        "nativeIntegrity": true,
+        "presentationBinding": true,
+        "semanticBinding": true,
+        "decisionStatusValidation": true,
+        "freshMp03": true
+      },
+      {
+        "entry": "recoverOrRefresh APPROVED",
+        "nativeIntegrity": true,
+        "presentationBinding": true,
+        "semanticBinding": true,
+        "decisionStatusValidation": true,
+        "freshMp03": true
+      },
+      {
+        "entry": "other path",
+        "result": "no other call path to continueApproved found"
+      }
+    ],
+    "sourceAudit": "rg audit of packages/human-approval/src/index.ts found exactly two callers of continueApproved()"
+  },
+  "validRecovery": {
+    "actions": [
+      "SEND_APPOINTMENT_DETAILS",
+      "RESCHEDULE_APPOINTMENT",
+      "TRANSMIT_CUSTOMER_CONTACT_DIRECTORY"
+    ],
+    "responseLoss": true,
+    "coordinatorRestart": true,
+    "freshAdmission": true,
+    "effectInvocations": 1,
+    "humanDecisions": 1,
+    "decisionIdentityStable": true
+  },
+  "integrationResults": {
+    "realFatesThreeAction": {
+      "files": 1,
+      "tests": 74,
+      "passed": 74,
+      "skipped": 0,
+      "syntheticEffectsOnly": true,
+      "ananke": "b888d61adf180d33e2ae2e61d276cb9b0f13bd12",
+      "horae": "aa296b420fbcf578089ca66dc03f6d09d9b06f00"
+    },
+    "mp03": {
+      "files": 1,
+      "tests": 37,
+      "passed": 37,
+      "skipped": 0
+    },
+    "mp04": {
+      "files": 1,
+      "tests": 13,
+      "passed": 13,
+      "skipped": 0
+    },
+    "fullProtocol": {
+      "files": 6,
+      "tests": 173,
+      "passed": 173,
+      "skipped": 0,
+      "priorMp05fTotal": 135,
+      "newTests": 38
+    },
+    "offlineFullProtocol": {
+      "files": 6,
+      "passed": 157,
+      "skipped": 16,
+      "total": 173,
+      "realFatesRequiredMode": "not used"
+    }
+  },
+  "validation": {
+    "npmCi": "passed",
+    "canonicalCheck": "passed with real Fates",
+    "typecheck": "passed",
+    "eslint": "passed",
+    "formatCheck": "passed",
+    "build": "passed",
+    "dependencyVerifier": "passed using public exact refs",
+    "gitDiffCheck": "passed",
+    "productionAudit": "0 vulnerabilities",
+    "fullAudit": "0 vulnerabilities",
+    "boundedSecretScan": "no matches"
+  },
+  "lockfile": {
+    "path": "package-lock.json",
+    "changed": false,
+    "dependencyHistoryModified": false
+  },
+  "isolation": {
+    "mp03SourceModified": false,
+    "mp04SourceModified": false,
+    "anankeModified": false,
+    "horaeModified": false,
+    "adrasteiaModified": false,
+    "fatesIntegrationRuntimeModified": false,
+    "mnemosyne": "MNEMOSYNE_NOT_REQUIRED_FOR_MP05",
+    "horae": "HORAE_NOT_REQUIRED_UNTIL_POST_APPROVAL_EXECUTION",
+    "solLuna": "SOL_FRONTEND_LUNA_BACKEND_PRESERVED",
+    "firecracker": {
+      "tagObject": "f817d98b222b4ddf417ace68384fa16b3f0c6aff",
+      "peeled": "c117a5c1d8744d7847447f86492d1f30a26d319c",
+      "lifecycleInvoked": false,
+      "attempt007Consumed": false
+    },
+    "moiraeConsole": {
+      "sourceModified": false,
+      "contestStateModified": false,
+      "dependenciesModified": false,
+      "deploymentModified": false,
+      "publicationModified": false,
+      "stateFileModified": false,
+      "observedPreExistingUntrackedStateFile": true
+    },
+    "mp06Started": false
+  },
+  "changedFiles": {
+    "production": ["packages/human-approval/src/index.ts"],
+    "tests": ["tests/mp05-human-approval.test.ts"],
+    "documentationAndEvidence": [
+      "docs/MP-05_HUMAN_APPROVAL.md",
+      "docs/evidence/mp-05g-recovery-semantic-rebinding.json"
+    ],
+    "forbiddenProductionFilesChanged": []
+  },
+  "publication": {
+    "remoteBranch": "origin/codex/mp05g-recovery-semantic-rebinding",
+    "published": false,
+    "status": "pending explicit authorization after safety review rejected export of this private branch",
+    "acceptanceTagCreated": false,
+    "mainPromotion": false
+  },
+  "requiredClassifications": [
+    "MP-05_RUNTIME_IMPLEMENTED_AS_CANDIDATE",
+    "MP-05_NOT_ACCEPTED",
+    "HORAE_NOT_REQUIRED_UNTIL_POST_APPROVAL_EXECUTION",
+    "MNEMOSYNE_NOT_REQUIRED_FOR_MP05",
+    "SOL_FRONTEND_LUNA_BACKEND_PRESERVED",
+    "NO_MP05_ACCEPTANCE_TAG_CREATED",
+    "NO_MAIN_PROMOTION"
+  ]
+}
