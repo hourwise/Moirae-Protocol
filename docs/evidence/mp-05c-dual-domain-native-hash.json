@@ -1,0 +1,119 @@
+{
+  "profile": "mp-05c-dual-domain-native-hash",
+  "status": "implementation-remediation-candidate",
+  "rejected": {
+    "mp05aTerminal": "a0fc7cbe4e8dd3d647cb39bc46179f52f6634864",
+    "reason": "prepareApproval accepted a forged native approval actionHash",
+    "mp05b": "The direct equality remediation was incompatible with the accepted FATES-008 native hash domain"
+  },
+  "candidate": {
+    "parent": "a0fc7cbe4e8dd3d647cb39bc46179f52f6634864",
+    "runtimeCommit": "22c652058614821631a668bf5389945b39e3875e",
+    "runtimeTree": "94b30e2298292ee1b716728e655a362dedf920b3"
+  },
+  "nativeHashDomains": {
+    "mp03": {
+      "field": "admissionNativeActionHash",
+      "meaning": "Historical MP-03 admission-domain identifier",
+      "verification": "Compared with the accepted MP-03 action fixture for the ActionIntent"
+    },
+    "fates008": {
+      "field": "nativeActionHash",
+      "meaning": "Expiry-sensitive FATES-008 approval-action identifier",
+      "derivation": "Trusted adapter invokes accepted Ananke hashApprovalAction"
+    },
+    "bridge": "Each hash is verified in its own native domain; operation, tool version, arguments, authenticated execution context, request binding, resource, purpose, policy, and other existing semantic material must match exactly."
+  },
+  "acceptedFatesExports": {
+    "anankeTag": "ananke-fates-008a-durable-human-approval-v0.1.0-protocol-1.4.0",
+    "anankeTagObject": "0fa08f78f27e2f79c895402f3f53a8aada5837b4",
+    "anankeTerminal": "b888d61adf180d33e2ae2e61d276cb9b0f13bd12",
+    "functions": ["hashApprovalAction", "hashApprovalPresentationBinding"],
+    "selfVerification": "3/3 real approval records derived to their stored actionHash and presentationBindingHash"
+  },
+  "port": {
+    "name": "Mp05AnankeApprovalPort.deriveApprovalHashes",
+    "input": "Semantic approval material plus approvalId and presentationVersion for presentation binding",
+    "claimedHashesAreInputs": false,
+    "nativeAlgorithmCopied": false,
+    "commonValidation": [
+      "prepareApproval",
+      "submitDecision native re-read",
+      "recoverOrRefresh native re-read"
+    ]
+  },
+  "tests": {
+    "offlineMp05File": {
+      "files": 1,
+      "tests": 28,
+      "passed": 25,
+      "skipped": 3,
+      "skippedReason": "real-Fates describe block without MP05_REQUIRE_REAL_FATES"
+    },
+    "realMp05File": {
+      "files": 1,
+      "tests": 28,
+      "passed": 28,
+      "fixtures": [
+        "SEND_APPOINTMENT_DETAILS",
+        "RESCHEDULE_APPOINTMENT",
+        "TRANSMIT_CUSTOMER_CONTACT_DIRECTORY"
+      ],
+      "effects": "synthetic only"
+    },
+    "fullProtocolCheck": {
+      "files": 6,
+      "tests": 127,
+      "passed": 127,
+      "realFatesEnabled": true,
+      "typecheck": "passed",
+      "lint": "passed",
+      "format": "passed",
+      "build": "passed"
+    },
+    "regressions": {
+      "mp03": "37 passed",
+      "mp04": "13 passed",
+      "mp01AndMp02AndStrands": "49 passed"
+    },
+    "corruption": [
+      "arbitrary valid forged actionHash rejected before presentation",
+      "another fixture native-domain hash rejected",
+      "wrong presentation binding rejected",
+      "coupled forged actionHash and presentation binding rejected",
+      "decision-time actionHash mutation rejected before decideApproval",
+      "approved recovery actionHash mutation rejected before continuation",
+      "MP-03 admission hash checked separately"
+    ]
+  },
+  "publicReproduction": {
+    "dependencyVerifier": "passed against fresh public Ananke, Horae, Adrasteia, and Fates Integration clones",
+    "anankeBuild": "passed",
+    "horaeBuild": "passed",
+    "evidenceBranch": "codex/fates-008h-acceptance-evidence",
+    "evidenceCommit": "cc889456dc16a908041d8d70425438ad56d483c8",
+    "evidenceBlobSha256": "c83afec825c3ed9248091730410d942830a2dfbbb8ad6f98245cacfbc2cb5b9b"
+  },
+  "preservation": {
+    "mp03SourceChanged": false,
+    "mp04SourceChanged": false,
+    "fatesSourceChanged": false,
+    "horaeChanged": false,
+    "adrasteiaChanged": false,
+    "mnemosyneChanged": false,
+    "firecrackerOperation": false,
+    "consoleChanged": false,
+    "mp06Started": false,
+    "externalEffects": false,
+    "historicalDependencyLocksChanged": false,
+    "packageLockChanged": false,
+    "acceptanceTagCreated": false
+  },
+  "requiredClassifications": [
+    "MP-05_RUNTIME_IMPLEMENTED_AS_CANDIDATE",
+    "MP-05_NOT_ACCEPTED",
+    "HORAE_NOT_REQUIRED_UNTIL_POST_APPROVAL_EXECUTION",
+    "MNEMOSYNE_NOT_REQUIRED_FOR_MP05",
+    "SOL_FRONTEND_LUNA_BACKEND_PRESERVED"
+  ]
+}
