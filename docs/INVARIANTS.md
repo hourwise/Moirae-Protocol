@@ -111,6 +111,20 @@ The supported claim is one host with local durable cross-process storage and res
 does not claim distributed consensus, multi-host linearizability, or external effects. No MP-05
 runtime, approval UI, provider, or effect adapter is implemented by this readiness update.
 
+## MP-05I implementation-candidate composition
+
+The MP-05I candidate in `packages/human-approval` consumes, but does not reproduce, the accepted
+FATES-008 approval boundary. `ApprovalPresentationV1` is a deterministic structured projection;
+its Protocol digest is not authority. A strict browser envelope carries only the native approval
+ID, decision, presentation digest, and native presentation binding. Trusted host code supplies the
+authenticated operator/session and native Fates supplies decision identity, approval state, and
+expiry.
+
+Only a fresh MP-03 `ADMITTED`/`ALLOW` result carrying the same native approval ID can enter the
+existing MP-04 coordinator. REJECT, stale, expired, revoked, consumed, conflict, or malformed
+states produce no execution. The MP-04 result remains separate from human approval result, and
+`UNKNOWN` remains non-retry. This is an implementation candidate, not an acceptance seal.
+
 ## Fail-closed default
 
 If a proposal or ActionIntent is malformed, a target is unknown, a canonical digest cannot be

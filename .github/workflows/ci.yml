@@ -63,6 +63,8 @@ jobs:
       MP05_FATES_HORAE_ROOT: ${{ github.workspace }}/.fates/mp05-horae
       MP05_FATES_ADRASTEIA_ROOT: ${{ github.workspace }}/.fates/mp05-adrasteia
       MP05_FATES_INTEGRATION_ROOT: ${{ github.workspace }}/.fates/mp05-integration
+      FATES_ANANKE_ROOT: ${{ github.workspace }}/.fates/mp05-ananke
+      FATES_HORAE_ROOT: ${{ github.workspace }}/.fates/mp05-horae
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -103,3 +105,7 @@ jobs:
         run: npm ci && npm run build
       - name: Verify public MP-05 dependency set
         run: npm run verify:mp05:fates-dependency
+      - name: Run required real-Fates MP-05 integration
+        env:
+          MP05_REQUIRE_REAL_FATES: "1"
+        run: npm test -- tests/mp05-human-approval.test.ts

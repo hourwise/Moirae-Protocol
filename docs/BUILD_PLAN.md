@@ -104,6 +104,8 @@ are release and submission gates.
 
 ### MP-05 — Human approval
 
+- **Status:** MP-05I implementation candidate — not yet accepted; no product UI, provider, or
+  external effect is included.
 - **Entry:** MP-03 can produce approval-required work and MP-04 can enforce exact binding. MP-05D
   design is ready and the bounded Ananke human-decision extension is accepted as
   `ananke-fates-008a-durable-human-approval-v0.1.0-protocol-1.4.0`.
@@ -122,6 +124,11 @@ was process-local and required a durable, independently authenticated human deci
 has since supplied and independently sealed that bounded capability. Current status:
 `MP-05 DESIGN READY — FATES-008 DEPENDENCY ACCEPTED`; MP-05 implementation remains not started.
 Horae remains `HORAE_NOT_REQUIRED_UNTIL_POST_APPROVAL_EXECUTION`; Mnemosyne remains excluded.
+
+**MP-05I current implementation note:** The fixture-bound runtime candidate now supplies a
+deterministic structured presentation, strict browser decision envelope, trusted-host decision
+port, native FATES-008 APPROVE/REJECT composition, fresh MP-03 re-admission, and composition into
+the existing MP-04 coordinator. It remains `MP-05_NOT_ACCEPTED` until independent acceptance.
 
 ### MP-06 — Background work loop
 

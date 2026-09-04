@@ -79,3 +79,17 @@ trusted host owns authentication and current dispatch time. Horae begins only af
 handoff; `UNKNOWN` remains non-retry; Mnemosyne remains excluded; and Sol remains the frontend while
 Luna remains backend/internal. `MP-05_RUNTIME_DEPENDENCY_UNBLOCKED` is a dependency-readiness status,
 not an MP-05 implementation or acceptance claim.
+
+## MP-05I implementation candidate
+
+The candidate adds no client authority. Every approval presentation is regenerated from the
+trusted ActionIntent, MP-03 waiting evidence, and a current native FATES-008 record. A changed
+parameter, target, principal, scope, policy, request, or stale native state fails before the
+decision call. The browser envelope is strict and cannot carry operator/session identity, native
+hashes, expiry, decision IDs, grants, claims, trusted time, or dispatch material.
+
+APPROVE is followed by a fresh MP-03 admission and the existing MP-04 Ananke/Horae path; REJECT
+never enters it. Native FATES-008 owns durable decision identity, idempotent replay, expiry,
+revocation, dispatch reservation, and consumption. The implementation test mode uses accepted
+public Fates roots and synthetic effects only. `MP-05_RUNTIME_IMPLEMENTED_AS_CANDIDATE` is not an
+acceptance claim.

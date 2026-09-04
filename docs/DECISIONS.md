@@ -258,3 +258,21 @@ from later implementation slices, but a change must be recorded rather than sile
   dispatch time; the browser and models remain non-authority; Horae begins only after approval;
   `UNKNOWN` remains non-retry; and the supported durability scope remains one host with local
   cross-process storage. The historical MP-04 lock remains pinned to FATES-007A and unchanged.
+
+## ADR-0020 — MP-05I composes FATES-008 without recreating authority
+
+- **Status:** Implementation candidate; not accepted.
+- **Date:** 2026-09-04.
+- **Decision:** Add a bounded `@moirae/human-approval` coordinator that regenerates a strict,
+  structured `ApprovalPresentationV1`, accepts only a narrow browser decision envelope, and
+  delegates the decision to a trusted-host structural port over the sealed FATES-008 Ananke
+  boundary. APPROVE must perform fresh MP-03 admission with the native approval ID before calling
+  the existing MP-04 coordinator; REJECT is terminal with no execution path.
+- **Reason:** MP-05 needs a deterministic human-facing projection and an explicit composition
+  boundary, but approval request identity, hashes, operator/session authentication, expiry,
+  revocation, native decision identity, and execution authority are already owned by accepted
+  FATES-008/FATES-007A. Copying those algorithms into Protocol would create a second authority.
+- **Consequence:** `MP-05_RUNTIME_IMPLEMENTED_AS_CANDIDATE` and `MP-05_NOT_ACCEPTED`. Protocol
+  presentation digests are display-integrity evidence only. Browser fields, model text, Sol, Luna,
+  and Protocol memory cannot create approval or execution authority. `UNKNOWN` remains non-retry,
+  and synthetic-only integration remains bounded to the accepted local Fates scope.

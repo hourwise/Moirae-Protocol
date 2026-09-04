@@ -1,0 +1,9 @@
+{
+  "name": "@moirae/human-approval",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "dependencies": {
+    "zod": "4.5.4"
+  }
+}

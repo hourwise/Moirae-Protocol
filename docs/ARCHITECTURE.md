@@ -331,6 +331,12 @@ The exact accepted dependency and public acceptance evidence are recorded in
 `docs/evidence/mp-05-fates-dependency-lock.json`. MP-05 is dependency-unblocked but still has no
 runtime implementation, browser surface, provider, or external effect.
 
+The descendant MP-05I implementation candidate is documented in `docs/MP-05_HUMAN_APPROVAL.md` and
+`packages/human-approval/src/index.ts`. It adds Protocol-side presentation/workflow composition
+only: native FATES-008 remains the approval authority, fresh MP-03 admission gates MP-04, and
+the structured browser envelope cannot supply identity, time, hashes, grants, claims, or effect
+truth. This is an implementation candidate, not an acceptance claim.
+
 ### MVP critical path
 
 1. Strands receives an administrative request and returns a bounded proposal.
