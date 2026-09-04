@@ -1,7 +1,7 @@
 /* global console, process */
 
 import { createHash } from "node:crypto";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 
 const ANANKE_TAG = "ananke-fates-008a-durable-human-approval-v0.1.0-protocol-1.4.0";
@@ -68,6 +68,18 @@ function publicRef(url, ref) {
     throw new Error(`public ref is missing: ${url} ${ref}`);
   }
   return value;
+}
+
+function gitBlob(root, revision) {
+  return execFileSync("git", [
+    "-c",
+    `safe.directory=${root}`,
+    "-C",
+    root,
+    "cat-file",
+    "blob",
+    revision,
+  ]);
 }
 
 try {
@@ -147,10 +159,11 @@ try {
     EVIDENCE_SHA,
     "FATES-008H acceptance evidence ancestry",
   );
-  const evidencePath = `${evidenceRoot}/${EVIDENCE_FILE}`;
   assertEqual(
-    "FATES-008H evidence file SHA-256",
-    createHash("sha256").update(readFileSync(evidencePath)).digest("hex"),
+    "FATES-008H committed evidence blob SHA-256",
+    createHash("sha256")
+      .update(gitBlob(evidenceRoot, `HEAD:${EVIDENCE_FILE}`))
+      .digest("hex"),
     EVIDENCE_FILE_SHA256,
   );
 
