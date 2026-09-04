@@ -616,6 +616,16 @@ export class Mp05HumanApprovalCoordinator {
       };
     }
     if (native.status === "approved") {
+      this.assertExactBinding(
+        native,
+        intent,
+        context,
+        {
+          approvalId: input.approvalId,
+          nativeActionHash: MP03_NATIVE_HASH_FIXTURES[intent.action],
+        },
+        false,
+      );
       const decisionId = requireDecisionId(native);
       const approval = this.approvalOutcome(
         native.id,
@@ -797,7 +807,10 @@ export class Mp05HumanApprovalCoordinator {
     grant: NativeApprovalSnapshot,
     intent: ActionIntentV1,
     context: Mp03AuthenticatedContext,
-    waiting: Extract<MoiraeAdmissionResultV1, { status: "WAITING_FOR_APPROVAL" }>,
+    waiting: Pick<
+      Extract<MoiraeAdmissionResultV1, { status: "WAITING_FOR_APPROVAL" }>,
+      "approvalId" | "nativeActionHash"
+    >,
     requirePending: boolean,
   ): void {
     const profile = MP03_PROFILE[intent.action as Mp03Action];
@@ -828,7 +841,7 @@ export class Mp05HumanApprovalCoordinator {
     )
       throw new Mp05BoundaryError(
         "NATIVE_APPROVAL_INVALID",
-        "Native pending approval is not exactly bound to the MP-03 ActionIntent and context.",
+        "Native approval is not exactly bound to the MP-03 ActionIntent and context.",
       );
   }
 

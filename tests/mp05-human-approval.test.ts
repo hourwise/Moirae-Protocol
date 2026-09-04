@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { mkdtempSync, rmSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { tmpdir } from "node:os";
@@ -8,6 +9,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
   actionIntentDigest,
+  canonicalizeJsonV1,
   compileAgentProposal,
   type ActionIntentV1,
   type CompilerContextV1,
@@ -279,6 +281,25 @@ function nativeGrant(
   };
 }
 
+function deriveSelfConsistentNativeHashes(
+  material: Parameters<NonNullable<Mp05AnankeApprovalPort["deriveApprovalHashes"]>>[0],
+) {
+  const { approvalId, presentationVersion, ...actionMaterial } = material;
+  const actionHash = createHash("sha256")
+    .update(canonicalizeJsonV1(actionMaterial), "utf8")
+    .digest("hex");
+  return {
+    actionHash,
+    ...(presentationVersion
+      ? {
+          presentationBindingHash: createHash("sha256")
+            .update(canonicalizeJsonV1({ approvalId, actionHash, presentationVersion }), "utf8")
+            .digest("hex"),
+        }
+      : {}),
+  };
+}
+
 function harness(action: Action, expiresAt?: string) {
   const intent = compileFixture(action);
   const context = contextFor(action);
@@ -411,6 +432,190 @@ function markApproved(
   fixture.state.approvedAt = input.now;
   fixture.state.revision += 1;
 }
+
+function forgeSelfConsistentApprovedRecoveryRecord(
+  fixture: ReturnType<typeof harness>,
+  options: {
+    arguments?: Record<string, unknown>;
+    executionContext?: Mp03AuthenticatedContext;
+    serverName?: string;
+    toolName?: string;
+    toolVersion?: string;
+    presentationBindingHash?: string;
+    decisionId?: string;
+  } = {},
+): void {
+  fixture.state.arguments = structuredClone(options.arguments ?? fixture.state.arguments);
+  fixture.state.executionContext = structuredClone(
+    options.executionContext ?? fixture.state.executionContext,
+  );
+  if (options.serverName) fixture.state.serverName = options.serverName;
+  if (options.toolName) fixture.state.toolName = options.toolName;
+  if (options.toolVersion) fixture.state.toolVersion = options.toolVersion;
+  fixture.state.status = "approved";
+  fixture.state.decisionId = options.decisionId ?? "11111111-1111-4111-8111-111111111111";
+  fixture.state.approvedBy = OPERATOR_A.operatorId;
+  fixture.state.approvedBySessionId = OPERATOR_A.sessionId;
+  fixture.state.approvedAt = NOW;
+  fixture.state.bindingHash = "b".repeat(64);
+  const derive = vi.mocked(fixture.native.deriveApprovalHashes);
+  derive.mockImplementation(async (material) => deriveSelfConsistentNativeHashes(material));
+  const material = {
+    approvalId: fixture.state.id,
+    serverName: fixture.state.serverName,
+    toolName: fixture.state.toolName,
+    toolVersion: fixture.state.toolVersion,
+    arguments: fixture.state.arguments,
+    executionContext: fixture.state.executionContext,
+    expiresAt: fixture.state.expiresAt,
+    bindRequestIdentity: fixture.state.bindRequestIdentity,
+    presentationVersion: fixture.state.presentationVersion,
+  };
+  Object.assign(fixture.state, deriveSelfConsistentNativeHashes(material));
+  if (options.presentationBindingHash)
+    fixture.state.presentationBindingHash = options.presentationBindingHash;
+}
+
+function expectRecoveryInvalid(fixture: ReturnType<typeof harness>) {
+  return expect(
+    fixture.coordinator.recoverOrRefresh({
+      intent: fixture.request.intent,
+      authenticatedContext: fixture.request.authenticatedContext,
+      approvalId: fixture.state.id,
+    }),
+  ).rejects.toMatchObject({
+    code: "NATIVE_APPROVAL_INVALID",
+    message: "Native approval is not exactly bound to the MP-03 ActionIntent and context.",
+  });
+}
+
+const RECOVERY_SEMANTIC_MUTATIONS: ReadonlyArray<{
+  action: Action;
+  field: string;
+  mutate: (parameters: Record<string, unknown>) => Record<string, unknown>;
+}> = [
+  {
+    action: "SEND_APPOINTMENT_DETAILS",
+    field: "bookingId",
+    mutate: (parameters) => ({ ...parameters, bookingId: "BOOKING-ATTACKER" }),
+  },
+  {
+    action: "SEND_APPOINTMENT_DETAILS",
+    field: "recipientAddress",
+    mutate: (parameters) => ({ ...parameters, recipientAddress: "attacker@example.test" }),
+  },
+  {
+    action: "SEND_APPOINTMENT_DETAILS",
+    field: "templateId",
+    mutate: (parameters) => ({ ...parameters, templateId: "appointment-details-forged-v2" }),
+  },
+  {
+    action: "RESCHEDULE_APPOINTMENT",
+    field: "bookingId",
+    mutate: (parameters) => ({ ...parameters, bookingId: "BOOKING-ATTACKER" }),
+  },
+  {
+    action: "RESCHEDULE_APPOINTMENT",
+    field: "currentStart",
+    mutate: (parameters) => ({ ...parameters, currentStart: "2026-09-04T12:00:00.000Z" }),
+  },
+  {
+    action: "RESCHEDULE_APPOINTMENT",
+    field: "proposedStart",
+    mutate: (parameters) => ({ ...parameters, proposedStart: "2026-09-08T14:00:00.000Z" }),
+  },
+  {
+    action: "RESCHEDULE_APPOINTMENT",
+    field: "timeZone",
+    mutate: (parameters) => ({ ...parameters, timeZone: "America/New_York" }),
+  },
+  {
+    action: "TRANSMIT_CUSTOMER_CONTACT_DIRECTORY",
+    field: "directoryResourceId",
+    mutate: (parameters) => ({ ...parameters, directoryResourceId: "RESOURCE-ATTACKER" }),
+  },
+  {
+    action: "TRANSMIT_CUSTOMER_CONTACT_DIRECTORY",
+    field: "recipientAddress",
+    mutate: (parameters) => ({ ...parameters, recipientAddress: "attacker@example.test" }),
+  },
+  {
+    action: "TRANSMIT_CUSTOMER_CONTACT_DIRECTORY",
+    field: "exportFormat",
+    mutate: (parameters) => ({ ...parameters, exportFormat: "json" }),
+  },
+];
+
+const RECOVERY_CONTEXT_MUTATIONS: ReadonlyArray<{
+  field: string;
+  mutate: (context: Mp03AuthenticatedContext) => Mp03AuthenticatedContext;
+}> = [
+  {
+    field: "authenticated workload",
+    mutate: (context) =>
+      ({
+        ...context,
+        authenticatedPrincipal: { ...context.authenticatedPrincipal, id: "forged-workload" },
+      }) as unknown as Mp03AuthenticatedContext,
+  },
+  {
+    field: "acting agent principal",
+    mutate: (context) =>
+      ({
+        ...context,
+        actingPrincipal: { ...context.actingPrincipal, id: "forged-agent" },
+      }) as unknown as Mp03AuthenticatedContext,
+  },
+  {
+    field: "requester/customer identity",
+    mutate: (context) =>
+      ({
+        ...context,
+        representedPrincipal: { ...context.representedPrincipal, id: "CUSTOMER-ATTACKER" },
+      }) as unknown as Mp03AuthenticatedContext,
+  },
+  {
+    field: "tenant",
+    mutate: (context) =>
+      ({ ...context, tenantId: "TENANT-ATTACKER" }) as unknown as Mp03AuthenticatedContext,
+  },
+  {
+    field: "runtime identity",
+    mutate: (context) =>
+      ({ ...context, runtimeId: "runtime-attacker" }) as unknown as Mp03AuthenticatedContext,
+  },
+  {
+    field: "runtime instance identity",
+    mutate: (context) =>
+      ({
+        ...context,
+        runtimeInstanceId: "runtime-instance-attacker",
+      }) as unknown as Mp03AuthenticatedContext,
+  },
+  {
+    field: "session identity",
+    mutate: (context) =>
+      ({ ...context, sessionId: "session-attacker" }) as unknown as Mp03AuthenticatedContext,
+  },
+  {
+    field: "purpose",
+    mutate: (context) =>
+      ({ ...context, purpose: "appointment.reschedule" }) as unknown as Mp03AuthenticatedContext,
+  },
+  {
+    field: "policy identity",
+    mutate: (context) =>
+      ({ ...context, policyVersion: "policy-attacker" }) as unknown as Mp03AuthenticatedContext,
+  },
+  {
+    field: "resource scope",
+    mutate: (context) =>
+      ({
+        ...context,
+        resourceScope: { ...context.resourceScope, resourceIds: ["RESOURCE-ATTACKER"] },
+      }) as unknown as Mp03AuthenticatedContext,
+  },
+];
 
 describe("MP-05 fixture-bound human approval", () => {
   it.each(Object.keys(MP03_PROFILE) as Action[])(
@@ -700,6 +905,184 @@ describe("MP-05 fixture-bound human approval", () => {
     expect(fixture.effect.calls).toBe(0);
   });
 
+  it("rejects the MP-05F approved recovery semantic rebinding exploit", async () => {
+    const fixture = harness("SEND_APPOINTMENT_DETAILS");
+    const changedArguments = {
+      ...fixture.state.arguments,
+      recipientAddress: "attacker@example.test",
+    };
+    fixture.state.arguments = changedArguments;
+    fixture.state.status = "approved";
+    fixture.state.decisionId = "44444444-4444-4444-8444-444444444444";
+    fixture.state.approvedBy = OPERATOR_A.operatorId;
+    fixture.state.approvedBySessionId = OPERATOR_A.sessionId;
+    fixture.state.approvedAt = NOW;
+    fixture.state.bindingHash = "b".repeat(64);
+    const derive = vi.mocked(fixture.native.deriveApprovalHashes);
+    derive.mockImplementation(async (material) => deriveSelfConsistentNativeHashes(material));
+    const material = {
+      approvalId: fixture.state.id,
+      serverName: fixture.state.serverName,
+      toolName: fixture.state.toolName,
+      toolVersion: fixture.state.toolVersion,
+      arguments: fixture.state.arguments,
+      executionContext: fixture.state.executionContext,
+      expiresAt: fixture.state.expiresAt,
+      bindRequestIdentity: fixture.state.bindRequestIdentity,
+      presentationVersion: fixture.state.presentationVersion,
+    };
+    Object.assign(fixture.state, deriveSelfConsistentNativeHashes(material));
+
+    await expect(
+      fixture.coordinator.recoverOrRefresh({
+        intent: fixture.request.intent,
+        authenticatedContext: fixture.request.authenticatedContext,
+        approvalId: fixture.state.id,
+      }),
+    ).rejects.toMatchObject({
+      code: "NATIVE_APPROVAL_INVALID",
+      message: "Native approval is not exactly bound to the MP-03 ActionIntent and context.",
+    });
+    expect(fixture.admit).not.toHaveBeenCalled();
+    expect(fixture.execution.executeAdmittedAction).not.toHaveBeenCalled();
+    expect(fixture.effect.calls).toBe(0);
+  });
+
+  it.each(RECOVERY_SEMANTIC_MUTATIONS)(
+    "rejects approved recovery with a self-consistent %s mutation for %s",
+    async ({ action, field, mutate }) => {
+      const fixture = harness(action);
+      forgeSelfConsistentApprovedRecoveryRecord(fixture, {
+        arguments: mutate(structuredClone(fixture.state.arguments)),
+      });
+
+      expect(fixture.state.arguments).toHaveProperty(field);
+      await expectRecoveryInvalid(fixture);
+      expect(fixture.admit).not.toHaveBeenCalled();
+      expect(fixture.execution.executeAdmittedAction).not.toHaveBeenCalled();
+      expect(fixture.effect.calls).toBe(0);
+    },
+  );
+
+  it.each(RECOVERY_CONTEXT_MUTATIONS)(
+    "rejects approved recovery with a self-consistent %s mutation",
+    async ({ field, mutate }) => {
+      const fixture = harness("SEND_APPOINTMENT_DETAILS");
+      forgeSelfConsistentApprovedRecoveryRecord(fixture, {
+        executionContext: mutate(structuredClone(fixture.state.executionContext)),
+      });
+
+      expect(field).toEqual(expect.any(String));
+      await expectRecoveryInvalid(fixture);
+      expect(fixture.admit).not.toHaveBeenCalled();
+      expect(fixture.effect.calls).toBe(0);
+    },
+  );
+
+  it.each([
+    ["server", { serverName: "untrusted-server" }],
+    ["tool", { toolName: "untrusted-tool" }],
+    ["version", { toolVersion: "9.9.9" }],
+  ] as const)(
+    "rejects approved recovery with a self-consistent operation %s mutation",
+    async (_field, change) => {
+      const fixture = harness("SEND_APPOINTMENT_DETAILS");
+      forgeSelfConsistentApprovedRecoveryRecord(fixture, change);
+
+      await expectRecoveryInvalid(fixture);
+      expect(fixture.admit).not.toHaveBeenCalled();
+      expect(fixture.effect.calls).toBe(0);
+    },
+  );
+
+  it.each([
+    ["SEND_APPOINTMENT_DETAILS", "RESCHEDULE_APPOINTMENT"],
+    ["TRANSMIT_CUSTOMER_CONTACT_DIRECTORY", "SEND_APPOINTMENT_DETAILS"],
+  ] as const)(
+    "rejects cross-action recovery substitution from %s to %s",
+    async (approvedAction, recoveryAction) => {
+      const fixture = harness(approvedAction);
+      forgeSelfConsistentApprovedRecoveryRecord(fixture);
+
+      await expect(
+        fixture.coordinator.recoverOrRefresh({
+          intent: compileFixture(recoveryAction),
+          authenticatedContext: contextFor(recoveryAction),
+          approvalId: fixture.state.id,
+        }),
+      ).rejects.toMatchObject({
+        code: "NATIVE_APPROVAL_INVALID",
+        message: "Native approval is not exactly bound to the MP-03 ActionIntent and context.",
+      });
+      expect(fixture.admit).not.toHaveBeenCalled();
+      expect(fixture.effect.calls).toBe(0);
+    },
+  );
+
+  it("rejects coupled semantic corruption after native hashes are recomputed", async () => {
+    const fixture = harness("SEND_APPOINTMENT_DETAILS");
+    forgeSelfConsistentApprovedRecoveryRecord(fixture, {
+      arguments: {
+        ...fixture.state.arguments,
+        bookingId: "BOOKING-ATTACKER",
+        recipientAddress: "attacker@example.test",
+      },
+    });
+
+    await expectRecoveryInvalid(fixture);
+    expect(fixture.admit).not.toHaveBeenCalled();
+    expect(fixture.effect.calls).toBe(0);
+  });
+
+  it("keeps presentation binding independent from semantic binding during recovery", async () => {
+    const wrongPresentation = harness("SEND_APPOINTMENT_DETAILS");
+    forgeSelfConsistentApprovedRecoveryRecord(wrongPresentation, {
+      presentationBindingHash: "0".repeat(64),
+    });
+    await expect(
+      wrongPresentation.coordinator.recoverOrRefresh({
+        intent: wrongPresentation.request.intent,
+        authenticatedContext: wrongPresentation.request.authenticatedContext,
+        approvalId: wrongPresentation.state.id,
+      }),
+    ).rejects.toMatchObject({
+      code: "NATIVE_APPROVAL_INVALID",
+      message:
+        "Native approval presentation binding does not verify against Ananke-derived material.",
+    });
+    expect(wrongPresentation.admit).not.toHaveBeenCalled();
+    expect(wrongPresentation.effect.calls).toBe(0);
+
+    const wrongSemantic = harness("SEND_APPOINTMENT_DETAILS");
+    forgeSelfConsistentApprovedRecoveryRecord(wrongSemantic, {
+      arguments: {
+        ...wrongSemantic.state.arguments,
+        recipientAddress: "attacker@example.test",
+      },
+    });
+    await expectRecoveryInvalid(wrongSemantic);
+    expect(wrongSemantic.admit).not.toHaveBeenCalled();
+    expect(wrongSemantic.effect.calls).toBe(0);
+
+    const bothWrong = harness("SEND_APPOINTMENT_DETAILS");
+    forgeSelfConsistentApprovedRecoveryRecord(bothWrong, {
+      arguments: {
+        ...bothWrong.state.arguments,
+        recipientAddress: "attacker@example.test",
+      },
+      presentationBindingHash: "0".repeat(64),
+    });
+    await expect(
+      bothWrong.coordinator.recoverOrRefresh({
+        intent: bothWrong.request.intent,
+        authenticatedContext: bothWrong.request.authenticatedContext,
+        approvalId: bothWrong.state.id,
+      }),
+    ).rejects.toMatchObject({ code: "NATIVE_APPROVAL_INVALID" });
+    expect(bothWrong.admit).not.toHaveBeenCalled();
+    expect(bothWrong.effect.calls).toBe(0);
+  });
+
   it.each(["target", "principal"] as const)(
     "rejects a changed %s before native decision",
     async (field) => {
@@ -753,6 +1136,164 @@ describe("MP-05 fixture-bound human approval", () => {
       expect(recovered.result.approval.decisionId).toBe("11111111-1111-4111-8111-111111111111");
     }
   });
+
+  it("requires a stable decisionId before approved recovery", async () => {
+    const fixture = harness("SEND_APPOINTMENT_DETAILS");
+    forgeSelfConsistentApprovedRecoveryRecord(fixture);
+    delete fixture.state.decisionId;
+
+    await expect(
+      fixture.coordinator.recoverOrRefresh({
+        intent: fixture.request.intent,
+        authenticatedContext: fixture.request.authenticatedContext,
+        approvalId: fixture.state.id,
+      }),
+    ).rejects.toMatchObject({
+      code: "NATIVE_APPROVAL_INVALID",
+      message: "A terminal native decision must expose its stable decision identity.",
+    });
+    expect(fixture.admit).not.toHaveBeenCalled();
+    expect(fixture.effect.calls).toBe(0);
+  });
+
+  it("preserves the durable decisionId supplied by native recovery truth", async () => {
+    const fixture = harness("SEND_APPOINTMENT_DETAILS");
+    forgeSelfConsistentApprovedRecoveryRecord(fixture, {
+      decisionId: "22222222-2222-4222-8222-222222222222",
+    });
+    const recovered = await fixture.coordinator.recoverOrRefresh({
+      intent: fixture.request.intent,
+      authenticatedContext: fixture.request.authenticatedContext,
+      approvalId: fixture.state.id,
+    });
+
+    expect(recovered.kind).toBe("WORKFLOW");
+    if (recovered.kind === "WORKFLOW") {
+      expect(recovered.result.approval.decisionId).toBe("22222222-2222-4222-8222-222222222222");
+      expect(recovered.result.execution?.status).toBe("CONFIRMED");
+    }
+    expect(fixture.effect.calls).toBe(1);
+  });
+
+  it.each([
+    ["expired", "EXPIRED"],
+    ["revoked", "STALE"],
+    ["consumed", "STALE"],
+  ] as const)("does not execute a %s recovered approval", async (nativeStatus, status) => {
+    const fixture = harness("SEND_APPOINTMENT_DETAILS");
+    forgeSelfConsistentApprovedRecoveryRecord(fixture);
+    fixture.state.status = nativeStatus;
+
+    const recovered = await fixture.coordinator.recoverOrRefresh({
+      intent: fixture.request.intent,
+      authenticatedContext: fixture.request.authenticatedContext,
+      approvalId: fixture.state.id,
+    });
+
+    expect(recovered.kind).toBe("WORKFLOW");
+    if (recovered.kind === "WORKFLOW") expect(recovered.result.approval.status).toBe(status);
+    expect(fixture.admit).not.toHaveBeenCalled();
+    expect(fixture.effect.calls).toBe(0);
+  });
+
+  it("fails closed for missing, malformed, and unreadable recovery records", async () => {
+    const missing = harness("SEND_APPOINTMENT_DETAILS");
+    await expect(
+      missing.coordinator.recoverOrRefresh({
+        intent: missing.request.intent,
+        authenticatedContext: missing.request.authenticatedContext,
+        approvalId: "missing-approval",
+      }),
+    ).rejects.toMatchObject({ code: "STALE_PRESENTATION" });
+    expect(missing.effect.calls).toBe(0);
+
+    const malformed = harness("SEND_APPOINTMENT_DETAILS");
+    malformed.state.status = "approved";
+    malformed.state.decisionId = "11111111-1111-4111-8111-111111111111";
+    malformed.state.actionHash = "f".repeat(64);
+    await expect(
+      malformed.coordinator.recoverOrRefresh({
+        intent: malformed.request.intent,
+        authenticatedContext: malformed.request.authenticatedContext,
+        approvalId: malformed.state.id,
+      }),
+    ).rejects.toMatchObject({ code: "NATIVE_APPROVAL_INVALID" });
+    expect(malformed.admit).not.toHaveBeenCalled();
+    expect(malformed.effect.calls).toBe(0);
+
+    const unreadable = harness("SEND_APPOINTMENT_DETAILS");
+    vi.mocked(unreadable.native.getApproval).mockRejectedValueOnce(
+      new Error("storage unavailable"),
+    );
+    await expect(
+      unreadable.coordinator.recoverOrRefresh({
+        intent: unreadable.request.intent,
+        authenticatedContext: unreadable.request.authenticatedContext,
+        approvalId: unreadable.state.id,
+      }),
+    ).rejects.toMatchObject({ code: "NATIVE_APPROVAL_INVALID" });
+    expect(unreadable.admit).not.toHaveBeenCalled();
+    expect(unreadable.effect.calls).toBe(0);
+  });
+
+  it("requires fresh MP-03 admission after semantic recovery validation", async () => {
+    const fixture = harness("SEND_APPOINTMENT_DETAILS");
+    forgeSelfConsistentApprovedRecoveryRecord(fixture);
+    const waiting = fixture.request.waitingAdmission as Extract<
+      MoiraeAdmissionResultV1,
+      { status: "WAITING_FOR_APPROVAL" }
+    >;
+    vi.mocked(fixture.admit).mockResolvedValueOnce(waiting);
+
+    const recovered = await fixture.coordinator.recoverOrRefresh({
+      intent: fixture.request.intent,
+      authenticatedContext: fixture.request.authenticatedContext,
+      approvalId: fixture.state.id,
+    });
+
+    expect(recovered.kind).toBe("WORKFLOW");
+    if (recovered.kind === "WORKFLOW") {
+      expect(recovered.result.execution?.status).toBe("BOUNDARY_FAILURE");
+      expect(recovered.result.execution?.reason).toBe("admission_not_executable");
+    }
+    expect(fixture.admit).toHaveBeenCalledTimes(1);
+    expect(fixture.execution.executeAdmittedAction).not.toHaveBeenCalled();
+    expect(fixture.effect.calls).toBe(0);
+  });
+
+  it.each(Object.keys(MP03_PROFILE) as Action[])(
+    "preserves valid approved recovery for %s after response loss",
+    async (action) => {
+      const fixture = harness(action);
+      const prepared = await fixture.coordinator.prepareApproval(fixture.request);
+      const submitted = await fixture.coordinator.submitDecision({
+        request: fixture.request,
+        envelope: envelope(prepared, "APPROVE"),
+        trustedDecision: { operator: OPERATOR_A },
+      });
+      const restarted = createMp05HumanApprovalCoordinator({
+        approval: fixture.native,
+        admission: { admitActionIntent: fixture.admit },
+        execution: fixture.execution,
+        trustedTime: { now: () => fixture.clock.value },
+        provenance: MP05_FATES_DEPENDENCY_PROVENANCE,
+      });
+      const recovered = await restarted.recoverOrRefresh({
+        intent: fixture.request.intent,
+        authenticatedContext: fixture.request.authenticatedContext,
+        approvalId: fixture.state.id,
+      });
+
+      expect(submitted.approval.decisionId).toBe(fixture.state.decisionId);
+      expect(recovered.kind).toBe("WORKFLOW");
+      if (recovered.kind === "WORKFLOW") {
+        expect(recovered.result.approval.decisionId).toBe(submitted.approval.decisionId);
+        expect(recovered.result.execution?.status).toBe("CONFIRMED");
+      }
+      expect(fixture.native.decideApproval).toHaveBeenCalledTimes(1);
+      expect(fixture.effect.calls).toBe(1);
+    },
+  );
 
   it("does not present an approval that is already expired", async () => {
     const fixture = harness("SEND_APPOINTMENT_DETAILS", "2026-09-03T11:59:00.000Z");
