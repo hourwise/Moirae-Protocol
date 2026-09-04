@@ -662,6 +662,53 @@ describe("MP-05 fixture-bound human approval", () => {
     );
     expect(fixture.effect.calls).toBe(0);
   });
+
+  it("completes the offline MP-01 to MP-05 approval and MP-04 pipeline", async () => {
+    const action: Action = "SEND_APPOINTMENT_DETAILS";
+    const agent = createAdministrativeAgentWithModelFactory({
+      provider: { kind: "mock", modelId: "mock/synthetic" },
+      modelFactory: () => new SyntheticStructuredOutputModel(() => proposalFor(action)),
+    });
+    const proposal = await invokeAdministrativeAgent(agent, "Send the appointment details", {
+      requestId: "REQUEST-MP02-DETAILS-001",
+      timeoutMs: 5_000,
+    });
+    const compiled = compileAgentProposal({
+      proposal: proposal.proposal,
+      context: compilerContext(),
+    });
+    expect(compiled.status).toBe("COMPILED");
+    if (compiled.status !== "COMPILED") return;
+
+    const fixture = harness(action);
+    const initialAdmission = await fixture.admit({
+      intent: compiled.actionIntent,
+      authenticatedContext: contextFor(action),
+      now: NOW,
+    });
+    expect(initialAdmission.status).toBe("WAITING_FOR_APPROVAL");
+    const request = {
+      ...fixture.request,
+      intent: compiled.actionIntent,
+      waitingAdmission: initialAdmission,
+    };
+    const prepared = await fixture.coordinator.prepareApproval(request);
+    const result = await fixture.coordinator.submitDecision({
+      request,
+      envelope: envelope(prepared, "APPROVE"),
+      trustedDecision: { operator: OPERATOR_A },
+    });
+
+    expect(result.approval).toMatchObject({
+      status: "APPROVED",
+      nativeOutcome: "applied",
+      decisionId: "11111111-1111-4111-8111-111111111111",
+    });
+    expect(result.execution?.status).toBe("CONFIRMED");
+    expect(fixture.admit).toHaveBeenCalledTimes(2);
+    expect(fixture.execution.executeAdmittedAction).toHaveBeenCalledTimes(1);
+    expect(fixture.effect.calls).toBe(1);
+  });
 });
 
 const realFatesRequired = process.env.MP05_REQUIRE_REAL_FATES === "1";
