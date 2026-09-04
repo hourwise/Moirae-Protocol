@@ -297,6 +297,35 @@ sanitized evidence. The local routing index is evidence only and cannot override
 record. The implementation is synthetic/offline and bounded to one host with local durable
 cross-process arbitration. See `docs/MP-04_DURABLE_EXECUTION.md`.
 
+### MP-05D human approval design/readiness boundary
+
+MP-05 is a human decision boundary, not a task-level permission or a UI-owned authority flow. The
+design is recorded in `docs/MP-05_HUMAN_APPROVAL_DESIGN.md` and currently concludes
+`ANANKE_NEEDS_BOUNDED_EXTENSION_FOR_MP05`: the sealed Ananke candidate's ordinary action approval
+store is process-local, even though its separate MP-04 authority ledger is durable. A future
+FATES-008 slice must add the narrow Ananke-owned durable approval request/decision boundary and a
+trusted host authentication port before MP-05 runtime work begins.
+
+```text
+validated MP-03 WAITING_FOR_APPROVAL
+        |
+        v
+Ananke-owned durable exact approval request
+        |
+        v
+deterministic presentation -> authenticated host decision
+        |
+        +--> REJECTED / EXPIRED / REVOKED -> terminal, no MP-04
+        |
+        +--> approved native grant -> MP-04 Ananke/Horae handoff
+```
+
+The browser only presents structured material and transports an approve/reject choice. It cannot
+supply an operator identity, native action hash, grant, claim, durable execution ID, or effect
+receipt. Ananke owns approval status, expiry, exact binding, decision races, and consumption; Horae
+is not required until the approved handoff enters post-approval durable execution. The rule remains
+`SOL_FRONTEND_LUNA_BACKEND_PRESERVED`; no model has a direct Fates, Horae, or effect path.
+
 ### MVP critical path
 
 1. Strands receives an administrative request and returns a bounded proposal.

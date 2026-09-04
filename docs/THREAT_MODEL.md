@@ -35,3 +35,30 @@ delivery, and users making legitimate mistakes under time pressure.
 No threat is being claimed solved by the placeholder workspace. There are no credentials, external
 connectors, approval endpoints, model calls, queue workers, or persisted authority records in this
 slice.
+
+## MP-05D design/readiness update
+
+The MP-04 acceptance does not close the human approval threat. MP-05D independently inspected the
+sealed Ananke candidate and found that ordinary action approvals are held in a process-local map;
+the durable authority ledger begins only after native execution-authority creation. The accepted
+HTTP route authenticates an operator before calling approval methods, but that route boundary does
+not provide a durable, restart-safe decision record for a future browser workflow. Therefore the
+MP-05 runtime remains blocked on `ANANKE_NEEDS_BOUNDED_EXTENSION_FOR_MP05`.
+
+The required future controls are:
+
+- render exact structured principal, operation, scope, target, arguments, purpose, policy, expiry,
+  and native evidence; never render approval as a task-wide grant;
+- accept a decision only from a trusted host-authenticated operator/session and ignore browser
+  identity, action hashes, grants, claims, and receipts;
+- persist pending/approved/rejected/expired/revoked/consumed state with checksums, atomic writes,
+  and cross-process compare-and-set;
+- reject stale presentations and every exact-binding mutation;
+- make approve/reject and recovery idempotent under duplicate clicks, process restart, and concurrent
+  requests;
+- preserve native Ananke approval ownership and enter Horae only after an approved native handoff.
+
+The future Sol-facing web surface must also use CSRF protection, strict origin and session checks,
+SameSite cookies, no mutating GETs, output escaping, CSP/frame restrictions, and careful avoidance
+of approval IDs or action details in URLs, referrers, storage, analytics, and logs. This design does
+not implement or claim any of those controls yet.

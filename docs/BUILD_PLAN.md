@@ -104,7 +104,9 @@ are release and submission gates.
 
 ### MP-05 — Human approval
 
-- **Entry:** MP-03 can produce approval-required work and MP-04 can enforce exact binding.
+- **Entry:** MP-03 can produce approval-required work and MP-04 can enforce exact binding. MP-05D
+  design is ready, but runtime entry is blocked until the bounded Ananke human-decision extension
+  is accepted (`ANANKE_NEEDS_BOUNDED_EXTENSION_FOR_MP05`).
 - **Build:** Implement an opaque human decision workflow. Display the exact principal, action,
   resource, target, parameters, expiry, and evidence needed for judgment. A positive decision creates
   or obtains fresh execution authority.
@@ -114,6 +116,13 @@ are release and submission gates.
   browser authority non-minting; fresh-authority assertions.
 - **Forbidden:** Generic “approve this task” grants; browser-minted authority; hidden parameter
   changes; approval by model output or memory.
+
+**MP-05D readiness note:** The accepted Ananke ordinary approval engine is currently process-local
+and its in-process `approve`/`reject` methods accept a structured operator value rather than a
+durable, independently authenticated human decision record. A future FATES-008 slice must provide
+durable approval request/decision state, trusted host authentication, compare-and-set decision
+races, restart behavior, and exact binding before this build item can begin. Horae remains
+`HORAE_NOT_REQUIRED_UNTIL_POST_APPROVAL_EXECUTION`; Mnemosyne remains excluded.
 
 ### MP-06 — Background work loop
 

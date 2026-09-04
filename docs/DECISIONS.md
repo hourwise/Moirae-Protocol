@@ -217,3 +217,24 @@ from later implementation slices, but a change must be recorded rather than sile
   or model-to-executor path. Its durability claim is limited to one host and local cross-process
   filesystem state. Independent acceptance evidence is recorded in
   `docs/evidence/mp-04a-acceptance.json`.
+
+## ADR-0018 — MP-05 requires a native human approval decision boundary
+
+- **Status:** MP-05D design/readiness; runtime implementation not started.
+- **Date:** 2026-09-04.
+- **Decision:** Keep human approval authority in Ananke and place a trusted host authentication
+  boundary between the browser and the native decision API. Require a future bounded FATES-008
+  extension for durable ordinary approval requests/decisions, exact action/context binding,
+  expiry/revocation, compare-and-set double-submit handling, and restart-safe persistence. MP-05
+  may only pass a native approved grant into the already accepted MP-04 Ananke/Horae path.
+- **Reason:** The sealed Ananke candidate's ordinary approval store is a process-local module-level
+  map. Its separate durable authority store begins at execution handoff and cannot recover a pending
+  human decision. The existing HTTP route authenticates an operator before calling the engine, but
+  the native in-process approval methods accept a caller-provided structured operator and do not
+  provide a durable decision record. Treating browser state, model prose, memory, or a remembered
+  approval ID as authority would create an unsafe gap across restart and decision races.
+- **Consequence:** `MP-05 DESIGN READY — ANANKE_NEEDS_BOUNDED_EXTENSION_FOR_MP05`. The future
+  extension must preserve Ananke ownership of approval hashing, validity, expiry, grant state, and
+  consumption. Horae is not required until an approved native grant enters post-approval durable
+  execution (`HORAE_NOT_REQUIRED_UNTIL_POST_APPROVAL_EXECUTION`). Mnemosyne remains excluded, and
+  `SOL_FRONTEND_LUNA_BACKEND_PRESERVED` remains binding. No MP-05 runtime is implemented here.

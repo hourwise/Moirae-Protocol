@@ -25,6 +25,12 @@ and MP-04 provides bounded synthetic durable-execution evidence. No production e
 | MP-I17 | Principal, requester, booking, recipient, resource, and timestamp facts come from trusted context. |
 | MP-I18 | Ambiguous registry or availability resolution produces clarification rather than a guess.          |
 | MP-I19 | Canonical digest input excludes derived digest fields and explanatory model prose.                 |
+| MP-I27 | A human decision authorises one exact native action, never a task or future mutation.              |
+| MP-I28 | Browser/UI state is presentation and decision transport only; it cannot mint authority.            |
+| MP-I29 | Human approval requires a trusted host-authenticated operator/session, not caller identity text.   |
+| MP-I30 | Approval decision races are durable compare-and-set transitions with one terminal winner.          |
+| MP-I31 | Approval expiry, rejection, revocation, corruption, and restart ambiguity fail closed.             |
+| MP-I32 | Re-approval does not create a second durable effect identity.                                      |
 
 ## Evidence expectation
 
@@ -80,6 +86,21 @@ agent prompt says it should hold.
 The implementation and test evidence are recorded in `docs/MP-04_DURABLE_EXECUTION.md`,
 `tests/mp04-durable-execution.test.ts`, and `docs/evidence/mp-04a-acceptance.json`. MP-04 is
 independently accepted and sealed as `moirae-protocol-mp04-durable-governed-execution-v0.1.0`.
+
+## MP-05D design/readiness evidence
+
+MP-05D records the architecture for MP-I27 through MP-I32 in
+`docs/MP-05_HUMAN_APPROVAL_DESIGN.md`. These are design requirements, not implemented runtime
+claims. The readiness conclusion is `ANANKE_NEEDS_BOUNDED_EXTENSION_FOR_MP05`: the accepted
+Ananke ordinary approval map is process-local and requires a future durable human-decision boundary
+before MP-05 implementation. The accepted MP-04 execution ledger does not substitute for a pending
+approval store. `HORAE_NOT_REQUIRED_UNTIL_POST_APPROVAL_EXECUTION` and
+`MNEMOSYNE_NOT_REQUIRED_FOR_MP05` remain in force.
+
+The future MP-05 evidence must cover exact presentation binding, trusted host authentication,
+expiry/revocation, rejection, double-submit races, restart windows, fresh-authority semantics, and
+the browser's inability to create Ananke authority. Until then, no approval UI or MP-05 execution
+path is claimed.
 
 ## Fail-closed default
 
