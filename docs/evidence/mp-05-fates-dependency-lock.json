@@ -1,0 +1,35 @@
+{
+  "profile": "moirae-protocol-mp05-fates-v1",
+  "status": "dependency-ready",
+  "adrasteia": {
+    "sha": "a1c01bf9e6f9d6a126cfdcc1acfacd488b214210"
+  },
+  "ananke": {
+    "ref": "ananke-fates-008a-durable-human-approval-v0.1.0-protocol-1.4.0",
+    "tagObject": "0fa08f78f27e2f79c895402f3f53a8aada5837b4",
+    "sha": "b888d61adf180d33e2ae2e61d276cb9b0f13bd12",
+    "runtimeSha": "c89b83de40ed0275969fe3931220f440bf082aa3"
+  },
+  "horae": {
+    "ref": "horae-fates-007a-claim-aware-execution-v0.1.0-protocol-1.4.0",
+    "tagObject": "59763d34644567c59d1041b3acef24efc5a1d072",
+    "sha": "aa296b420fbcf578089ca66dc03f6d09d9b06f00",
+    "runtimeSha": "7b24cb0af083e505bd2dc9fa55c6c3387f849131"
+  },
+  "fates008AcceptanceEvidence": {
+    "branch": "codex/fates-008h-acceptance-evidence",
+    "commit": "cc889456dc16a908041d8d70425438ad56d483c8",
+    "acceptanceCommit": "0f06f7564ad13728dfe4e4848f0c32d8d7859db0",
+    "sha256": "c83afec825c3ed9248091730410d942830a2dfbbb8ad6f98245cacfbc2cb5b9b",
+    "runtimeDependency": false
+  },
+  "mnemosyne": {
+    "status": "not-required"
+  },
+  "scope": {
+    "host": "single-host",
+    "filesystem": "local-durable-cross-process",
+    "distributedConsensus": false,
+    "externalEffects": false
+  }
+}

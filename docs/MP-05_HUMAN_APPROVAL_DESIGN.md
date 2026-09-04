@@ -3,7 +3,10 @@
 **Status:** Design/readiness only. No MP-05 runtime, browser, queue, provider, or effect adapter is
 implemented by this slice.
 
-**Decision:** `MP-05 DESIGN READY — ANANKE_NEEDS_BOUNDED_EXTENSION_FOR_MP05`.
+**Decision:** `MP-05 DESIGN READY — FATES-008 DEPENDENCY ACCEPTED`.
+
+**Historical MP-05D finding:** `ANANKE_NEEDS_BOUNDED_EXTENSION_FOR_MP05` was the prerequisite
+identified when this design was written against FATES-007A.
 
 **Related classifications:**
 
@@ -11,6 +14,7 @@ implemented by this slice.
 - `MNEMOSYNE_NOT_REQUIRED_FOR_MP05`
 - `SOL_FRONTEND_LUNA_BACKEND_PRESERVED`
 - `NO_MP05_RUNTIME_IMPLEMENTED`
+- `MP-05_RUNTIME_DEPENDENCY_UNBLOCKED`
 
 ## Purpose and boundary
 
@@ -68,7 +72,7 @@ new runtime dependencies:
 The MP-04 Protocol dependency lock remains the source of the accepted Fates pins. MP-05D does not
 alter it and does not add a second lock or modify the MP-04 acceptance evidence.
 
-## Current accepted Ananke behavior
+## Historical FATES-007A inspection at MP-05D design time
 
 The inspected sealed Ananke source establishes the following facts:
 
@@ -100,7 +104,7 @@ created an approval in the same process. They are not sufficient for a human app
 must survive gateway restart, race two decision requests, prove the authenticating host session, and
 resume safely.
 
-## Readiness conclusion
+## Historical readiness conclusion
 
 `ANANKE_NEEDS_BOUNDED_EXTENSION_FOR_MP05` is a real prerequisite, not a request to weaken MP-04.
 The missing capability is a narrow Ananke-owned human decision boundary with:
@@ -401,16 +405,50 @@ cross-process arbitration, checksums, atomic replacement, and restart recovery. 
 extension must state the same scope and must not describe browser storage or a model context as
 durable authority.
 
-## Exit decision
+## Current readiness after accepted FATES-008
 
-MP-05 is design-ready but implementation-blocked on the native human decision boundary:
+FATES-008 is now independently accepted and sealed as the MP-05 Ananke dependency:
+
+- tag: `ananke-fates-008a-durable-human-approval-v0.1.0-protocol-1.4.0`;
+- annotated tag object: `0fa08f78f27e2f79c895402f3f53a8aada5837b4`;
+- peeled terminal: `b888d61adf180d33e2ae2e61d276cb9b0f13bd12`;
+- acceptance evidence: public Fates Integration branch `codex/fates-008h-acceptance-evidence` at
+  `cc889456dc16a908041d8d70425438ad56d483c8`, with acceptance record
+  `0f06f7564ad13728dfe4e4848f0c32d8d7859db0`;
+- supported scope: one host, local durable storage, cross-process arbitration and restart recovery;
+  no distributed-consensus, multi-host or external-effect claim.
+
+The dedicated MP-05 lock in `docs/evidence/mp-05-fates-dependency-lock.json` records this Ananke
+seal together with the accepted Horae and Adrasteia references. Accepted FATES-008 provides durable
+ordinary approval requests, stable native human `decisionId`, durable APPROVE/REJECT, authenticated
+operator/session binding, restart recovery, cross-process compare-and-set, exact presentation
+binding, expiry, revocation, durable dispatch reservation and its human irrevocability boundary,
+fresh trusted-time validation at dispatch, idempotent response-loss replay, durable consumption,
+and compatibility with accepted FATES-007A execution/reconciliation. These remain native Ananke
+capabilities; MP-05 must consume them rather than recreate them.
+
+Therefore:
 
 ```text
-MP-05 DESIGN READY — ANANKE_NEEDS_BOUNDED_EXTENSION_FOR_MP05
+FATES-008 prerequisite: SATISFIED
+MP-05_RUNTIME_DEPENDENCY_UNBLOCKED
+NO_MP05_RUNTIME_IMPLEMENTED
+```
+
+This updates current dependency readiness only. It does not claim that MP-05 runtime, browser/UI,
+provider/effect integration, or MP-05 acceptance has been implemented.
+
+## Exit decision
+
+MP-05 remains design-only, with its native human-decision dependency now satisfied:
+
+```text
+MP-05 DESIGN READY — FATES-008 DEPENDENCY ACCEPTED
 HORAE_NOT_REQUIRED_UNTIL_POST_APPROVAL_EXECUTION
 MNEMOSYNE_NOT_REQUIRED_FOR_MP05
 SOL_FRONTEND_LUNA_BACKEND_PRESERVED
 NO_MP05_RUNTIME_IMPLEMENTED
+MP-05_RUNTIME_DEPENDENCY_UNBLOCKED
 ```
 
 No MP-05 runtime branch, acceptance tag, Fates modification, Protocol runtime change, browser

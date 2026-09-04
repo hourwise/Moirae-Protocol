@@ -238,3 +238,23 @@ from later implementation slices, but a change must be recorded rather than sile
   consumption. Horae is not required until an approved native grant enters post-approval durable
   execution (`HORAE_NOT_REQUIRED_UNTIL_POST_APPROVAL_EXECUTION`). Mnemosyne remains excluded, and
   `SOL_FRONTEND_LUNA_BACKEND_PRESERVED` remains binding. No MP-05 runtime is implemented here.
+
+## ADR-0019 — FATES-008 unblocks MP-05 dependency readiness
+
+- **Status:** Accepted dependency readiness; MP-05 runtime implementation not started.
+- **Date:** 2026-09-04.
+- **Decision:** Pin MP-05 to the immutable Ananke tag
+  `ananke-fates-008a-durable-human-approval-v0.1.0-protocol-1.4.0` (tag object
+  `0fa08f78f27e2f79c895402f3f53a8aada5837b4`, peeled terminal
+  `b888d61adf180d33e2ae2e61d276cb9b0f13bd12`) and keep the accepted Horae/Adrasteia set explicit
+  in `docs/evidence/mp-05-fates-dependency-lock.json`.
+- **Reason:** FATES-008 independently accepted durable ordinary human approval, stable native
+  decision identity, authenticated operator/session binding, cross-process CAS, exact presentation
+  binding, expiry, revocation/dispatch fencing, fresh dispatch-time validation, replay-safe
+  observation, and durable consumption. The public Fates Integration acceptance evidence is pinned
+  separately as evidence, not as a runtime dependency.
+- **Consequence:** `MP-05_RUNTIME_DEPENDENCY_UNBLOCKED`, while `NO_MP05_RUNTIME_IMPLEMENTED` remains
+  true. Ananke remains the approval authority; the trusted host owns authentication and current
+  dispatch time; the browser and models remain non-authority; Horae begins only after approval;
+  `UNKNOWN` remains non-retry; and the supported durability scope remains one host with local
+  cross-process storage. The historical MP-04 lock remains pinned to FATES-007A and unchanged.

@@ -90,17 +90,26 @@ independently accepted and sealed as `moirae-protocol-mp04-durable-governed-exec
 ## MP-05D design/readiness evidence
 
 MP-05D records the architecture for MP-I27 through MP-I32 in
-`docs/MP-05_HUMAN_APPROVAL_DESIGN.md`. These are design requirements, not implemented runtime
-claims. The readiness conclusion is `ANANKE_NEEDS_BOUNDED_EXTENSION_FOR_MP05`: the accepted
-Ananke ordinary approval map is process-local and requires a future durable human-decision boundary
-before MP-05 implementation. The accepted MP-04 execution ledger does not substitute for a pending
-approval store. `HORAE_NOT_REQUIRED_UNTIL_POST_APPROVAL_EXECUTION` and
-`MNEMOSYNE_NOT_REQUIRED_FOR_MP05` remain in force.
+`docs/MP-05_HUMAN_APPROVAL_DESIGN.md`. The historical design conclusion
+`ANANKE_NEEDS_BOUNDED_EXTENSION_FOR_MP05` identified the FATES-007A process-local approval gap.
+That gap is now closed by the independently accepted FATES-008 Ananke boundary. These invariants
+remain binding for the future Protocol implementation.
 
-The future MP-05 evidence must cover exact presentation binding, trusted host authentication,
-expiry/revocation, rejection, double-submit races, restart windows, fresh-authority semantics, and
-the browser's inability to create Ananke authority. Until then, no approval UI or MP-05 execution
-path is claimed.
+## MP-05 dependency readiness after FATES-008
+
+The MP-05 dependency lock in `docs/evidence/mp-05-fates-dependency-lock.json` pins the accepted
+Ananke FATES-008 tag/object/terminal, accepted Horae tag/object/terminal/runtime, and Adrasteia
+SHA. Accepted FATES-008 now supplies durable ordinary approval requests and decisions, stable native
+human decision identity, trusted host-authenticated operator/session binding, exact presentation
+binding, restart-safe state, durable cross-process CAS, expiry, revocation, dispatch reservation
+and its human irrevocability boundary, fresh trusted-time validation at dispatch, replay-safe
+observation, and durable consumption. Ananke remains the authority owner; the browser and model
+remain non-authority; trusted host code owns authentication and current dispatch time; Horae begins
+only after approval; and `UNKNOWN` remains non-retry.
+
+The supported claim is one host with local durable cross-process storage and restart recovery. It
+does not claim distributed consensus, multi-host linearizability, or external effects. No MP-05
+runtime, approval UI, provider, or effect adapter is implemented by this readiness update.
 
 ## Fail-closed default
 

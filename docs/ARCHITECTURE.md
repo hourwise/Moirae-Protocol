@@ -300,11 +300,9 @@ cross-process arbitration. See `docs/MP-04_DURABLE_EXECUTION.md`.
 ### MP-05D human approval design/readiness boundary
 
 MP-05 is a human decision boundary, not a task-level permission or a UI-owned authority flow. The
-design is recorded in `docs/MP-05_HUMAN_APPROVAL_DESIGN.md` and currently concludes
-`ANANKE_NEEDS_BOUNDED_EXTENSION_FOR_MP05`: the sealed Ananke candidate's ordinary action approval
-store is process-local, even though its separate MP-04 authority ledger is durable. A future
-FATES-008 slice must add the narrow Ananke-owned durable approval request/decision boundary and a
-trusted host authentication port before MP-05 runtime work begins.
+design is recorded in `docs/MP-05_HUMAN_APPROVAL_DESIGN.md`. Historically, MP-05D concluded
+`ANANKE_NEEDS_BOUNDED_EXTENSION_FOR_MP05` because the FATES-007A ordinary action approval store was
+process-local. FATES-008 is now the accepted Ananke-owned durable approval dependency for MP-05.
 
 ```text
 validated MP-03 WAITING_FOR_APPROVAL
@@ -321,10 +319,17 @@ deterministic presentation -> authenticated host decision
 ```
 
 The browser only presents structured material and transports an approve/reject choice. It cannot
-supply an operator identity, native action hash, grant, claim, durable execution ID, or effect
-receipt. Ananke owns approval status, expiry, exact binding, decision races, and consumption; Horae
-is not required until the approved handoff enters post-approval durable execution. The rule remains
+supply an operator identity, native action hash, grant, claim, durable execution ID, effect receipt,
+trusted current time, or dispatch reservation. The trusted host supplies human authentication and
+dispatch current time. Ananke owns approval status, stable decision identity, expiry, exact binding,
+decision races, revocation, dispatch reservation/irrevocability, and consumption; Horae begins only
+after an approved handoff enters post-approval durable execution. `UNKNOWN` remains non-retry and
+cannot be rewritten by presentation or model text. The rule remains
 `SOL_FRONTEND_LUNA_BACKEND_PRESERVED`; no model has a direct Fates, Horae, or effect path.
+
+The exact accepted dependency and public acceptance evidence are recorded in
+`docs/evidence/mp-05-fates-dependency-lock.json`. MP-05 is dependency-unblocked but still has no
+runtime implementation, browser surface, provider, or external effect.
 
 ### MVP critical path
 

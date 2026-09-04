@@ -55,3 +55,51 @@ jobs:
       - name: Run mandatory real-Fates MP-04 integration
         run: npm run test:mp04:required
       - run: npm run check
+
+  mp05-readiness:
+    runs-on: ubuntu-latest
+    env:
+      MP05_FATES_ANANKE_ROOT: ${{ github.workspace }}/.fates/mp05-ananke
+      MP05_FATES_HORAE_ROOT: ${{ github.workspace }}/.fates/mp05-horae
+      MP05_FATES_ADRASTEIA_ROOT: ${{ github.workspace }}/.fates/mp05-adrasteia
+      MP05_FATES_INTEGRATION_ROOT: ${{ github.workspace }}/.fates/mp05-integration
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Checkout accepted FATES-008 Ananke
+        uses: actions/checkout@v4
+        with:
+          repository: hourwise/Project-Ananke
+          ref: ananke-fates-008a-durable-human-approval-v0.1.0-protocol-1.4.0
+          path: .fates/mp05-ananke
+          fetch-depth: 0
+      - name: Checkout accepted Horae
+        uses: actions/checkout@v4
+        with:
+          repository: hourwise/Project-Horae
+          ref: horae-fates-007a-claim-aware-execution-v0.1.0-protocol-1.4.0
+          path: .fates/mp05-horae
+          fetch-depth: 0
+      - name: Checkout pinned Adrasteia
+        uses: actions/checkout@v4
+        with:
+          repository: hourwise/Project-Adrasteia
+          ref: a1c01bf9e6f9d6a126cfdcc1acfacd488b214210
+          path: .fates/mp05-adrasteia
+          fetch-depth: 0
+      - name: Checkout FATES-008H acceptance evidence
+        uses: actions/checkout@v4
+        with:
+          repository: hourwise/Project-Fates-Integration
+          ref: codex/fates-008h-acceptance-evidence
+          path: .fates/mp05-integration
+          fetch-depth: 0
+      - name: Install and build accepted Ananke
+        working-directory: .fates/mp05-ananke
+        run: npm ci && npm run build
+      - name: Verify public MP-05 dependency set
+        run: npm run verify:mp05:fates-dependency

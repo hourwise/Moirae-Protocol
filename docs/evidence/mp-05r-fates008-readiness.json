@@ -1,0 +1,73 @@
+{
+  "profile": "MP-05R",
+  "classification": "dependency-ready",
+  "protocolParent": "2e13f7743acb1021b757f9579be47806bc62fe09",
+  "dependencyLock": {
+    "path": "docs/evidence/mp-05-fates-dependency-lock.json",
+    "sha256": "cfaf85d7d241eba51936814d4cd385f5eec885ae7272f7d4998ce74cd6636bfc"
+  },
+  "ananke": {
+    "ref": "ananke-fates-008a-durable-human-approval-v0.1.0-protocol-1.4.0",
+    "tagObject": "0fa08f78f27e2f79c895402f3f53a8aada5837b4",
+    "sha": "b888d61adf180d33e2ae2e61d276cb9b0f13bd12",
+    "runtimeSha": "c89b83de40ed0275969fe3931220f440bf082aa3"
+  },
+  "horae": {
+    "ref": "horae-fates-007a-claim-aware-execution-v0.1.0-protocol-1.4.0",
+    "tagObject": "59763d34644567c59d1041b3acef24efc5a1d072",
+    "sha": "aa296b420fbcf578089ca66dc03f6d09d9b06f00",
+    "runtimeSha": "7b24cb0af083e505bd2dc9fa55c6c3387f849131"
+  },
+  "adrasteia": {
+    "sha": "a1c01bf9e6f9d6a126cfdcc1acfacd488b214210"
+  },
+  "fates008AcceptanceEvidence": {
+    "branch": "codex/fates-008h-acceptance-evidence",
+    "commit": "cc889456dc16a908041d8d70425438ad56d483c8",
+    "acceptanceCommit": "0f06f7564ad13728dfe4e4848f0c32d8d7859db0",
+    "sha256": "c83afec825c3ed9248091730410d942830a2dfbbb8ad6f98245cacfbc2cb5b9b",
+    "runtimeDependency": false
+  },
+  "publicReconstruction": {
+    "result": "MP-05_FATES_DEPENDENCY_SET_PUBLICLY_REPRODUCIBLE",
+    "anankeTagObjectAndPeel": "verified",
+    "horaeTagObjectAndPeel": "verified",
+    "adrasteiaPinnedRelease": "verified",
+    "fates008AcceptanceEvidenceBranchAndDigest": "verified",
+    "fallbackToMain": false,
+    "localWorktreesRequired": false
+  },
+  "ciReadiness": {
+    "script": "scripts/verify-mp05-fates-dependency.mjs",
+    "failClosed": true,
+    "historicalMp04VerificationRemainsSeparate": true
+  },
+  "validation": {
+    "npmCi": "passed",
+    "protocolTests": {
+      "filesPassed": 5,
+      "testsPassed": 86,
+      "testsSkipped": 13
+    },
+    "mp04RequiredTests": 13,
+    "typecheck": "passed",
+    "lint": "passed",
+    "build": "passed",
+    "changedFileFormatting": "passed",
+    "repositoryFormatting": "pre-existing-package-lock-mismatch",
+    "diffCheck": "passed"
+  },
+  "scope": {
+    "host": "single-host",
+    "filesystem": "local-durable-cross-process",
+    "distributedConsensus": false,
+    "externalEffects": false
+  },
+  "status": {
+    "MP-05_RUNTIME_DEPENDENCY_UNBLOCKED": true,
+    "NO_MP05_RUNTIME_IMPLEMENTED": true,
+    "HORAE_NOT_REQUIRED_UNTIL_POST_APPROVAL_EXECUTION": true,
+    "MNEMOSYNE_NOT_REQUIRED_FOR_MP05": true,
+    "SOL_FRONTEND_LUNA_BACKEND_PRESERVED": true
+  }
+}

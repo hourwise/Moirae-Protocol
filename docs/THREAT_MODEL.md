@@ -36,14 +36,14 @@ No threat is being claimed solved by the placeholder workspace. There are no cre
 connectors, approval endpoints, model calls, queue workers, or persisted authority records in this
 slice.
 
-## MP-05D design/readiness update
+## MP-05D historical design/readiness update
 
 The MP-04 acceptance does not close the human approval threat. MP-05D independently inspected the
 sealed Ananke candidate and found that ordinary action approvals are held in a process-local map;
 the durable authority ledger begins only after native execution-authority creation. The accepted
 HTTP route authenticates an operator before calling approval methods, but that route boundary does
-not provide a durable, restart-safe decision record for a future browser workflow. Therefore the
-MP-05 runtime remains blocked on `ANANKE_NEEDS_BOUNDED_EXTENSION_FOR_MP05`.
+not provide a durable, restart-safe decision record for a future browser workflow. This was the
+MP-05D prerequisite finding against FATES-007A.
 
 The required future controls are:
 
@@ -61,4 +61,21 @@ The required future controls are:
 The future Sol-facing web surface must also use CSRF protection, strict origin and session checks,
 SameSite cookies, no mutating GETs, output escaping, CSP/frame restrictions, and careful avoidance
 of approval IDs or action details in URLs, referrers, storage, analytics, and logs. This design does
-not implement or claim any of those controls yet.
+not implement or claim any of those browser controls yet.
+
+## MP-05 current dependency readiness
+
+FATES-008 is independently accepted and sealed as the native Ananke human approval boundary. The
+current dependency is pinned in `docs/evidence/mp-05-fates-dependency-lock.json` and provides durable
+approval state, stable decision identity, authenticated operator/session binding, exact presentation
+binding, expiry, revocation, cross-process decision CAS, durable dispatch reservation, fresh trusted
+dispatch-time validation, replay-safe observation, and durable consumption. The accepted boundary
+defines the human irrevocability fence at Ananke dispatch reservation; after that fence, later expiry
+does not cancel the already reserved dispatch, and a revoke attempt must conflict.
+
+The browser remains a presentation/decision transport and cannot supply operator identity, roles,
+decision identity, native hashes, trusted time, authority, claim, reservation, or effect truth. The
+trusted host owns authentication and current dispatch time. Horae begins only after an approved native
+handoff; `UNKNOWN` remains non-retry; Mnemosyne remains excluded; and Sol remains the frontend while
+Luna remains backend/internal. `MP-05_RUNTIME_DEPENDENCY_UNBLOCKED` is a dependency-readiness status,
+not an MP-05 implementation or acceptance claim.
