@@ -1,0 +1,104 @@
+{
+  "profile": "mp-05e-post-decision-durable-reread",
+  "status": "implementation-remediation-candidate",
+  "rejected": {
+    "mp05dTerminal": "c6fba9826e056891d94ff5df5bb6d68f3be75b16",
+    "tree": "63e57c7f6c2ac805cdb9314b9cb6ac4169f8a400",
+    "reason": "submitDecision trusted a shape-parsed nativeDecision.grant without native integrity verification and continued into MP-04 execution"
+  },
+  "candidate": {
+    "parent": "c6fba9826e056891d94ff5df5bb6d68f3be75b16",
+    "parentTree": "63e57c7f6c2ac805cdb9314b9cb6ac4169f8a400",
+    "runtimeCommit": "63cf7c9d8562072697602f3ce36e40efd96ee83a",
+    "runtimeTree": "80f17d70e5f6f64d1af921dab0d3eb4c1ffd1ce7"
+  },
+  "decisionResponse": {
+    "classification": "observation/result transport; optional embedded grant is non-authoritative",
+    "acceptedNativeShape": "accepted Ananke returns grant material for applied, idempotent, conflict, and expired outcomes",
+    "continuationRule": "embedded grant is never used for executable approval state"
+  },
+  "durableReread": {
+    "trustedTime": "fresh host-owned sample after decideApproval",
+    "verifiedPath": "readNativeApproval -> parseNativeApproval -> assertNativeIntegrity",
+    "postReadChecks": [
+      "decisionId consistency",
+      "requested decision versus durable status",
+      "submitted presentation binding",
+      "MP-03 WAITING and ActionIntent semantic binding"
+    ],
+    "fallbackToEmbeddedGrant": false,
+    "missingOrFailedRead": "fail closed"
+  },
+  "focusedResults": {
+    "forgedEmbeddedGrantWithValidDurableRead": "verified durable approval continued safely; forged embedded actionHash was ignored",
+    "forgedDurableActionHash": "BOUNDARY_FAILURE before re-admission",
+    "missingDurableRecord": "fail closed without embedded-grant fallback",
+    "durableReadFailure": "BOUNDARY_FAILURE without embedded-grant fallback",
+    "decisionIdMismatch": "BOUNDARY_FAILURE before re-admission",
+    "revokeBetweenDecisionAndReread": "durable revoked truth produced CONFLICT and zero effect",
+    "corruptedEmbeddedRejectGrant": "verified durable rejection remained terminal with zero effect",
+    "freshPostDecisionTime": "post-decision read received a later trusted sample"
+  },
+  "regressions": {
+    "offlineMp05": {
+      "files": 1,
+      "tests": 36,
+      "passed": 33,
+      "skipped": 3,
+      "skipReason": "real-Fates block requires MP05_REQUIRE_REAL_FATES and roots"
+    },
+    "realMp05": {
+      "files": 1,
+      "tests": 36,
+      "passed": 36,
+      "effects": "synthetic only",
+      "ananke": "b888d61adf180d33e2ae2e61d276cb9b0f13bd12",
+      "horae": "aa296b420fbcf578089ca66dc03f6d09d9b06f00"
+    },
+    "fullProtocol": {
+      "files": 6,
+      "tests": 135,
+      "passed": 135,
+      "skipped": 0,
+      "typecheck": "passed",
+      "lint": "passed",
+      "format": "passed",
+      "build": "passed"
+    },
+    "mp03": "37 passed",
+    "mp04": "13 passed",
+    "twoCoordinatorReplay": "deferred to independent acceptance",
+    "crossProcessReplay": "deferred to independent acceptance"
+  },
+  "dependencies": {
+    "anankeTag": "ananke-fates-008a-durable-human-approval-v0.1.0-protocol-1.4.0",
+    "anankeTagObject": "0fa08f78f27e2f79c895402f3f53a8aada5837b4",
+    "anankeTerminal": "b888d61adf180d33e2ae2e61d276cb9b0f13bd12",
+    "horaeTag": "horae-fates-007a-claim-aware-execution-v0.1.0-protocol-1.4.0",
+    "horaeTagObject": "59763d34644567c59d1041b3acef24efc5a1d072",
+    "horaeTerminal": "aa296b420fbcf578089ca66dc03f6d09d9b06f00",
+    "adrasteiaSha": "a1c01bf9e6f9d6a126cfdcc1acfacd488b214210",
+    "publicDependencyVerifier": "passed",
+    "packageLock": "unchanged"
+  },
+  "validation": {
+    "protocolNpmCi": "passed",
+    "diffCheck": "passed",
+    "secretScan": "no credential patterns found",
+    "productionAudit": "0 vulnerabilities",
+    "fullAudit": "0 vulnerabilities",
+    "publicOnlyDependencyRoots": "exact public accepted refs in temporary clones"
+  },
+  "isolation": {
+    "mp03Source": "unchanged",
+    "mp04Source": "unchanged",
+    "anankeSource": "unchanged",
+    "horae": "HORAE_NOT_REQUIRED_UNTIL_POST_APPROVAL_EXECUTION",
+    "mnemosyne": "MNEMOSYNE_NOT_REQUIRED_FOR_MP05",
+    "solLuna": "SOL_FRONTEND_LUNA_BACKEND_PRESERVED",
+    "firecracker": "no operation; Attempt 007 unused",
+    "console": "unchanged",
+    "mp06": "blocked"
+  },
+  "classification": "MP-05_RUNTIME_IMPLEMENTED_AS_CANDIDATE; MP-05_NOT_ACCEPTED"
+}

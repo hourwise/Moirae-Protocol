@@ -51,6 +51,14 @@ to the existing MP-04 coordinator. REJECT never calls MP-04 or Horae. Native `ap
 and `conflict` outcomes remain visible to the Protocol result, and native `decisionId` is never
 replaced by a Protocol-generated ID.
 
+The native decision response is an observation/result transport, not durable approval authority.
+After every decision that could affect continuation, the coordinator takes a fresh trusted-time
+sample and re-reads the durable native approval through the same verified read path used by
+preparation and recovery. Only that re-read may establish decision identity, status, native
+integrity, presentation binding, semantic binding, and permission to perform fresh MP-03 admission.
+An embedded response `grant`, if present, is retained only as non-authoritative transport material;
+missing, malformed, unavailable, revoked, or inconsistent durable truth never falls back to it.
+
 ### Dual native hash domains
 
 The two native hash references in `ApprovalPresentationV1` intentionally belong to separate
