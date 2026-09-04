@@ -106,7 +106,7 @@
     "npmAuditFull": "0 vulnerabilities",
     "publicFatesDependencyVerifier": "passed",
     "freshPublicCheckout": {
-      "validatedCandidateCommit": "92890ae7a87e86a3a9d1f1ce6602fbc6fc2de959",
+      "validatedCandidateCommit": "92890ae6f99b646636298590597c32a30af45e7b",
       "terminalEvidenceCommitIsDocsOnly": true,
       "publicDependencyVerifier": "passed",
       "publicAnankeTerminal": "b888d61adf180d33e2ae2e61d276cb9b0f13bd12",
