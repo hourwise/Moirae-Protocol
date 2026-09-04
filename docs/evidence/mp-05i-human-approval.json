@@ -82,19 +82,19 @@
     "cleanInstall": "passed",
     "mp05Focused": {
       "files": 1,
-      "passed": 17,
+      "passed": 18,
       "skippedWithoutRealRoots": 3,
-      "total": 20,
+      "total": 21,
       "realFatesPassed": 3
     },
     "mp03Regression": { "files": 1, "passed": 37, "skipped": 0, "realFates": true },
     "mp04Regression": { "files": 1, "passed": 13, "skipped": 0, "realFates": true },
     "fullProtocol": {
       "files": 6,
-      "passed": 119,
+      "passed": 120,
       "skipped": 0,
       "realFates": true,
-      "offlineComparison": { "passed": 103, "skipped": 16 }
+      "offlineComparison": { "passed": 104, "skipped": 16 }
     },
     "typecheck": "passed",
     "lint": "passed",
@@ -106,7 +106,7 @@
     "npmAuditFull": "0 vulnerabilities",
     "publicFatesDependencyVerifier": "passed",
     "freshPublicCheckout": {
-      "validatedRuntimeCommit": "969d1574bcbaba714e664c4419d84f46973d12bc",
+      "validatedCandidateCommit": "92890ae7a87e86a3a9d1f1ce6602fbc6fc2de959",
       "terminalEvidenceCommitIsDocsOnly": true,
       "publicDependencyVerifier": "passed",
       "publicAnankeTerminal": "b888d61adf180d33e2ae2e61d276cb9b0f13bd12",
@@ -117,7 +117,7 @@
       "horaeInstallAndBuild": "passed",
       "protocolInstall": "passed",
       "requiredRealFatesIntegration": { "files": 1, "passed": 3, "skipped": 0 },
-      "fullProtocol": { "files": 6, "passed": 119, "skipped": 0 },
+      "fullProtocol": { "files": 6, "passed": 120, "skipped": 0 },
       "typecheck": "passed",
       "lint": "passed",
       "format": "passed",
