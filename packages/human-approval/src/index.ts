@@ -430,11 +430,65 @@ export class Mp05HumanApprovalCoordinator {
       );
     }
     const nativeDecision = parseNativeDecision(rawDecision);
-    const nativeGrant = nativeDecision.grant
-      ? parseNativeApproval(nativeDecision.grant)
-      : await this.readNativeApproval(envelope.approvalId, now).catch(() => undefined);
-    const decisionId = nativeDecision.decisionId ?? nativeGrant?.decisionId;
+    let nativeGrant: NativeApprovalSnapshot;
+    try {
+      // The decision response is an observation/result transport. Its
+      // optional embedded grant is deliberately non-authoritative. Re-read
+      // the durable native record after the decision using a fresh trusted
+      // time sample, so every executable continuation uses the same verified
+      // record path as preparation and recovery.
+      nativeGrant = await this.readNativeApproval(envelope.approvalId, this.readTrustedNow());
+      this.assertExactBinding(nativeGrant, trusted.intent, trusted.context, waiting, false);
+    } catch (error) {
+      const status: Mp05ApprovalStatus =
+        nativeDecision.outcome === "expired"
+          ? "EXPIRED"
+          : nativeDecision.outcome === "not_found"
+            ? "STALE"
+            : nativeDecision.outcome === "conflict"
+              ? "CONFLICT"
+              : "BOUNDARY_FAILURE";
+      return this.boundaryResult(
+        envelope.approvalId,
+        envelope.decision,
+        status,
+        nativeDecision.reason ??
+          (error instanceof Error ? error.message : "The durable native approval read failed."),
+        nativeDecision.outcome,
+        nativeDecision.decisionId,
+      );
+    }
 
+    if (
+      nativeDecision.decisionId &&
+      nativeGrant.decisionId &&
+      nativeDecision.decisionId !== nativeGrant.decisionId
+    )
+      return this.boundaryResult(
+        envelope.approvalId,
+        envelope.decision,
+        "BOUNDARY_FAILURE",
+        "The native decision identity does not match durable approval truth.",
+        nativeDecision.outcome,
+        nativeGrant.decisionId,
+        nativeGrant.status,
+      );
+
+    if (
+      (nativeDecision.outcome === "applied" || nativeDecision.outcome === "idempotent") &&
+      !nativeGrant.decisionId
+    )
+      return this.boundaryResult(
+        envelope.approvalId,
+        envelope.decision,
+        "BOUNDARY_FAILURE",
+        "The durable native decision has no stable decision identity.",
+        nativeDecision.outcome,
+        nativeDecision.decisionId,
+        nativeGrant.status,
+      );
+
+    const decisionId = nativeGrant.decisionId ?? nativeDecision.decisionId;
     if (nativeDecision.outcome === "expired")
       return this.boundaryResult(
         envelope.approvalId,
@@ -443,7 +497,7 @@ export class Mp05HumanApprovalCoordinator {
         nativeDecision.reason ?? "The native approval expired.",
         nativeDecision.outcome,
         decisionId,
-        nativeGrant?.status,
+        nativeGrant.status,
       );
     if (nativeDecision.outcome === "not_found")
       return this.boundaryResult(
@@ -453,7 +507,7 @@ export class Mp05HumanApprovalCoordinator {
         nativeDecision.reason ?? "The native approval request was not found.",
         nativeDecision.outcome,
         decisionId,
-        nativeGrant?.status,
+        nativeGrant.status,
       );
     if (nativeDecision.outcome === "invalid")
       return this.boundaryResult(
@@ -463,7 +517,7 @@ export class Mp05HumanApprovalCoordinator {
         nativeDecision.reason ?? "The native approval decision was invalid.",
         nativeDecision.outcome,
         decisionId,
-        nativeGrant?.status,
+        nativeGrant.status,
       );
     if (nativeDecision.outcome === "conflict")
       return this.boundaryResult(
@@ -473,15 +527,7 @@ export class Mp05HumanApprovalCoordinator {
         nativeDecision.reason ?? "The native approval decision conflicted with terminal truth.",
         nativeDecision.outcome,
         decisionId,
-        nativeGrant?.status,
-      );
-    if (!nativeGrant)
-      return this.boundaryResult(
-        envelope.approvalId,
-        envelope.decision,
-        "BOUNDARY_FAILURE",
-        "The native decision returned no durable approval record.",
-        nativeDecision.outcome,
+        nativeGrant.status,
       );
     if (!decisionId)
       return this.boundaryResult(
@@ -501,7 +547,7 @@ export class Mp05HumanApprovalCoordinator {
         envelope.approvalId,
         envelope.decision,
         "CONFLICT",
-        "The native decision record does not match the requested decision.",
+        "The durable native decision record does not match the requested decision.",
         nativeDecision.outcome,
         decisionId,
         nativeGrant.status,
@@ -514,7 +560,7 @@ export class Mp05HumanApprovalCoordinator {
         envelope.approvalId,
         envelope.decision,
         "BOUNDARY_FAILURE",
-        "The native decision record is not bound to the submitted presentation.",
+        "The durable native decision record is not bound to the submitted presentation.",
         nativeDecision.outcome,
         decisionId,
         nativeGrant.status,

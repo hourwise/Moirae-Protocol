@@ -400,6 +400,18 @@ function envelope(
   };
 }
 
+function markApproved(
+  fixture: ReturnType<typeof harness>,
+  input: Mp05NativeApprovalDecisionInput,
+): void {
+  fixture.state.status = "approved";
+  fixture.state.decisionId = "11111111-1111-4111-8111-111111111111";
+  fixture.state.approvedBy = (input.operator as { operatorId: string }).operatorId;
+  fixture.state.approvedBySessionId = (input.operator as { sessionId: string }).sessionId;
+  fixture.state.approvedAt = input.now;
+  fixture.state.revision += 1;
+}
+
 describe("MP-05 fixture-bound human approval", () => {
   it.each(Object.keys(MP03_PROFILE) as Action[])(
     "creates an exact structured presentation for %s without authority or execution",
@@ -840,6 +852,198 @@ describe("MP-05 fixture-bound human approval", () => {
     expect(fixture.admit).toHaveBeenCalledTimes(2);
     expect(fixture.execution.executeAdmittedAction).toHaveBeenCalledTimes(1);
     expect(fixture.effect.calls).toBe(1);
+  });
+
+  it("ignores a forged decision-returned grant and uses verified durable truth", async () => {
+    const fixture = harness("SEND_APPOINTMENT_DETAILS");
+    const prepared = await fixture.coordinator.prepareApproval(fixture.request);
+    vi.mocked(fixture.native.decideApproval).mockImplementationOnce(async (input) => {
+      markApproved(fixture, input);
+      return {
+        outcome: "applied",
+        decisionId: fixture.state.decisionId,
+        grant: {
+          ...structuredClone(fixture.state),
+          actionHash: "f".repeat(64),
+          arguments: { forged: true },
+        },
+      };
+    });
+
+    const result = await fixture.coordinator.submitDecision({
+      request: fixture.request,
+      envelope: envelope(prepared, "APPROVE"),
+      trustedDecision: { operator: OPERATOR_A },
+    });
+
+    expect(result.approval.status).toBe("APPROVED");
+    expect(result.execution?.status).toBe("CONFIRMED");
+    expect(fixture.native.deriveApprovalHashes).toHaveBeenCalledTimes(3);
+    expect(fixture.effect.calls).toBe(1);
+  });
+
+  it("uses a fresh trusted time for the post-decision durable read", async () => {
+    const fixture = harness("SEND_APPOINTMENT_DETAILS");
+    const readTimes: string[] = [];
+    vi.mocked(fixture.native.getApproval).mockImplementation(async (_id, now) => {
+      readTimes.push(now);
+      return structuredClone(fixture.state);
+    });
+    vi.mocked(fixture.native.decideApproval).mockImplementationOnce(async (input) => {
+      markApproved(fixture, input);
+      fixture.clock.value = "2026-09-03T12:02:00.000Z";
+      return {
+        outcome: "applied",
+        decisionId: fixture.state.decisionId,
+        grant: structuredClone(fixture.state),
+      };
+    });
+    const prepared = await fixture.coordinator.prepareApproval(fixture.request);
+    await fixture.coordinator.submitDecision({
+      request: fixture.request,
+      envelope: envelope(prepared, "APPROVE"),
+      trustedDecision: { operator: OPERATOR_A },
+    });
+
+    expect(readTimes).toEqual([NOW, NOW, "2026-09-03T12:02:00.000Z"]);
+  });
+
+  it("rejects a forged durable record after an applied decision", async () => {
+    const fixture = harness("SEND_APPOINTMENT_DETAILS");
+    const getApproval = vi.mocked(fixture.native.getApproval);
+    getApproval
+      .mockImplementationOnce(async () => structuredClone(fixture.state))
+      .mockImplementationOnce(async () => structuredClone(fixture.state))
+      .mockImplementationOnce(async () => ({
+        ...structuredClone(fixture.state),
+        status: "approved",
+        actionHash: "f".repeat(64),
+      }));
+    const prepared = await fixture.coordinator.prepareApproval(fixture.request);
+    const result = await fixture.coordinator.submitDecision({
+      request: fixture.request,
+      envelope: envelope(prepared, "APPROVE"),
+      trustedDecision: { operator: OPERATOR_A },
+    });
+
+    expect(result.approval.status).toBe("BOUNDARY_FAILURE");
+    expect(fixture.admit).not.toHaveBeenCalled();
+    expect(fixture.execution.executeAdmittedAction).not.toHaveBeenCalled();
+    expect(fixture.effect.calls).toBe(0);
+  });
+
+  it("does not fall back to an embedded grant when the post-decision record is missing", async () => {
+    const fixture = harness("SEND_APPOINTMENT_DETAILS");
+    const getApproval = vi.mocked(fixture.native.getApproval);
+    getApproval
+      .mockImplementationOnce(async () => structuredClone(fixture.state))
+      .mockImplementationOnce(async () => structuredClone(fixture.state))
+      .mockImplementationOnce(async () => undefined);
+    const prepared = await fixture.coordinator.prepareApproval(fixture.request);
+    const result = await fixture.coordinator.submitDecision({
+      request: fixture.request,
+      envelope: envelope(prepared, "APPROVE"),
+      trustedDecision: { operator: OPERATOR_A },
+    });
+
+    expect(["STALE", "BOUNDARY_FAILURE"]).toContain(result.approval.status);
+    expect(fixture.admit).not.toHaveBeenCalled();
+    expect(fixture.effect.calls).toBe(0);
+  });
+
+  it("does not fall back to an embedded grant when the post-decision read fails", async () => {
+    const fixture = harness("SEND_APPOINTMENT_DETAILS");
+    const getApproval = vi.mocked(fixture.native.getApproval);
+    getApproval
+      .mockImplementationOnce(async () => structuredClone(fixture.state))
+      .mockImplementationOnce(async () => structuredClone(fixture.state))
+      .mockImplementationOnce(async () => {
+        throw new Error("approval store unavailable");
+      });
+    const prepared = await fixture.coordinator.prepareApproval(fixture.request);
+    const result = await fixture.coordinator.submitDecision({
+      request: fixture.request,
+      envelope: envelope(prepared, "APPROVE"),
+      trustedDecision: { operator: OPERATOR_A },
+    });
+
+    expect(result.approval.status).toBe("BOUNDARY_FAILURE");
+    expect(fixture.admit).not.toHaveBeenCalled();
+    expect(fixture.effect.calls).toBe(0);
+  });
+
+  it("rejects a decision identity mismatch against durable truth", async () => {
+    const fixture = harness("SEND_APPOINTMENT_DETAILS");
+    const prepared = await fixture.coordinator.prepareApproval(fixture.request);
+    vi.mocked(fixture.native.decideApproval).mockImplementationOnce(async (input) => {
+      markApproved(fixture, input);
+      return {
+        outcome: "applied",
+        decisionId: "22222222-2222-4222-8222-222222222222",
+        grant: structuredClone(fixture.state),
+      };
+    });
+
+    const result = await fixture.coordinator.submitDecision({
+      request: fixture.request,
+      envelope: envelope(prepared, "APPROVE"),
+      trustedDecision: { operator: OPERATOR_A },
+    });
+
+    expect(result.approval.status).toBe("BOUNDARY_FAILURE");
+    expect(fixture.admit).not.toHaveBeenCalled();
+    expect(fixture.effect.calls).toBe(0);
+  });
+
+  it("lets durable revocation between decision and reread block continuation", async () => {
+    const fixture = harness("SEND_APPOINTMENT_DETAILS");
+    const getApproval = vi.mocked(fixture.native.getApproval);
+    getApproval
+      .mockImplementationOnce(async () => structuredClone(fixture.state))
+      .mockImplementationOnce(async () => structuredClone(fixture.state))
+      .mockImplementationOnce(async () => ({
+        ...structuredClone(fixture.state),
+        status: "revoked",
+      }));
+    const prepared = await fixture.coordinator.prepareApproval(fixture.request);
+    const result = await fixture.coordinator.submitDecision({
+      request: fixture.request,
+      envelope: envelope(prepared, "APPROVE"),
+      trustedDecision: { operator: OPERATOR_A },
+    });
+
+    expect(result.approval.status).toBe("CONFLICT");
+    expect(fixture.admit).not.toHaveBeenCalled();
+    expect(fixture.effect.calls).toBe(0);
+  });
+
+  it("re-reads and verifies durable rejection instead of trusting an embedded grant", async () => {
+    const fixture = harness("TRANSMIT_CUSTOMER_CONTACT_DIRECTORY");
+    const prepared = await fixture.coordinator.prepareApproval(fixture.request);
+    vi.mocked(fixture.native.decideApproval).mockImplementationOnce(async (input) => {
+      fixture.state.status = "rejected";
+      fixture.state.decisionId = "11111111-1111-4111-8111-111111111111";
+      fixture.state.rejectedBy = (input.operator as { operatorId: string }).operatorId;
+      fixture.state.rejectedBySessionId = (input.operator as { sessionId: string }).sessionId;
+      fixture.state.rejectedAt = input.now;
+      fixture.state.revision += 1;
+      return {
+        outcome: "applied",
+        decisionId: fixture.state.decisionId,
+        grant: { ...structuredClone(fixture.state), actionHash: "f".repeat(64) },
+      };
+    });
+
+    const result = await fixture.coordinator.submitDecision({
+      request: fixture.request,
+      envelope: envelope(prepared, "REJECT"),
+      trustedDecision: { operator: OPERATOR_A },
+    });
+
+    expect(result.approval.status).toBe("REJECTED");
+    expect(fixture.admit).not.toHaveBeenCalled();
+    expect(fixture.execution.executeAdmittedAction).not.toHaveBeenCalled();
+    expect(fixture.effect.calls).toBe(0);
   });
 });
 
