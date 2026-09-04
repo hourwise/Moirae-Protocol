@@ -51,6 +51,23 @@ to the existing MP-04 coordinator. REJECT never calls MP-04 or Horae. Native `ap
 and `conflict` outcomes remain visible to the Protocol result, and native `decisionId` is never
 replaced by a Protocol-generated ID.
 
+### Dual native hash domains
+
+The two native hash references in `ApprovalPresentationV1` intentionally belong to separate
+domains:
+
+- `admissionNativeActionHash` is the historical MP-03 admission-domain identifier and remains
+  checked against the accepted MP-03 fixture/profile;
+- `nativeActionHash` is the expiry-sensitive FATES-008 approval-action identifier, derived by
+  the trusted Ananke adapter from the approval record's semantic material.
+
+The domains are not compared for equality. Instead, the trusted Ananke adapter re-derives the
+FATES-008 action hash and, when present, its presentation-binding hash from the record's operation,
+arguments, execution context, expiry, request-binding flag, and presentation version. Protocol
+compares those derived values with the stored claims, then applies the existing semantic bridge
+between the MP-03 WAITING result, ActionIntent, and authenticated context. The Protocol digest is
+display/staleness evidence only and is not a native authority hash.
+
 ## Replay, restart, and expiry
 
 The native FATES-008 decision is durable and remains the source of truth after response loss,

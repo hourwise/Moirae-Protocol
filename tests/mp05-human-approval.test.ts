@@ -77,6 +77,17 @@ const OPERATOR_B = {
   roles: ["approver"],
 };
 
+const NATIVE_APPROVAL_HASH_FIXTURES: Record<Action, string> = {
+  SEND_APPOINTMENT_DETAILS: "a".repeat(64),
+  RESCHEDULE_APPOINTMENT: "b".repeat(64),
+  TRANSMIT_CUSTOMER_CONTACT_DIRECTORY: "c".repeat(64),
+};
+const NATIVE_PRESENTATION_BINDING_FIXTURES: Record<Action, string> = {
+  SEND_APPOINTMENT_DETAILS: "d".repeat(64),
+  RESCHEDULE_APPOINTMENT: "e".repeat(64),
+  TRANSMIT_CUSTOMER_CONTACT_DIRECTORY: "f".repeat(64),
+};
+
 type Action = Mp03Action;
 
 interface FakeNativeGrant {
@@ -254,7 +265,7 @@ function nativeGrant(
     serverName: MP03_PROFILE[action].operation.server,
     toolName: MP03_PROFILE[action].operation.toolName,
     toolVersion: MP03_PROFILE[action].operation.version,
-    actionHash: MP03_NATIVE_HASH_FIXTURES[action],
+    actionHash: NATIVE_APPROVAL_HASH_FIXTURES[action],
     arguments: structuredClone(intent.parameters),
     executionContext: structuredClone(context),
     status: "pending",
@@ -264,7 +275,7 @@ function nativeGrant(
     revision: 0,
     bindRequestIdentity: true,
     presentationVersion: "fates-008a/approval-presentation/v1",
-    presentationBindingHash: "a".repeat(64),
+    presentationBindingHash: NATIVE_PRESENTATION_BINDING_FIXTURES[action],
   };
 }
 
@@ -274,6 +285,8 @@ function harness(action: Action, expiresAt?: string) {
   const approvalId = `approval-${action.toLowerCase()}`;
   const waiting = waitingFor(action, intent, approvalId);
   const state: FakeNativeGrant = nativeGrant(action, intent, context, approvalId, expiresAt);
+  const expectedNativeActionHash = state.actionHash;
+  const expectedPresentationBindingHash = state.presentationBindingHash;
   const clock = { value: NOW };
   const effect = { calls: 0 };
   const native: Mp05AnankeApprovalPort = {
@@ -321,6 +334,10 @@ function harness(action: Action, expiresAt?: string) {
         grant: structuredClone(state),
       };
     }),
+    deriveApprovalHashes: vi.fn(async () => ({
+      actionHash: expectedNativeActionHash,
+      presentationBindingHash: expectedPresentationBindingHash,
+    })),
   };
   const admit = vi.fn(async (input: Parameters<Mp03AdmissionAdapter["admitActionIntent"]>[0]) =>
     state.status === "approved" && typeof input.approvalId === "string"
@@ -411,6 +428,14 @@ describe("MP-05 fixture-bound human approval", () => {
             >
           ).nativeActionHash,
       );
+      expect(prepared.presentation.nativeActionHash).toBe(fixture.state.actionHash);
+      expect(prepared.presentation.nativePresentationBindingHash).toBe(
+        fixture.state.presentationBindingHash,
+      );
+      const derivationInput = vi.mocked(fixture.native.deriveApprovalHashes).mock.calls[0]?.[0];
+      expect(derivationInput).toBeDefined();
+      expect(derivationInput).not.toHaveProperty("actionHash");
+      expect(derivationInput).not.toHaveProperty("presentationBindingHash");
       expect(fixture.native.decideApproval).not.toHaveBeenCalled();
       expect(fixture.execution.executeAdmittedAction).not.toHaveBeenCalled();
     },
@@ -553,6 +578,113 @@ describe("MP-05 fixture-bound human approval", () => {
     });
     expect(["STALE", "BOUNDARY_FAILURE"]).toContain(result.approval.status);
     expect(fixture.native.decideApproval).not.toHaveBeenCalled();
+    expect(fixture.effect.calls).toBe(0);
+  });
+
+  it.each([
+    ["an arbitrary syntactically valid hash", "f".repeat(64)],
+    ["another fixture's valid native hash", NATIVE_APPROVAL_HASH_FIXTURES.RESCHEDULE_APPOINTMENT],
+  ] as const)("rejects %s before presenting", async (_label, actionHash) => {
+    const fixture = harness("SEND_APPOINTMENT_DETAILS");
+    fixture.state.actionHash = actionHash;
+
+    await expect(fixture.coordinator.prepareApproval(fixture.request)).rejects.toMatchObject({
+      code: "NATIVE_APPROVAL_INVALID",
+    });
+    expect(fixture.native.decideApproval).not.toHaveBeenCalled();
+    expect(fixture.admit).not.toHaveBeenCalled();
+    expect(fixture.execution.executeAdmittedAction).not.toHaveBeenCalled();
+    expect(fixture.effect.calls).toBe(0);
+  });
+
+  it("rejects a native presentation binding mutation before presenting", async () => {
+    const fixture = harness("SEND_APPOINTMENT_DETAILS");
+    fixture.state.presentationBindingHash = "b".repeat(64);
+
+    await expect(fixture.coordinator.prepareApproval(fixture.request)).rejects.toMatchObject({
+      code: "NATIVE_APPROVAL_INVALID",
+    });
+    expect(fixture.native.decideApproval).not.toHaveBeenCalled();
+    expect(fixture.admit).not.toHaveBeenCalled();
+    expect(fixture.execution.executeAdmittedAction).not.toHaveBeenCalled();
+    expect(fixture.effect.calls).toBe(0);
+  });
+
+  it("rejects coupled forged action and presentation hashes", async () => {
+    const fixture = harness("SEND_APPOINTMENT_DETAILS");
+    fixture.state.actionHash = "f".repeat(64);
+    fixture.state.presentationBindingHash = "c".repeat(64);
+
+    await expect(fixture.coordinator.prepareApproval(fixture.request)).rejects.toMatchObject({
+      code: "NATIVE_APPROVAL_INVALID",
+    });
+    expect(fixture.native.decideApproval).not.toHaveBeenCalled();
+    expect(fixture.admit).not.toHaveBeenCalled();
+    expect(fixture.execution.executeAdmittedAction).not.toHaveBeenCalled();
+    expect(fixture.effect.calls).toBe(0);
+  });
+
+  it("rejects an MP-03 admission hash mutation separately from native approval hashes", async () => {
+    const fixture = harness("SEND_APPOINTMENT_DETAILS");
+    const waiting = fixture.request.waitingAdmission as Extract<
+      MoiraeAdmissionResultV1,
+      { status: "WAITING_FOR_APPROVAL" }
+    >;
+    waiting.nativeActionHash = MP03_NATIVE_HASH_FIXTURES.RESCHEDULE_APPOINTMENT;
+
+    await expect(fixture.coordinator.prepareApproval(fixture.request)).rejects.toMatchObject({
+      code: "NATIVE_APPROVAL_INVALID",
+    });
+    expect(fixture.native.decideApproval).not.toHaveBeenCalled();
+    expect(fixture.admit).not.toHaveBeenCalled();
+    expect(fixture.execution.executeAdmittedAction).not.toHaveBeenCalled();
+    expect(fixture.effect.calls).toBe(0);
+  });
+
+  it("rejects a native action-hash mutation during decision-time revalidation", async () => {
+    const fixture = harness("SEND_APPOINTMENT_DETAILS");
+    const prepared = await fixture.coordinator.prepareApproval(fixture.request);
+    fixture.state.actionHash = "f".repeat(64);
+
+    const result = await fixture.coordinator.submitDecision({
+      request: fixture.request,
+      envelope: envelope(prepared, "APPROVE"),
+      trustedDecision: { operator: OPERATOR_A },
+    });
+
+    expect(["STALE", "BOUNDARY_FAILURE"]).toContain(result.approval.status);
+    expect(fixture.native.decideApproval).not.toHaveBeenCalled();
+    expect(fixture.admit).not.toHaveBeenCalled();
+    expect(fixture.execution.executeAdmittedAction).not.toHaveBeenCalled();
+    expect(fixture.effect.calls).toBe(0);
+  });
+
+  it("rejects a forged native action hash during approved recovery", async () => {
+    const fixture = harness("SEND_APPOINTMENT_DETAILS");
+    fixture.state.status = "approved";
+    fixture.state.decisionId = "33333333-3333-4333-8333-333333333333";
+    fixture.state.approvedBy = OPERATOR_A.operatorId;
+    fixture.state.approvedBySessionId = OPERATOR_A.sessionId;
+    fixture.state.approvedAt = NOW;
+    fixture.state.bindingHash = "b".repeat(64);
+    fixture.state.actionHash = "f".repeat(64);
+    const restarted = createMp05HumanApprovalCoordinator({
+      approval: fixture.native,
+      admission: { admitActionIntent: fixture.admit },
+      execution: fixture.execution,
+      trustedTime: { now: () => fixture.clock.value },
+      provenance: MP05_FATES_DEPENDENCY_PROVENANCE,
+    });
+
+    await expect(
+      restarted.recoverOrRefresh({
+        intent: fixture.request.intent,
+        authenticatedContext: fixture.request.authenticatedContext,
+        approvalId: fixture.state.id,
+      }),
+    ).rejects.toMatchObject({ code: "NATIVE_APPROVAL_INVALID" });
+    expect(fixture.admit).not.toHaveBeenCalled();
+    expect(fixture.execution.executeAdmittedAction).not.toHaveBeenCalled();
     expect(fixture.effect.calls).toBe(0);
   });
 
@@ -732,6 +864,15 @@ interface RealAnankeModule {
   providerIdempotencyKey(authority: unknown): string;
 }
 
+interface RealAnankeHashModule {
+  hashApprovalAction(material: Record<string, unknown>): string;
+  hashApprovalPresentationBinding(
+    approvalId: string,
+    actionHash: string,
+    presentationVersion?: string,
+  ): string;
+}
+
 interface RealApprovalStore {
   get(id: string, now?: string): unknown;
   decide(
@@ -792,6 +933,9 @@ describeReal("MP-05 required native FATES-008 integration", () => {
       const anankeModule = (await import(
         pathToFileURL(join(anankeRoot, "packages/runtime-core/dist/index.js")).href
       )) as unknown as RealAnankeModule;
+      const anankeHashModule = (await import(
+        pathToFileURL(join(anankeRoot, "packages/authority-engine/dist/index.js")).href
+      )) as unknown as RealAnankeHashModule;
       const horaeModule = (await import(
         pathToFileURL(join(horaeRoot, "packages/session-orchestrator/dist/index.js")).href
       )) as unknown as {
@@ -964,7 +1108,28 @@ describeReal("MP-05 required native FATES-008 integration", () => {
         if (waiting.status !== "WAITING_FOR_APPROVAL") return;
         const coordinator = createMp05HumanApprovalCoordinator({
           approval: {
-            getApproval: (id, now) => gatewayInstance.approvals.get(id, now),
+            getApproval: (id, now) => {
+              const grant = gatewayInstance.approvals.get(id, now);
+              return grant;
+            },
+            deriveApprovalHashes: (material) => {
+              const { approvalId, presentationVersion, ...actionMaterial } = material;
+              const actionHash = anankeHashModule.hashApprovalAction(
+                actionMaterial as unknown as Record<string, unknown>,
+              );
+              return {
+                actionHash,
+                ...(presentationVersion
+                  ? {
+                      presentationBindingHash: anankeHashModule.hashApprovalPresentationBinding(
+                        approvalId,
+                        actionHash,
+                        presentationVersion,
+                      ),
+                    }
+                  : {}),
+              };
+            },
             decideApproval: (input) =>
               gatewayInstance.approvals.decide(
                 input.approvalId,
@@ -992,6 +1157,15 @@ describeReal("MP-05 required native FATES-008 integration", () => {
           waitingAdmission: waiting,
         };
         const prepared = await coordinator.prepareApproval(request);
+        const nativeApproval = gatewayInstance.approvals.get(waiting.approvalId, NOW) as {
+          actionHash: string;
+          presentationBindingHash: string;
+        };
+        expect(prepared.presentation.nativeActionHash).toBe(nativeApproval.actionHash);
+        expect(prepared.presentation.nativePresentationBindingHash).toBe(
+          nativeApproval.presentationBindingHash,
+        );
+        expect(prepared.presentation.nativeActionHash).not.toBe(waiting.nativeActionHash);
         const operator = await gatewayInstance.authenticateOperator("Bearer mp05-operator-token");
         expect(operator).toBeDefined();
         const result = await coordinator.submitDecision({

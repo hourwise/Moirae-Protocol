@@ -151,9 +151,32 @@ export interface Mp05NativeApprovalDecisionInput {
   readonly presentationBindingHash: string;
 }
 
+export interface Mp05NativeApprovalHashMaterialV1 {
+  /** Used only for the presentation-binding domain, never as action-hash input. */
+  readonly approvalId: string;
+  readonly serverName: string;
+  readonly toolName: string;
+  readonly toolVersion?: string;
+  readonly arguments: Record<string, unknown>;
+  readonly executionContext: unknown;
+  readonly expiresAt: string;
+  readonly bindRequestIdentity?: boolean;
+  /** Used only for the presentation-binding domain, never as action-hash input. */
+  readonly presentationVersion?: string;
+}
+
+export interface Mp05NativeApprovalDerivedHashesV1 {
+  readonly actionHash: string;
+  readonly presentationBindingHash?: string;
+}
+
 export interface Mp05AnankeApprovalPort {
   getApproval(approvalId: string, now: string): unknown | Promise<unknown>;
   decideApproval(input: Mp05NativeApprovalDecisionInput): unknown | Promise<unknown>;
+  /** Derives native hashes from semantic approval material; claimed hashes are never inputs. */
+  deriveApprovalHashes(
+    material: Mp05NativeApprovalHashMaterialV1,
+  ): Mp05NativeApprovalDerivedHashesV1 | Promise<Mp05NativeApprovalDerivedHashesV1>;
 }
 
 export interface Mp05TrustedTimeSource {
@@ -288,12 +311,21 @@ const nativeDecisionSchema = z
   })
   .strict();
 
+const nativeDerivedHashesSchema = z
+  .object({
+    actionHash: hashSchema,
+    presentationBindingHash: hashSchema.optional(),
+  })
+  .strict();
+
 export class Mp05HumanApprovalCoordinator {
   constructor(private readonly options: Mp05HumanApprovalCoordinatorOptions) {
     if (!options.approval || typeof options.approval.getApproval !== "function")
       throw new TypeError("MP-05 requires a native Ananke approval port.");
     if (typeof options.approval.decideApproval !== "function")
       throw new TypeError("MP-05 requires a native Ananke decision port.");
+    if (typeof options.approval.deriveApprovalHashes !== "function")
+      throw new TypeError("MP-05 requires native Ananke approval hash derivation.");
     if (!options.admission || typeof options.admission.admitActionIntent !== "function")
       throw new TypeError("MP-05 requires the existing MP-03 admission adapter.");
     if (!options.execution || typeof options.execution.executeAdmittedAction !== "function")
@@ -661,7 +693,49 @@ export class Mp05HumanApprovalCoordinator {
     }
     if (raw === undefined)
       throw new Mp05BoundaryError("STALE_PRESENTATION", "Native approval request was not found.");
-    return parseNativeApproval(raw);
+    const grant = parseNativeApproval(raw);
+    await this.assertNativeIntegrity(grant);
+    return grant;
+  }
+
+  private async assertNativeIntegrity(grant: NativeApprovalSnapshot): Promise<void> {
+    let rawDerived: unknown;
+    try {
+      rawDerived = await this.options.approval.deriveApprovalHashes({
+        approvalId: grant.id,
+        serverName: grant.serverName,
+        toolName: grant.toolName,
+        ...(grant.toolVersion ? { toolVersion: grant.toolVersion } : {}),
+        arguments: grant.arguments,
+        executionContext: grant.executionContext,
+        expiresAt: grant.expiresAt,
+        ...(typeof grant.bindRequestIdentity === "boolean"
+          ? { bindRequestIdentity: grant.bindRequestIdentity }
+          : {}),
+        ...(grant.presentationVersion ? { presentationVersion: grant.presentationVersion } : {}),
+      });
+    } catch (error) {
+      throw new Mp05BoundaryError(
+        "NATIVE_APPROVAL_INVALID",
+        error instanceof Error ? error.message : "Native approval hash derivation failed.",
+      );
+    }
+    const derived = nativeDerivedHashesSchema.safeParse(rawDerived);
+    if (!derived.success || derived.data.actionHash !== grant.actionHash)
+      throw new Mp05BoundaryError(
+        "NATIVE_APPROVAL_INVALID",
+        "Native approval action hash does not verify against Ananke-derived approval material.",
+      );
+    if (grant.presentationBindingHash) {
+      if (
+        !derived.data.presentationBindingHash ||
+        derived.data.presentationBindingHash !== grant.presentationBindingHash
+      )
+        throw new Mp05BoundaryError(
+          "NATIVE_APPROVAL_INVALID",
+          "Native approval presentation binding does not verify against Ananke-derived material.",
+        );
+    }
   }
 
   private assertPendingBinding(
