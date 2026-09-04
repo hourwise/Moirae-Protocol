@@ -1,0 +1,129 @@
+{
+  "profile": "moirae-protocol-mp05-human-approval-v1",
+  "status": "implementation-candidate",
+  "notAccepted": true,
+  "parent": {
+    "branch": "codex/mp05-fates008-readiness",
+    "sha": "5fa3ac29ebfee7feafeda5092ffec78db95f2d0b",
+    "tree": "705ac93cb603681c51f8167e0e76e31f3f7b28de"
+  },
+  "implementation": {
+    "runtimeCommit": "969d1574bcbaba714e664c4419d84f46973d12bc",
+    "runtimeTree": "39f9ae780f338f804768fb75523ecdf5d0eb600f",
+    "runtimeMessage": "feat(protocol): add fixture-bound human approval workflow",
+    "package": "packages/human-approval",
+    "focusedTest": "tests/mp05-human-approval.test.ts"
+  },
+  "fatesDependencyLock": {
+    "path": "docs/evidence/mp-05-fates-dependency-lock.json",
+    "sha256": "cfaf85d7d241eba51936814d4cd385f5eec885ae7272f7d4998ce74cd6636bfc",
+    "ananke": {
+      "ref": "ananke-fates-008a-durable-human-approval-v0.1.0-protocol-1.4.0",
+      "tagObject": "0fa08f78f27e2f79c895402f3f53a8aada5837b4",
+      "sha": "b888d61adf180d33e2ae2e61d276cb9b0f13bd12",
+      "runtimeSha": "c89b83de40ed0275969fe3931220f440bf082aa3"
+    },
+    "horae": {
+      "ref": "horae-fates-007a-claim-aware-execution-v0.1.0-protocol-1.4.0",
+      "tagObject": "59763d34644567c59d1041b3acef24efc5a1d072",
+      "sha": "aa296b420fbcf578089ca66dc03f6d09d9b06f00",
+      "runtimeSha": "7b24cb0af083e505bd2dc9fa55c6c3387f849131"
+    },
+    "adrasteiaSha": "a1c01bf9e6f9d6a126cfdcc1acfacd488b214210",
+    "mnemosyne": "not-required"
+  },
+  "authorityBoundary": {
+    "approvalOwner": "Ananke FATES-008",
+    "presentationOwner": "Moirae Protocol",
+    "humanAuthenticationOwner": "trusted host adapter",
+    "executionOwner": "accepted MP-04 Ananke/Horae path",
+    "browserAuthority": "none",
+    "modelAuthority": "none",
+    "stableNativeDecisionIdentity": "Ananke decisionId",
+    "protocolPresentationDigest": "display-integrity-only",
+    "effectTruth": "MP-04 receipt/reconciliation"
+  },
+  "contracts": {
+    "presentation": "ApprovalPresentationV1",
+    "decisionEnvelope": "HumanDecisionEnvelopeV1",
+    "presentationVersion": "moirae-protocol/approval-presentation/v1",
+    "nativePresentationVersion": "fates-008a/approval-presentation/v1",
+    "mp03WaitingRequired": true,
+    "freshAdmittedRequired": true,
+    "rejectEntersExecution": false,
+    "unknownIsRetryPermission": false
+  },
+  "fixtures": [
+    "SEND_APPOINTMENT_DETAILS",
+    "RESCHEDULE_APPOINTMENT",
+    "TRANSMIT_CUSTOMER_CONTACT_DIRECTORY"
+  ],
+  "evidence": {
+    "sourceRequestId": "fixture-bound-per-test",
+    "nativeApprovalId": "opaque-native-per-test",
+    "nativeDecisionId": "opaque-native-per-test",
+    "nativeActionHash": "native-fates-per-test",
+    "nativePresentationBindingHash": "native-fates-per-test",
+    "protocolPresentationDigest": "deterministic-per-test",
+    "executionDurableId": "mp04-native-per-test",
+    "credentialsRecorded": false,
+    "modelProseRecorded": false,
+    "nativeAuthorityRecorded": false,
+    "horaeClaimRecordedInBrowser": false
+  },
+  "requiredRealFatesIntegration": {
+    "mode": "MP05_REQUIRE_REAL_FATES=1",
+    "missingRoots": "fail-closed",
+    "anankeRoot": "b888d61adf180d33e2ae2e61d276cb9b0f13bd12",
+    "horaeRoot": "aa296b420fbcf578089ca66dc03f6d09d9b06f00",
+    "effectMode": "synthetic-only"
+  },
+  "validation": {
+    "cleanInstall": "passed",
+    "mp05Focused": {
+      "files": 1,
+      "passed": 17,
+      "skippedWithoutRealRoots": 3,
+      "total": 20,
+      "realFatesPassed": 3
+    },
+    "mp03Regression": { "files": 1, "passed": 37, "skipped": 0, "realFates": true },
+    "mp04Regression": { "files": 1, "passed": 13, "skipped": 0, "realFates": true },
+    "fullProtocol": {
+      "files": 6,
+      "passed": 119,
+      "skipped": 0,
+      "realFates": true,
+      "offlineComparison": { "passed": 103, "skipped": 16 }
+    },
+    "typecheck": "passed",
+    "lint": "passed",
+    "format": "passed",
+    "build": "passed",
+    "diffCheck": "passed",
+    "secretScan": "NO_HIGH_CONFIDENCE_SECRET_MATCHES",
+    "npmAuditProduction": "0 vulnerabilities",
+    "npmAuditFull": "0 vulnerabilities",
+    "publicFatesDependencyVerifier": "passed",
+    "freshPublicCheckout": "pending-final-validation"
+  },
+  "classifications": [
+    "MP-05_RUNTIME_IMPLEMENTED_AS_CANDIDATE",
+    "MP-05_NOT_ACCEPTED",
+    "HORAE_NOT_REQUIRED_UNTIL_POST_APPROVAL_EXECUTION",
+    "MNEMOSYNE_NOT_REQUIRED_FOR_MP05",
+    "SOL_FRONTEND_LUNA_BACKEND_PRESERVED",
+    "NO_MP05_RUNTIME_IMPLEMENTED is historical readiness text only"
+  ],
+  "isolation": {
+    "horaeModified": false,
+    "mnemosyneModified": false,
+    "adrasteiaModified": false,
+    "anankeModified": false,
+    "consoleModified": false,
+    "firecrackerExecuted": false,
+    "attempt007Consumed": false,
+    "mp06Started": false,
+    "mp05AcceptanceTagCreated": false
+  }
+}
