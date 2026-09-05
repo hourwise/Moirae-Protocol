@@ -5,8 +5,9 @@
 **Branch:** `codex/mp07c-local-dashboard-approval-interaction`
 **Source terminal:** `591f630b74205d0bed840aba019d7f5d082d5e9a`
 **Accepted MP-06 tree:** `3060ea60f6f56b5f07026ff426477661c1b24057`
-**Publication:** MP-07A and MP-07B are published; MP-07C publication is not authorized.
-**Acceptance:** MP-07 is not accepted; MP-07D and MP-07E are not started.
+**Publication:** MP-07A, MP-07B, and MP-07C are published; MP-07D remains a local
+candidate.
+**Acceptance:** MP-07 is not accepted; MP-07E is not started.
 
 ## 1. Purpose and boundary
 
@@ -441,3 +442,43 @@ loss, stale references, loopback serving, exact action fields, accessibility
 semantics, and the browser non-authority boundary. MP-07D remains responsible
 for deeper stale-state, accessibility, responsive, refresh, compatibility, and
 demo hardening. MP-07E remains the independent end-to-end acceptance slice.
+
+## 16. MP-07D candidate implementation facts
+
+MP-07D hardens the published MP-07C local surface without moving any product
+truth into the browser:
+
+- `apps/web/src/index.ts` now uses a monotonic request sequence and an
+  `AbortController` so an older state response cannot overwrite a newer one.
+  Refresh is explicit and bounded; the decision path performs only a bounded
+  post-decision reread and never starts an approval polling loop. Response loss,
+  host unavailability, stale approval references, and native boundary failure
+  receive distinct deterministic status language.
+- stale/conflicting native views retain the MP-07B structured reason and expose a
+  refresh-required message. The browser never treats a stale card, activity
+  record, category, or client clock as authority and never submits a replacement
+  decision automatically.
+- the document has a skip link, semantic decision group, exact accessible
+  labels, busy/status announcements, visible focus, reduced-motion handling,
+  long-value wrapping, and responsive layout rules that keep consequential
+  action fields visible at narrow widths.
+- `apps/host/src/demo.ts` provides a clearly synthetic, dependency-free local
+  judge fixture with one item in each product category and all three supported
+  actions. Its bounded fake transition is demo/test material only: it performs
+  no external effect and is not an approval or execution authority.
+- `apps/host/src/server.ts` now waits for the host state read before writing
+  success headers, so a host/provider failure returns the bounded 503 state
+  error instead of destroying the local response.
+
+MP-07D remains a local candidate. MP-07E owns independent product acceptance;
+MP-08 owns deployment. WebMCP, Sol/Luna inference, browser persistence,
+unbounded polling, confidence scoring, and generic retry controls remain out of
+scope.
+
+The MP-07D validation campaign passed the focused suite (6/6), MP-07B and MP-07C
+regressions, the MP-06 focused regression, the exact real-Fates targeted suites,
+and the full real-Fates suite (281/281, zero skips). The offline comparison passed
+265 tests with 16 expected Fates guards. The repository's existing dependency
+installation command was attempted but stalled in the managed environment before
+completion; existing installed dependencies were not treated as clean-install
+evidence. MP-07E must independently reassess clean-install reproducibility.

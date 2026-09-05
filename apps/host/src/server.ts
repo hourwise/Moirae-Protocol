@@ -71,8 +71,9 @@ async function handleRequest(
 
   if (method === "GET" && path === "/mp07/state") {
     try {
+      const state = await transport.readState();
       response.writeHead(200, responseHeaders("application/json; charset=utf-8"));
-      response.end(JSON.stringify(await transport.readState()));
+      response.end(JSON.stringify(state));
     } catch {
       writeError(response, 503, "Current product state is unavailable.");
     }

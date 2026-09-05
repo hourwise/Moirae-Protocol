@@ -154,10 +154,10 @@ in the accepted MP-06 lineage; MP-07 adds presentation only and does not reopen 
 
 ### MP-07 — Human product experience
 
-- **Status:** MP-07A readiness/design and MP-07B deterministic product read-model are
-  published. MP-07C is a local candidate on
-  `codex/mp07c-local-dashboard-approval-interaction`; MP-07C publication is not
-  authorized and MP-07 remains not accepted.
+- **Status:** MP-07A readiness/design, MP-07B deterministic product read-model, and
+  MP-07C local dashboard/approval interaction are published. MP-07D is a locally
+  validated hardening candidate on `codex/mp07d-human-product-hardening`; MP-07
+  remains not accepted.
 - **Entry:** Accepted MP-06 produces stable outcome records.
 - **Build:** Create the dashboard concepts: Handled automatically, Needs you, Blocked, and Activity.
   Keep technical evidence expandable so trust details are available without dominating the primary
@@ -168,6 +168,14 @@ in the accepted MP-06 lineage; MP-07 adds presentation only and does not reopen 
   outcome refresh and stale-state handling.
 - **Forbidden:** Visual confidence scores as permission; hidden action parameters; client-side secret
   storage; client-side policy decisions.
+
+**MP-07D candidate note:** The MP-07C branch is published at
+`e7cb0153dc0e0f0d6c5e0844a29620f9e643b961`. MP-07D hardens stale-state messaging,
+ordered bounded refresh, accessibility semantics, narrow-viewport exact-field
+presentation, and a clearly synthetic local judge fixture without changing the
+MP-07B mapping or MP-05/MP-06 authority. MP-07D does not add WebMCP, deployment,
+model calls, browser persistence, or a retry control. Its focused suite and full
+real-Fates campaign pass; MP-07E remains the independent acceptance slice.
 
 ### MP-08 — AWS deployment
 

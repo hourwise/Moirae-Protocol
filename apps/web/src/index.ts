@@ -13,6 +13,8 @@ export const MP07_DASHBOARD_DOCUMENT = String.raw`<!doctype html>
     :root { color-scheme: light; font-family: system-ui, sans-serif; background: #f6f7fb; color: #162033; }
     * { box-sizing: border-box; }
     body { margin: 0; min-width: 18rem; }
+    .skip-link { position: absolute; left: .75rem; top: .5rem; transform: translateY(-200%); background: #172554; color: white; padding: .55rem .75rem; border-radius: .35rem; z-index: 2; }
+    .skip-link:focus { transform: translateY(0); }
     header, main { width: min(72rem, calc(100% - 2rem)); margin-inline: auto; }
     header { padding: 2rem 0 1rem; }
     header p { max-width: 48rem; color: #475569; }
@@ -24,6 +26,7 @@ export const MP07_DASHBOARD_DOCUMENT = String.raw`<!doctype html>
     button:hover { background: #eef2ff; }
     button:focus-visible, summary:focus-visible { outline: 3px solid #d97706; outline-offset: 3px; }
     button[disabled] { cursor: wait; opacity: .65; }
+    button[aria-busy="true"]::after { content: " …"; }
     .toolbar { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
     #status { min-height: 1.5rem; color: #334155; }
     .categories { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; margin-block: 1rem 2rem; }
@@ -44,7 +47,7 @@ export const MP07_DASHBOARD_DOCUMENT = String.raw`<!doctype html>
     .fields { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-block: 1rem; }
     .field { border-left: .25rem solid #e2e8f0; padding-left: .65rem; overflow-wrap: anywhere; }
     .field strong, .evidence-grid dt { display: block; color: #475569; font-size: .85rem; }
-    .field span, .evidence-grid dd { overflow-wrap: anywhere; }
+    .field span, .evidence-grid dd { overflow-wrap: anywhere; word-break: break-word; min-width: 0; }
     .actions { display: flex; flex-wrap: wrap; margin-block: 1rem; }
     .approve { border-color: #166534; color: #14532d; }
     .reject { border-color: #991b1b; color: #7f1d1d; }
@@ -55,6 +58,12 @@ export const MP07_DASHBOARD_DOCUMENT = String.raw`<!doctype html>
     dt { font-weight: 650; }
     dd { margin: 0 0 .5rem; }
     .error { color: #991b1b; }
+    .notice { border-left: .3rem solid #9a3412; background: #fff7ed; padding: .7rem .85rem; }
+    .notice.error { border-left-color: #991b1b; background: #fef2f2; }
+    .decision-status { min-height: 1.5rem; }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
+    }
     @media (max-width: 44rem) {
       header, main { width: min(100% - 1rem, 72rem); }
       .categories, .meta, .fields, .evidence-grid { grid-template-columns: 1fr; }
@@ -63,12 +72,13 @@ export const MP07_DASHBOARD_DOCUMENT = String.raw`<!doctype html>
   </style>
 </head>
 <body>
+  <a class="skip-link" href="#items">Skip to current work</a>
   <header>
     <h1>Moirae work</h1>
     <p>Authoritative Protocol state, presented clearly. Human decisions are sent to the trusted local host and are reread before MP-05 processes them.</p>
     <div class="toolbar">
-      <button id="refresh" type="button">Refresh current state</button>
-      <p id="status" role="status" aria-live="polite">Loading current state…</p>
+      <button id="refresh" type="button" aria-controls="items">Refresh current state</button>
+      <p id="status" class="decision-status" role="status" aria-live="polite" aria-atomic="true">Loading current state…</p>
     </div>
   </header>
   <main>
@@ -81,9 +91,9 @@ export const MP07_DASHBOARD_DOCUMENT = String.raw`<!doctype html>
         <section class="category" data-category="ACTIVITY" aria-labelledby="activity-heading"><h2 id="activity-heading">Activity</h2><p id="activity-count">0 items</p></section>
       </div>
     </section>
-    <section aria-labelledby="items-heading">
+    <section id="main-content" aria-labelledby="items-heading">
       <h2 id="items-heading">Current work</h2>
-      <div id="items" aria-live="polite"><p class="empty">Loading…</p></div>
+      <div id="items" aria-live="polite" aria-busy="true"><p class="empty">Loading…</p></div>
     </section>
   </main>
   <script>
@@ -92,6 +102,9 @@ export const MP07_DASHBOARD_DOCUMENT = String.raw`<!doctype html>
       var pending = new Set();
       var root = document.getElementById('items');
       var status = document.getElementById('status');
+      var latestRequest = 0;
+      var inFlight = null;
+      var headingSequence = 0;
       var labels = {
         HANDLED_AUTOMATICALLY: 'Handled automatically',
         NEEDS_YOU: 'Needs you',
@@ -134,6 +147,32 @@ export const MP07_DASHBOARD_DOCUMENT = String.raw`<!doctype html>
         details.append(grid);
         parent.append(details);
       }
+      function reasonMessage(view) {
+        var messages = {
+          CONFIRMED_COMPLETION: 'The effect is durably confirmed.',
+          MP03_REJECTED: 'This action was blocked by the authority policy.',
+          MP04_UNKNOWN: 'The execution outcome is uncertain. Moirae will not repeat the effect until it is reconciled.',
+          MP04_RECOVERY_REQUIRED: 'The execution requires native recovery before it can continue.',
+          EFFECT_ABSENT: 'The original execution is durably absent and will not be silently redispatched.',
+          RETRY_EXHAUSTED: 'The bounded operational retry budget is exhausted.',
+          APPROVAL_PENDING: 'A current human decision is required before this action can continue.',
+          APPROVAL_EXPIRED: 'This approval request expired before a valid decision was recorded.',
+          APPROVAL_REJECTED: 'The human decision rejected this action.',
+          APPROVAL_REVOKED: 'The approval was revoked before execution.',
+          APPROVAL_CONSUMED: 'This approval has already been consumed and cannot be reused.',
+          APPROVAL_MISSING: 'The authoritative approval record is missing.',
+          APPROVAL_INVALID: 'The authoritative approval is invalid or does not bind to this action.',
+          APPROVAL_BOUNDARY_FAILURE: 'The trusted approval boundary failed closed.',
+          BOUNDARY_BLOCKED: 'The trusted Protocol boundary blocked this work item.',
+          TERMINAL_FAILURE: 'The work ended in a terminal failure.',
+          INCONSISTENT_COMPLETION: 'Durable queue and execution state disagree; refresh is required.',
+          INCONSISTENT_APPROVAL_STATE: 'Durable approval state is inconsistent; refresh is required.',
+          MP03_BOUNDARY_FAILURE: 'The current authority boundary failed closed.',
+          RETRY_SCHEDULED: 'The work is scheduled for a bounded retry.',
+          ACTIVE_PROCESSING: 'The work is being processed by the trusted host.'
+        };
+        return messages[view.native.reasonCode] || 'The trusted host returned a structured state that needs attention.';
+      }
       function activity(parent, view) {
         if (!view.activity || view.activity.length === 0) return;
         var details = node('details');
@@ -166,7 +205,7 @@ export const MP07_DASHBOARD_DOCUMENT = String.raw`<!doctype html>
         var approval = view.approval;
         if (!approval || approval.status !== 'PENDING' || pending.has(approval.approvalId)) return;
         pending.add(approval.approvalId);
-        buttons.forEach(function (button) { button.disabled = true; });
+        buttons.forEach(function (button) { button.disabled = true; button.setAttribute('aria-busy', 'true'); });
         status.textContent = 'Sending ' + decision.toLowerCase() + ' to the trusted host…';
         var envelope = {
           schemaVersion: 'human-decision-v1',
@@ -179,27 +218,45 @@ export const MP07_DASHBOARD_DOCUMENT = String.raw`<!doctype html>
           .then(function (response) { return response.json().then(function (body) { return { ok: response.ok, body: body }; }); })
           .then(function (result) {
             pending.delete(approval.approvalId);
-            if (result.body.refreshRequired) status.textContent = 'The decision may be durable; refresh current state instead of submitting another decision.';
-            else status.textContent = result.ok ? 'Decision accepted by the trusted host. Current state refreshed.' : 'Decision was not accepted; current state refreshed.';
+            if (result.body.refreshRequired) status.textContent = 'The decision may be durable; rereading current native state. Do not submit a replacement.';
+            else if (result.body.code === 'STALE_APPROVAL_REFERENCE') status.textContent = 'This request changed elsewhere; rereading current state.';
+            else if (result.body.code === 'DECISION_BOUNDARY_FAILURE') status.textContent = 'The trusted approval boundary rejected the request; rereading current state.';
+            else status.textContent = result.ok ? 'Decision accepted by the trusted host; rereading current state.' : 'Decision was not accepted; rereading current state.';
             return loadState();
           })
           .catch(function () {
             pending.delete(approval.approvalId);
-            status.textContent = 'The response was unavailable. Refresh current state; do not submit a replacement decision.';
-            buttons.forEach(function (button) { button.disabled = false; });
+            status.textContent = 'The response was unavailable. Rereading current state; do not submit a replacement decision.';
+            buttons.forEach(function (button) { button.disabled = false; button.removeAttribute('aria-busy'); });
+            return loadState().then(function () {
+              status.textContent = 'The response was unavailable. Current native state was reread; do not submit a replacement decision.';
+            });
           });
       }
       function renderView(view) {
         var article = node('article');
         var header = node('header');
+        var headingId = 'work-heading-' + String(++headingSequence);
         var heading = node('h3', actionLabels[view.action.action] || view.action.action);
-        header.append(heading, node('p', labels[view.category] + ' · ' + text(view.native.reasonCode), 'reason'));
+        heading.id = headingId;
+        article.setAttribute('aria-labelledby', headingId);
+        var nativeReason = text(view.native.reasonCode);
+        header.append(heading, node('p', labels[view.category] + ' · ' + nativeReason, 'reason'), node('p', reasonMessage(view), 'notice'));
         article.append(header, actionFields(view));
+        if (view.freshness && view.freshness.refetchRequired) {
+          article.append(node('p', 'This request has changed. Refresh to see its current status.', 'notice'));
+        }
         if (view.category === 'NEEDS_YOU' && view.approval && view.approval.status === 'PENDING') {
           var actions = node('div', undefined, 'actions');
+          actions.setAttribute('role', 'group');
+          actions.setAttribute('aria-label', 'Human decision for ' + (actionLabels[view.action.action] || view.action.action));
           var approve = node('button', 'Approve this action', 'approve');
           var reject = node('button', 'Reject this action', 'reject');
           approve.type = 'button'; reject.type = 'button';
+          approve.setAttribute('aria-label', 'Approve ' + (actionLabels[view.action.action] || view.action.action));
+          reject.setAttribute('aria-label', 'Reject ' + (actionLabels[view.action.action] || view.action.action));
+          approve.setAttribute('aria-describedby', headingId);
+          reject.setAttribute('aria-describedby', headingId);
           approve.addEventListener('click', function () { submit(view, 'APPROVE', [approve, reject]); });
           reject.addEventListener('click', function () { submit(view, 'REJECT', [approve, reject]); });
           actions.append(approve, reject);
@@ -217,15 +274,37 @@ export const MP07_DASHBOARD_DOCUMENT = String.raw`<!doctype html>
           var element = document.getElementById(id);
           if (element) element.textContent = String(count) + (count === 1 ? ' item' : ' items');
         });
+        root.setAttribute('aria-busy', 'false');
         root.replaceChildren();
         if (views.length === 0) { root.append(node('p', 'No current work.', 'empty')); return; }
         views.forEach(function (view) { root.append(renderView(view)); });
       }
       function loadState() {
-        return fetch('/mp07/state', { headers: { accept: 'application/json' } })
-          .then(function (response) { if (!response.ok) throw new Error('state'); return response.json(); })
-          .then(function (body) { renderState(body); status.textContent = 'Current state loaded from the trusted host.'; })
-          .catch(function () { root.replaceChildren(node('p', 'Current state is unavailable. Use refresh to try again.', 'error')); status.textContent = 'State could not be loaded.'; });
+        var requestId = ++latestRequest;
+        if (inFlight) inFlight.abort();
+        inFlight = new AbortController();
+        root.setAttribute('aria-busy', 'true');
+        status.textContent = 'Reading current state from the trusted host…';
+        return fetch('/mp07/state', { headers: { accept: 'application/json' }, signal: inFlight.signal })
+          .then(function (response) {
+            return response.json().then(function (body) {
+              if (!response.ok) throw new Error(body && body.code ? body.code : 'STATE_READ_FAILURE');
+              return body;
+            });
+          })
+          .then(function (body) {
+            if (requestId !== latestRequest) return;
+            renderState(body);
+            status.textContent = 'Current state loaded from the trusted host.';
+          })
+          .catch(function (error) {
+            if (error && error.name === 'AbortError') return;
+            if (requestId !== latestRequest) return;
+            root.setAttribute('aria-busy', 'false');
+            root.replaceChildren(node('p', 'Current state is unavailable. Use refresh to try again.', 'error'));
+            status.textContent = error && error.message === 'STATE_READ_FAILURE' ? 'The local host is unavailable.' : 'Current state could not be read; refresh to try again.';
+          })
+          .finally(function () { if (requestId === latestRequest) inFlight = null; });
       }
       document.getElementById('refresh').addEventListener('click', loadState);
       loadState();

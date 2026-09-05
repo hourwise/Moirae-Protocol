@@ -1,0 +1,135 @@
+{
+  "schemaVersion": "mp07d-evidence-v1",
+  "slice": "MP-07D_HUMAN_PRODUCT_HARDENING",
+  "status": "LOCAL_VALIDATION_PASS_CANDIDATE",
+  "parent": {
+    "branch": "codex/mp07c-local-dashboard-approval-interaction",
+    "terminal": "e7cb0153dc0e0f0d6c5e0844a29620f9e643b961",
+    "tree": "2d4e30571db53f2aea08813c08acdbabb85eae9a"
+  },
+  "implementation": {
+    "files": [
+      "apps/host/src/demo.ts",
+      "apps/host/src/server.ts",
+      "apps/web/src/index.ts",
+      "tests/mp07d-human-product-hardening.test.ts",
+      "docs/MP-07_HUMAN_PRODUCT_EXPERIENCE_DESIGN.md",
+      "docs/BUILD_PLAN.md"
+    ],
+    "staleState": {
+      "nativeTruthWins": true,
+      "refreshRequiredMessage": true,
+      "responseLossDoesNotReplaceDecision": true,
+      "orderedResponses": true,
+      "overlappingRefreshAborted": true,
+      "automaticPolling": false
+    },
+    "accessibility": {
+      "semanticHtml": true,
+      "skipLink": true,
+      "visibleFocus": true,
+      "statusLiveRegion": true,
+      "decisionGroupLabels": true,
+      "reducedMotion": true,
+      "colorOnlyStatus": false
+    },
+    "responsive": {
+      "narrowLayout": "single-column below 44rem",
+      "longValuesWrap": true,
+      "approvalFieldsRemainVisible": true
+    },
+    "demoFixture": {
+      "synthetic": true,
+      "categories": ["HANDLED_AUTOMATICALLY", "NEEDS_YOU", "BLOCKED", "ACTIVITY"],
+      "actions": [
+        "SEND_APPOINTMENT_DETAILS",
+        "RESCHEDULE_APPOINTMENT",
+        "TRANSMIT_CUSTOMER_CONTACT_DIRECTORY"
+      ],
+      "externalEffects": 0,
+      "authority": "none"
+    }
+  },
+  "tested": {
+    "focused": {
+      "file": "tests/mp07d-human-product-hardening.test.ts",
+      "tests": 6,
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0,
+      "evidence": [
+        "four-category and all-action synthetic fixture",
+        "stale/refresh/accessibility/static markers",
+        "loopback judge scenario",
+        "duplicate and forged decision rejection",
+        "restart state recovery",
+        "bounded host-unavailable response"
+      ]
+    },
+    "mp07bRegression": { "tests": 30, "passed": 30, "failed": 0, "skipped": 0 },
+    "mp07cRegression": { "tests": 12, "passed": 12, "failed": 0, "skipped": 0 },
+    "mp06FocusedRegression": { "tests": 60, "passed": 60, "failed": 0, "skipped": 0 },
+    "realFatesTargeted": {
+      "mp03": { "tests": 37, "passed": 37, "failed": 0, "skipped": 0 },
+      "mp04": { "tests": 13, "passed": 13, "failed": 0, "skipped": 0 },
+      "mp05": { "tests": 74, "passed": 74, "failed": 0, "skipped": 0 },
+      "mp06AndMp07": { "tests": 108, "passed": 108, "failed": 0, "skipped": 0 }
+    },
+    "realFatesFullDefault": {
+      "files": 12,
+      "tests": 281,
+      "passed": 281,
+      "failed": 0,
+      "skipped": 0,
+      "durationSeconds": 18.36
+    },
+    "realFatesFullDiagnostic": {
+      "files": 12,
+      "tests": 281,
+      "passed": 281,
+      "failed": 0,
+      "skipped": 0,
+      "testTimeoutMs": 30000,
+      "durationSeconds": 14.32
+    },
+    "offlineComparison": {
+      "files": 12,
+      "tests": 281,
+      "passed": 265,
+      "failed": 0,
+      "skipped": 16,
+      "durationSeconds": 11.05
+    },
+    "classification": [
+      "static",
+      "local-http-integration",
+      "synthetic-demo",
+      "real-fates-integration",
+      "offline-regression"
+    ]
+  },
+  "nonAuthorityAudit": {
+    "browserDecidesCategory": false,
+    "browserCallsProtocolEffects": false,
+    "browserMintsApprovalOrDecision": false,
+    "browserUsesStorageForProtocolTruth": false,
+    "demoCreatesAuthority": false,
+    "webmcp": "not implemented",
+    "solLuna": "not called",
+    "mnemosyne": "not used"
+  },
+  "validation": {
+    "realFates": "verify:sealed-fates and verify:mp05:fates-dependency passed; targeted and full suites passed with zero required Fates skips",
+    "canonical": "typecheck, lint, format:check, test, build, check, and diff --check passed; npm ci was attempted but stalled in the managed environment before completion",
+    "dependencyLock": "package.json and package-lock.json unchanged; no new dependency",
+    "securityAudit": "npm audit --audit-level=low found 0 vulnerabilities; bounded secret scan found no high-confidence matches"
+  },
+  "deferred": [
+    "MP-07E independent end-to-end product acceptance",
+    "MP-08 deployment and hosting",
+    "WebMCP",
+    "full browser compatibility certification",
+    "full accessibility certification"
+  ],
+  "acceptance": "MP-07_NOT_ACCEPTED"
+}
