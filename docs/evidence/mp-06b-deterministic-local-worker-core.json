@@ -1,0 +1,95 @@
+{
+  "schemaVersion": "mp-06b-evidence-v1",
+  "slice": "MP-06B",
+  "title": "Deterministic local queue/worker core",
+  "classification": {
+    "MP-06_OPENED": true,
+    "MP-06A_BACKGROUND_LOOP_READINESS_COMPLETE": true,
+    "MP-06A_PUBLISHED": true,
+    "MP-06B_DETERMINISTIC_LOCAL_WORKER_CORE_COMPLETE": true,
+    "MP-06_RUNTIME_IMPLEMENTED_AS_CANDIDATE": true,
+    "MP-06_NOT_ACCEPTED": true,
+    "MP-06C_NOT_STARTED": true,
+    "MP-06D_NOT_STARTED": true,
+    "MP-06E_NOT_STARTED": true
+  },
+  "base": {
+    "branch": "codex/mp06b-deterministic-local-worker-core",
+    "parent": "6ae5d7e2fb83aabbd8c60a8d88217b33c4e975b9",
+    "mp06aTree": "26e9042f489066e7114b920c5cd79007e046b903",
+    "acceptedMp05Terminal": "e264538c6c88a12afc3c1cddd0761e37d41d0974",
+    "acceptedMp05Tag": "mp-05-accepted-v1"
+  },
+  "implementedBehavior": [
+    "Versioned immutable routing envelope separates logical work, source request, ActionIntent digest/idempotency, delivery, scheduling claim, approval, native admission, and MP-04 durable identities.",
+    "Deterministic in-memory queue supports enqueue, availability, compare-and-set claim, completion, explicit bounded release, and logical outcome inspection.",
+    "Worker loads canonical ActionIntent through a trusted Protocol boundary and recomputes MP-02 integrity before MP-03.",
+    "Worker calls accepted MP-04 executeAdmittedAction only after current MP-03 ADMITTED; it never calls an effect adapter directly.",
+    "Activity records are bounded explanatory evidence and are not read as authority or execution input."
+  ],
+  "testedBehavior": {
+    "kind": "synthetic-local",
+    "testFile": "tests/mp06b-background-work.test.ts",
+    "testCount": 15,
+    "scenarios": [
+      "valid MP-03 to MP-04 execution with one synthetic effect",
+      "WAITING_FOR_APPROVAL with zero MP-04/effect calls",
+      "REJECTED/DENY with zero MP-04/effect calls",
+      "same-delivery replay and completed logical-work replay",
+      "approval-required redelivery without approval reuse",
+      "competing workers with one active scheduling claimant",
+      "forged workId, digest, principal, tenant, resource, target, parameters, and worker claim",
+      "tampered activity and stale admission observation ignored"
+    ],
+    "realExternalEffects": false,
+    "realFatesDependencies": false
+  },
+  "deferredBehavior": {
+    "MP-06C": [
+      "process crash during claim",
+      "lease expiry and crash/reclaim races",
+      "retry budgets, retry storms, dead letters, and full concurrent stress",
+      "durable cross-process queue backend",
+      "MP-04 UNKNOWN/reconciliation recovery"
+    ],
+    "MP-06D": [
+      "MP-05 presentation parking and durable decision observation",
+      "approval expiry, rejection, revocation, and recovery",
+      "repeated waiting deliveries and post-decision fresh MP-03 to MP-04 continuation"
+    ],
+    "MP-06E": ["independent MP-06 acceptance"]
+  },
+  "boundaries": {
+    "HORAE_NOT_REQUIRED_UNTIL_POST_APPROVAL_EXECUTION": true,
+    "MNEMOSYNE_NOT_REQUIRED_FOR_MP06B": true,
+    "SOL_FRONTEND_LUNA_BACKEND_PRESERVED": true,
+    "firecrackerInvoked": false,
+    "moiraeConsoleModified": false,
+    "fatesHoraeSourcesModified": false,
+    "cloudQueueDependency": false
+  },
+  "validation": {
+    "status": "passed",
+    "commands": {
+      "npmCi": "passed; npm reported added 431 packages and audited 441 packages in 1m",
+      "targetedMp06b": "passed",
+      "targetedMp06bDuration": "1.59s emitted Vitest duration",
+      "targetedMp03": "passed; 30 passed, 7 guarded skips; 3.75s emitted Vitest duration",
+      "targetedMp04": "passed; 7 passed, 6 guarded skips; 2.95s emitted Vitest duration",
+      "targetedMp05": "passed; 71 passed, 3 guarded skips; 4.65s emitted Vitest duration",
+      "fullTest": "passed; 172 passed, 16 guarded skips across 7 files; 6.71s emitted Vitest duration",
+      "typecheck": "passed",
+      "lint": "passed",
+      "formatCheck": "passed",
+      "build": "passed",
+      "check": "passed; includes typecheck, lint, format, full test, and build",
+      "gitDiffCheck": "passed"
+    },
+    "guardedSkips": "All 16 skips are existing FATES_ANANKE_ROOT/FATES_HORAE_ROOT-gated integration tests; no MP-06B test was skipped."
+  },
+  "audit": {
+    "npmAudit": "passed; 0 vulnerabilities",
+    "secretScan": "passed; no known private-key or common token patterns in bounded changed scope",
+    "authorityAudit": "passed; no direct effect/provider call, queue claim authority use, stale admission authority use, or model execution control"
+  }
+}

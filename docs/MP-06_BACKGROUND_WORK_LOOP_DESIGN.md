@@ -1,15 +1,20 @@
-# MP-06A — Background Work Loop Readiness and Contract Design
+# MP-06 — Background Work Loop Readiness and Candidate Design
 
-**Status:** `MP-06A_BACKGROUND_LOOP_READINESS_COMPLETE`; design/readiness only.
+**MP-06A historical status:** `MP-06A_BACKGROUND_LOOP_READINESS_COMPLETE`; the readiness
+contract was completed and published at `6ae5d7e2fb83aabbd8c60a8d88217b33c4e975b9`.
 
-**Runtime status:** `MP-06_RUNTIME_NOT_IMPLEMENTED`; no queue, worker, timer, provider, effect
-adapter, or autonomous execution runtime is added by this slice.
+**MP-06B candidate status:** `MP-06B_DETERMINISTIC_LOCAL_WORKER_CORE_COMPLETE`; a deterministic
+local queue/worker core exists on the candidate branch. It is synthetic/local evidence only and
+does not accept MP-06.
 
-**Classification:** `MP-06_OPENED`, `MP-06_NOT_ACCEPTED`.
+**Runtime classification:** `MP-06_RUNTIME_IMPLEMENTED_AS_CANDIDATE`; no timer, external queue,
+provider, cloud credential, or autonomous production runtime is added.
 
-This document turns the MP-06 build-plan entry into an implementation contract. It does not
-accept MP-06, implement MP-06B, reopen MP-05, or alter the accepted MP-02–MP-05 runtime
-boundaries.
+**Overall classification:** `MP-06_OPENED`, `MP-06_NOT_ACCEPTED`.
+
+This document turns the MP-06 build-plan entry into an implementation contract and records the
+bounded MP-06B candidate facts below. It does not accept MP-06, reopen MP-05, or alter the
+accepted MP-02–MP-05 runtime boundaries.
 
 ## 1. Scope and entry assumptions
 
@@ -752,7 +757,7 @@ must, however, use the existing MP-04/MP-05 public boundaries rather than treati
 records as a new queue API. Distributed/cloud deployment and provider idempotency remain future
 acceptance questions, not hidden assumptions.
 
-## 22. Readiness decision
+## 22. MP-06A historical readiness decision
 
 ```text
 MP-06_OPENED
@@ -766,5 +771,32 @@ MNEMOSYNE_NOT_REQUIRED_FOR_MP06A
 SOL_FRONTEND_LUNA_BACKEND_PRESERVED
 ```
 
-MP-06A is ready for a separate implementation authorization. It does not claim that a queue or
-worker exists, that background autonomy is active, or that MP-06 is accepted.
+At the MP-06A terminal, this readiness decision did not claim that a queue or worker existed,
+that background autonomy was active, or that MP-06 was accepted.
+
+## 23. MP-06B implementation candidate facts
+
+The candidate implements only `packages/background-work/src/index.ts` and its focused test
+coverage. The local backend is an in-memory, filesystem-independent implementation with a
+versioned `QueueWorkV1` envelope, deterministic logical work/claim IDs, compare-and-set
+scheduling claims, bounded explicit release, terminal/logical outcome inspection, and a separate
+non-authoritative activity sink. It has no external queue dependency and no direct effect API.
+
+The worker loads canonical ActionIntent material and trusted authenticated context through a
+`TrustedProtocolBoundary`, recomputes MP-02 digest/idempotency material, verifies source-request
+and logical-work bindings, requests current MP-03 admission, and calls the accepted MP-04
+`executeAdmittedAction` boundary only for `ADMITTED`. `WAITING_FOR_APPROVAL` is observable without
+auto-approval; `REJECTED` becomes `DENIED`; MP-03 boundary failures become `BOUNDARY_BLOCKED`.
+Activity and queue outcomes retain references to approval/native/durable identities but never
+serve as authority.
+
+Focused synthetic tests cover valid execution, approval waiting, denial zero calls, forged work and
+ActionIntent bindings, tenant/context substitution, forged claims, duplicate delivery and logical
+work, completed-work replay through MP-04 durable truth, approval redelivery, competing workers,
+and activity/prior-admission tampering. No external connector or real effect is used.
+
+Explicitly deferred to MP-06C are process-crash handling, lease expiry races, retry budgets and
+storms, durable cross-process backends, dead letters, full stress, and MP-04 `UNKNOWN` recovery
+or reconciliation. Explicitly deferred to MP-06D are MP-05 presentation parking, durable human
+decision observation, expiry/rejection/revocation recovery, repeated waiting deliveries, and
+post-decision fresh MP-03 → MP-04 continuation. MP-06E and MP-06 acceptance remain unstarted.

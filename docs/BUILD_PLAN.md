@@ -135,6 +135,9 @@ the existing MP-04 coordinator. It remains `MP-05_NOT_ACCEPTED` until independen
 - **MP-06A status:** Background work loop readiness/design complete on
   `codex/mp06a-background-loop-readiness`; runtime not implemented and MP-06 not accepted. See
   `docs/MP-06_BACKGROUND_WORK_LOOP_DESIGN.md`.
+- **MP-06B status:** Deterministic local queue/worker core implemented as a candidate on
+  `codex/mp06b-deterministic-local-worker-core`; synthetic/local evidence only, with MP-06C and
+  MP-06D explicitly deferred and MP-06 still not accepted.
 - **Entry:** MP-04 and MP-05 enforce bounded execution and exact approval binding.
 - **Build:** Add an actual queue/worker loop. Route ALLOW silently, surface approval-required work,
   and record DENY without effect. Make worker claims and retries observable.
