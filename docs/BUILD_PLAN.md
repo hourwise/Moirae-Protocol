@@ -104,8 +104,8 @@ are release and submission gates.
 
 ### MP-05 — Human approval
 
-- **Status:** MP-05I implementation candidate — not yet accepted; no product UI, provider, or
-  external effect is included.
+- **Status:** MP-05 is accepted and promoted to main at `e264538c6c88a12afc3c1cddd0761e37d41d0974`
+  under `mp-05-accepted-v1`; no product UI, provider, or external effect is included in MP-05.
 - **Entry:** MP-03 can produce approval-required work and MP-04 can enforce exact binding. MP-05D
   design is ready and the bounded Ananke human-decision extension is accepted as
   `ananke-fates-008a-durable-human-approval-v0.1.0-protocol-1.4.0`.
@@ -122,29 +122,26 @@ are release and submission gates.
 **MP-05D historical readiness note:** At design time, the accepted Ananke ordinary approval engine
 was process-local and required a durable, independently authenticated human decision record. FATES-008
 has since supplied and independently sealed that bounded capability. Current status:
-`MP-05 DESIGN READY — FATES-008 DEPENDENCY ACCEPTED`; MP-05 implementation remains not started.
+`MP-05_ACCEPTED` and `MP-05_PROMOTED_TO_MAIN`.
 Horae remains `HORAE_NOT_REQUIRED_UNTIL_POST_APPROVAL_EXECUTION`; Mnemosyne remains excluded.
 
-**MP-05I current implementation note:** The fixture-bound runtime candidate now supplies a
+**MP-05I historical implementation note:** The fixture-bound runtime candidate supplied a
 deterministic structured presentation, strict browser decision envelope, trusted-host decision
 port, native FATES-008 APPROVE/REJECT composition, fresh MP-03 re-admission, and composition into
-the existing MP-04 coordinator. It remains `MP-05_NOT_ACCEPTED` until independent acceptance.
+the existing MP-04 coordinator. That implementation was independently validated and is included
+in the accepted MP-06 lineage; MP-07 adds presentation only and does not reopen MP-05.
 
 ### MP-06 — Background work loop
 
 - **MP-06A status:** Background work loop readiness/design complete on
-  `codex/mp06a-background-loop-readiness`; runtime not implemented and MP-06 not accepted. See
-  `docs/MP-06_BACKGROUND_WORK_LOOP_DESIGN.md`.
-- **MP-06B status:** Deterministic local queue/worker core implemented as a candidate on
-  `codex/mp06b-deterministic-local-worker-core`; synthetic/local evidence only, with MP-06C and
-  MP-06D explicitly deferred and MP-06 still not accepted.
-- **MP-06C status:** Concurrency, crash, retry, and reconciliation hardening implemented as a
-  published and independently validated candidate on `codex/mp06c-concurrency-crash-retry-hardening`;
-  MP-06D and MP-06 acceptance remain deferred.
-- **MP-06D status:** Background human-approval integration implemented as a local candidate on
-  `codex/mp06d-background-human-approval-integration`; it composes the accepted MP-05 durable
-  approval workflow, preserves MP-06C recovery guarantees, and remains unpublished pending
-  independent MP-06E acceptance.
+  `codex/mp06a-background-loop-readiness` and published as part of the accepted MP-06 lineage.
+- **MP-06B status:** Deterministic local queue/worker core independently validated and published.
+- **MP-06C status:** Concurrency, crash, retry, and reconciliation hardening independently validated
+  and published.
+- **MP-06D status:** Background human-approval integration independently validated and published.
+- **MP-06 status:** Formally accepted and promoted to main at `1d47f2a01c662275a42a8ffcd74b61432da0d255`
+  under `mp-06-accepted-v1`. MP-06 remains the authority-preserving queue/approval integration;
+  MP-07 supplies the human product presentation layer.
 - **Entry:** MP-04 and MP-05 enforce bounded execution and exact approval binding.
 - **Build:** Add an actual queue/worker loop. Route ALLOW silently, surface approval-required work,
   and record DENY without effect. Make worker claims and retries observable.
@@ -157,7 +154,9 @@ the existing MP-04 coordinator. It remains `MP-05_NOT_ACCEPTED` until independen
 
 ### MP-07 — Human product experience
 
-- **Entry:** MP-06 produces stable outcome records.
+- **Status:** MP-07A readiness/design is complete on `codex/mp07a-human-product-readiness`.
+  Product runtime is not implemented, MP-07 is not accepted, and publication is not authorized.
+- **Entry:** Accepted MP-06 produces stable outcome records.
 - **Build:** Create the dashboard concepts: Handled automatically, Needs you, Blocked, and Activity.
   Keep technical evidence expandable so trust details are available without dominating the primary
   workflow.
