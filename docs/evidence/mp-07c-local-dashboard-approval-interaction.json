@@ -1,0 +1,109 @@
+{
+  "schemaVersion": "mp07c-evidence-v1",
+  "slice": "MP-07C_LOCAL_DASHBOARD_APPROVAL_INTERACTION",
+  "status": "LOCAL_VALIDATION_PASS_CANDIDATE",
+  "parent": {
+    "branch": "codex/mp07b-deterministic-product-read-model",
+    "terminal": "591f630b74205d0bed840aba019d7f5d082d5e9a",
+    "tree": "0969b130b8446641df5d70d6ffeab1fa906d91f6"
+  },
+  "implementation": {
+    "files": [
+      "apps/host/src/server.ts",
+      "apps/host/src/transport.ts",
+      "apps/web/src/index.ts",
+      "tests/mp07c-local-dashboard-approval-interaction.test.ts"
+    ],
+    "hostTransport": {
+      "stateRoute": "GET /mp07/state",
+      "decisionRoute": "POST /mp07/decision",
+      "bind": "127.0.0.1",
+      "browserInput": "strict HumanDecisionEnvelopeV1 only",
+      "decisionAuthority": "existing MP-05 coordinator with trusted server-side binding",
+      "postDecisionStateReread": true,
+      "responseLoss": "refreshRequired without replacement decision"
+    },
+    "dashboard": {
+      "categories": ["HANDLED_AUTOMATICALLY", "NEEDS_YOU", "BLOCKED", "ACTIVITY"],
+      "supportedActions": [
+        "SEND_APPOINTMENT_DETAILS",
+        "RESCHEDULE_APPOINTMENT",
+        "TRANSMIT_CUSTOMER_CONTACT_DIRECTORY"
+      ],
+      "approvalControls": "host-provided pending approval only",
+      "evidence": "bounded expandable fields from Mp07ProductViewV1",
+      "browserStorage": "none",
+      "externalDependencies": "none",
+      "webmcp": "not implemented"
+    }
+  },
+  "tested": {
+    "focusedTests": {
+      "file": "tests/mp07c-local-dashboard-approval-interaction.test.ts",
+      "tests": 12,
+      "passed": 12,
+      "failed": 0,
+      "skipped": 0,
+      "durationMs": 9580
+    },
+    "coverage": [
+      "strict decision envelope",
+      "forged category and security-field rejection",
+      "stale approval rejection",
+      "response-loss refresh behavior",
+      "loopback dashboard/state/decision routes",
+      "semantic/accessibility baseline",
+      "three exact action field sets",
+      "APPROVE and REJECT transport coverage for all three supported actions",
+      "bounded evidence and activity rendering"
+    ],
+    "syntheticEffects": "transport tests use a fake MP-05 coordinator; no external effect",
+    "realFates": {
+      "command": "npm test -- --testTimeout=30000",
+      "testFiles": 11,
+      "passed": 269,
+      "failed": 0,
+      "skipped": 0,
+      "durationMs": 23810,
+      "note": "The unmodified default 5-second full real-Fates run had four existing integration timeouts under load; no assertion failures. The command-line-only diagnostic completed all 269 tests."
+    },
+    "manualSmoke": "bounded loopback HTTP smoke covered by focused test: page, state, decision, content-type, and security-header checks",
+    "accessibilitySmoke": "semantic landmarks, headings, keyboard buttons, visible focus, details/summary evidence, aria-live status, non-color status",
+    "responsiveSmoke": "narrow-width CSS preserves exact action fields and collapses only layout columns"
+  },
+  "nonAuthorityAudit": {
+    "browserDecidesCategory": false,
+    "browserProvidesIntentOrContext": false,
+    "browserCallsMp04OrHorae": false,
+    "browserMintsApprovalOrDecision": false,
+    "hostResolvesTrustedMp05Binding": true,
+    "dynamicValuesUseTextContent": true,
+    "modelsUsed": false
+  },
+  "validation": {
+    "npmCi": "passed",
+    "typecheck": "passed",
+    "lint": "passed",
+    "formatCheck": "passed",
+    "offlineFullSuite": {
+      "passed": 259,
+      "failed": 0,
+      "skipped": 16,
+      "testFilesPassed": 11,
+      "tests": 275,
+      "durationMs": 62360
+    },
+    "realFates": "passed: 269/269 with zero guarded skips under exact accepted dependencies and command-line diagnostic timeout",
+    "fatesVerificationScripts": "verify:sealed-fates and verify:mp05:fates-dependency passed",
+    "canonicalCheck": "passed with repository defaults",
+    "dependencyLock": "package.json and package-lock.json unchanged; no new dependency",
+    "securityAudit": "npm audit passed with 0 vulnerabilities; bounded secret scan found no high-confidence matches"
+  },
+  "deferred": [
+    "MP-07D stale-state/accessibility/refresh/responsive/demo hardening",
+    "MP-07E independent end-to-end acceptance",
+    "WebMCP",
+    "deployment and hosting"
+  ],
+  "acceptance": "MP-07_NOT_ACCEPTED"
+}

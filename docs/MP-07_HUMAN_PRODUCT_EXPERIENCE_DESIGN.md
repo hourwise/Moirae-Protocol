@@ -1,12 +1,12 @@
 # MP-07 — Human Product Experience
 
-**Milestone slice:** MP-07A — Human Product Experience Readiness and Presentation Contract
-**Status:** Readiness/design complete; product runtime is not implemented.
-**Branch:** `codex/mp07a-human-product-readiness`
-**Source terminal:** `1d47f2a01c662275a42a8ffcd74b61432da0d255`
+**Milestone slice:** MP-07C — Minimal Local Dashboard and Exact Approval Interaction
+**Status:** MP-07B is published; MP-07C is a local implementation candidate.
+**Branch:** `codex/mp07c-local-dashboard-approval-interaction`
+**Source terminal:** `591f630b74205d0bed840aba019d7f5d082d5e9a`
 **Accepted MP-06 tree:** `3060ea60f6f56b5f07026ff426477661c1b24057`
-**Publication:** Not authorized in MP-07A
-**Acceptance:** MP-07 is not accepted; MP-07B is not started.
+**Publication:** MP-07A and MP-07B are published; MP-07C publication is not authorized.
+**Acceptance:** MP-07 is not accepted; MP-07D and MP-07E are not started.
 
 ## 1. Purpose and boundary
 
@@ -408,4 +408,36 @@ The MP-07B tests cover the three supported action shapes, completion and
 reconciliation distinctions, approval presentation binding, identity and
 semantic mutation rejection, category/activity non-authority, bounded evidence,
 unsupported state rejection, and repeatability. MP-07B remains a local
-candidate; publication and MP-07C dashboard/approval interaction are deferred.
+candidate; it is now published at `591f630b74205d0bed840aba019d7f5d082d5e9a`.
+
+## 15. MP-07C candidate implementation facts
+
+MP-07C adds the smallest local product surface over the published MP-07B view
+without adding a UI framework or changing Protocol authority:
+
+- `apps/web/src/index.ts` serves a dependency-free semantic HTML/CSS/browser
+  document with four prominent concepts: Handled automatically, Needs you,
+  Blocked, and Activity. It renders exact fields for all three supported
+  actions, expandable bounded evidence, bounded activity, and explicit
+  keyboard-operable APPROVE/REJECT controls only for a host-provided pending
+  approval view.
+- `apps/host/src/transport.ts` defines the versioned local transport. The
+  browser may submit only the strict `HumanDecisionEnvelopeV1`; the host
+  resolves the trusted MP-05 request, coordinator, and decision context by
+  approval reference, invokes `Mp05HumanApprovalCoordinator.submitDecision`,
+  and rereads current product state. A lost reread is surfaced as
+  `refreshRequired` rather than causing a replacement decision.
+- `apps/host/src/server.ts` provides loopback-only `GET /mp07/state`,
+  `POST /mp07/decision`, and the dashboard document. It applies bounded JSON
+  input, strict content-type handling, no arbitrary-origin CORS, no directory
+  traversal, and local security headers.
+- The browser derives no category, approval truth, authority, retry, execution,
+  or reconciliation state. It uses `textContent` for dynamic values, does not
+  use browser storage, and has no Sol/Luna, Fates, Horae, provider, or WebMCP
+  dependency.
+
+The MP-07C tests cover strict decision input, direct transport use, response
+loss, stale references, loopback serving, exact action fields, accessibility
+semantics, and the browser non-authority boundary. MP-07D remains responsible
+for deeper stale-state, accessibility, responsive, refresh, compatibility, and
+demo hardening. MP-07E remains the independent end-to-end acceptance slice.
