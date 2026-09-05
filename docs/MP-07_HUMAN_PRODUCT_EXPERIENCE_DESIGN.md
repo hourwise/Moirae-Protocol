@@ -378,3 +378,34 @@ Deferred to later bounded slices:
 
 MP-07A does not claim that the product runtime exists, that approval UI exists,
 that WebMCP is integrated, or that MP-07 is accepted.
+
+## 14. MP-07B candidate implementation facts
+
+MP-07B implements the first host-side product runtime slice as a pure
+TypeScript adapter at `apps/host/src/index.ts`:
+
+- `buildMp07ProductView(input)` accepts a versioned host-observation boundary
+  and returns `Mp07ProductViewV1` (`mp07-product-view-v1`);
+- the adapter derives exactly four presentation categories —
+  `HANDLED_AUTOMATICALLY`, `NEEDS_YOU`, `BLOCKED`, and `ACTIVITY` — from
+  structured queue, MP-03, MP-04, and MP-05 observations;
+- `HANDLED_AUTOMATICALLY` requires both durable MP-06 `COMPLETED` and MP-04
+  `CONFIRMED`; pending approval requires a valid current MP-05 presentation;
+  inconsistent, missing, expired, rejected, revoked, consumed, unknown, and
+  reconciliation states remain structured blocked outcomes;
+- the output deliberately selects exact action/context fields, bounded activity,
+  native status/reason fields, and expandable evidence rather than spreading
+  internal Protocol objects;
+- ActionIntent identity and MP-05 presentation bindings are verified at the
+  adapter boundary using existing Protocol helpers. The adapter does not query
+  or mutate MP-02/03/04/05/06, create approval or decision identities, call a
+  provider, or invoke Sol/Luna;
+- mapping is synchronous, deterministic, side-effect free, network free,
+  filesystem free, environment free, and model free. No browser routes, UI,
+  WebMCP, or approval transport are included.
+
+The MP-07B tests cover the three supported action shapes, completion and
+reconciliation distinctions, approval presentation binding, identity and
+semantic mutation rejection, category/activity non-authority, bounded evidence,
+unsupported state rejection, and repeatability. MP-07B remains a local
+candidate; publication and MP-07C dashboard/approval interaction are deferred.

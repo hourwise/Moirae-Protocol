@@ -154,8 +154,10 @@ in the accepted MP-06 lineage; MP-07 adds presentation only and does not reopen 
 
 ### MP-07 — Human product experience
 
-- **Status:** MP-07A readiness/design is complete on `codex/mp07a-human-product-readiness`.
-  Product runtime is not implemented, MP-07 is not accepted, and publication is not authorized.
+- **Status:** MP-07A readiness/design is published on `codex/mp07a-human-product-readiness`.
+  MP-07B deterministic product read-model implementation is a local candidate on
+  `codex/mp07b-deterministic-product-read-model`; the product UI is not implemented,
+  MP-07 is not accepted, and MP-07B publication is not authorized.
 - **Entry:** Accepted MP-06 produces stable outcome records.
 - **Build:** Create the dashboard concepts: Handled automatically, Needs you, Blocked, and Activity.
   Keep technical evidence expandable so trust details are available without dominating the primary

@@ -1,0 +1,170 @@
+{
+  "schemaVersion": "mp07b-deterministic-product-read-model-v1",
+  "classification": {
+    "milestone": "MP-07_OPENED",
+    "implementation": "MP-07B_DETERMINISTIC_PRODUCT_READ_MODEL_COMPLETE",
+    "validation": "MP-07B_LOCAL_VALIDATION_PASS",
+    "runtime": "MP-07_PRODUCT_READ_MODEL_IMPLEMENTED_AS_CANDIDATE",
+    "ui": "MP-07_UI_NOT_IMPLEMENTED",
+    "acceptance": "MP-07_NOT_ACCEPTED",
+    "publication": "MP-07B_NOT_AUTHORIZED",
+    "mp07c": "MP-07C_NOT_STARTED",
+    "mp07d": "MP-07D_NOT_STARTED",
+    "mp07e": "MP-07E_NOT_STARTED",
+    "mp08": "MP-08_NOT_STARTED"
+  },
+  "source": {
+    "repository": "https://github.com/hourwise/Moirae-Protocol.git",
+    "branch": "codex/mp07b-deterministic-product-read-model",
+    "parent": "7f2b21fb0fb04a5e737431a2ff3c494926476fe4",
+    "parentTree": "f992f86a4aeb874060dd4888e166d609a29d52ff",
+    "acceptedMp06": "1d47f2a01c662275a42a8ffcd74b61432da0d255",
+    "acceptedMp06Tree": "3060ea60f6f56b5f07026ff426477661c1b24057",
+    "acceptedMp06Tag": "mp-06-accepted-v1",
+    "acceptedMp06TagObject": "d7e5455e8483a45c65451c6e8c375e038cffef38",
+    "acceptedMp05": "e264538c6c88a12afc3c1cddd0761e37d41d0974",
+    "acceptedMp05Tag": "mp-05-accepted-v1"
+  },
+  "implementation": {
+    "hostModule": "apps/host/src/index.ts",
+    "api": "buildMp07ProductView(input)",
+    "schemaVersion": "mp07-product-view-v1",
+    "inputBoundary": "Mp07ProductInputV1 host-observed canonical ActionIntent, authenticated context, queue, admission, execution, and MP-05 approval observations",
+    "outputContract": "Mp07ProductViewV1 with deliberately selected work identity, exact action/context fields, native status, bounded approval display, evidence, activity, and freshness",
+    "categories": ["HANDLED_AUTOMATICALLY", "NEEDS_YOU", "BLOCKED", "ACTIVITY"],
+    "mappingRules": {
+      "handledAutomatically": "MP-06 COMPLETED and MP-04 CONFIRMED",
+      "needsYou": "MP-06 WAITING_FOR_APPROVAL and a valid current MP-05 pending ApprovalPresentationV1",
+      "blocked": "DENIED, boundary/terminal/retry/reconciliation/effect outcomes, inconsistent completion, and invalid/missing/expired/rejected/revoked/consumed approval observations",
+      "activity": "bounded non-terminal queue progress and activity observation"
+    },
+    "supportedActions": [
+      "SEND_APPOINTMENT_DETAILS",
+      "RESCHEDULE_APPOINTMENT",
+      "TRANSMIT_CUSTOMER_CONTACT_DIRECTORY"
+    ],
+    "determinism": {
+      "pure": true,
+      "synchronous": true,
+      "networkFree": true,
+      "filesystemFree": true,
+      "environmentFree": true,
+      "modelFree": true,
+      "uncontrolledClockOrRandomness": false
+    },
+    "authorityBoundary": {
+      "readsOnly": true,
+      "callsEffects": false,
+      "callsMp03": false,
+      "callsMp04": false,
+      "callsMp05DecisionSubmission": false,
+      "mutatesMp06": false,
+      "callsHorae": false,
+      "mintsAuthority": false,
+      "mintsApprovalOrDecisionIdentity": false,
+      "activityIsAuthority": false,
+      "categoryIsAuthority": false
+    },
+    "dataMinimisation": {
+      "internalObjectSpreading": false,
+      "credentialsExposed": false,
+      "rawProviderSecretsExposed": false,
+      "rawAuthorityGrantsExposed": false,
+      "unrestrictedModelProseExposed": false,
+      "activityLimit": 50
+    }
+  },
+  "testEvidence": {
+    "focusedFile": "tests/mp07b-deterministic-product-read-model.test.ts",
+    "focusedTests": 30,
+    "focusedPassed": 30,
+    "focusedFailed": 0,
+    "focusedSkipped": 0,
+    "coverage": [
+      "confirmed completion predicate",
+      "unknown/recovery/absent and structured blocked outcomes",
+      "valid and invalid MP-05 approval presentation observations",
+      "all three supported action renderings",
+      "ActionIntent identity and semantic mutation rejection",
+      "category/evidence/activity non-authority",
+      "bounded activity and data minimisation",
+      "unsupported durable-state rejection",
+      "repeatable deterministic output"
+    ]
+  },
+  "realFatesRegression": {
+    "provenance": {
+      "ananke007a": "114063e03332af3389fe805193e88a62111d9323",
+      "ananke008a": "b888d61adf180d33e2ae2e61d276cb9b0f13bd12",
+      "horae007a": "aa296b420fbcf578089ca66dc03f6d09d9b06f00",
+      "horaeRuntimeAncestor": "7b24cb0af083e505bd2dc9fa55c6c3387f849131",
+      "adrasteia": "a1c01bf9e6f9d6a126cfdcc1acfacd488b214210",
+      "fates007bEvidence": "3c7b1f9916833728882e71f79a7276e9a806f808",
+      "fates008hEvidence": "cc889456dc16a908041d8d70425438ad56d483c8"
+    },
+    "verificationScripts": {
+      "verifySealedFates": "PASS",
+      "verifyMp05FatesDependency": "PASS"
+    },
+    "suites": {
+      "mp03": { "files": 1, "passed": 37, "failed": 0, "skipped": 0 },
+      "mp04": { "files": 1, "passed": 13, "failed": 0, "skipped": 0 },
+      "mp05": { "files": 1, "passed": 74, "failed": 0, "skipped": 0 },
+      "mp06AndMp07bFocused": { "files": 4, "passed": 90, "failed": 0, "skipped": 0 },
+      "fullProtocol": { "files": 10, "passed": 263, "failed": 0, "skipped": 0 }
+    }
+  },
+  "offlineComparison": {
+    "fullProtocol": { "files": 10, "passed": 247, "failed": 0, "skipped": 16 },
+    "guardedSkips": {
+      "mp03": 7,
+      "mp04": 6,
+      "mp05": 3
+    }
+  },
+  "canonicalValidation": {
+    "npmCi": "PASS",
+    "typecheck": "PASS",
+    "lint": "PASS",
+    "formatCheck": "PASS",
+    "targetedMp07b": "PASS (30/30)",
+    "npmTestDefault": "PASS (247 passed, 16 guarded skips)",
+    "build": "PASS",
+    "check": "PASS",
+    "diffCheck": "PASS",
+    "npmAuditAuditLevelLow": "PASS (0 root vulnerabilities)"
+  },
+  "dependencyState": {
+    "packageJsonChanged": false,
+    "packageLockChanged": false,
+    "newDependency": false,
+    "cloudOrApprovalProviderDependency": false,
+    "temporaryExternalAuditFindings": "Temporary exact Ananke 008A and Horae 007A validation installs each reported 9 pre-existing dependency findings; the Protocol root reported 0 vulnerabilities. No audit fix was applied and no finding was attributed to MP-07B."
+  },
+  "securityAudit": {
+    "secretScan": "PASS; no matching private-key, GitHub/AWS/npm/OpenAI/Slack/bearer-token or queue-provider credential patterns",
+    "productionShellOrChildProcess": false,
+    "productionNetworkCalls": false,
+    "environmentDerivedAuthority": false,
+    "directEffectOrProviderPath": false,
+    "unsafeInternalObjectSpread": false,
+    "modelCalls": false
+  },
+  "boundaries": {
+    "mp05AndMp06RuntimeModified": false,
+    "horae": "HORAE_NOT_REQUIRED_UNTIL_POST_APPROVAL_EXECUTION",
+    "mnemosyne": "MNEMOSYNE_NOT_REQUIRED_FOR_MP07B",
+    "solLuna": "SOL_FRONTEND_LUNA_BACKEND_PRESERVED",
+    "webmcpImplemented": false,
+    "uiImplemented": false,
+    "firecrackerInvoked": false,
+    "moiraeConsoleModified": false
+  },
+  "deferred": [
+    "MP-07C minimal local dashboard and exact approval interaction",
+    "MP-07D stale-state, accessibility, refresh, and responsive hardening",
+    "MP-07E independent product acceptance",
+    "MP-08 deployment and hosting",
+    "formal MP-07 acceptance and tagging"
+  ]
+}
