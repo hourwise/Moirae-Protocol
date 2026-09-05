@@ -9,8 +9,14 @@ does not accept MP-06.
 
 **MP-06C candidate status:** `MP-06C_CONCURRENCY_CRASH_RETRY_HARDENING_COMPLETE`; bounded local
 durability, scheduling leases, crash checkpoints, typed retries, and MP-04 reconciliation routing
-are implemented on a fresh candidate branch. This remains a local candidate and does not publish
-or accept MP-06.
+are implemented and independently validated on the published terminal
+`650404c0c69bd4ca3f70e818b36d0fb546a94cca`. This remains a milestone candidate and does not
+accept MP-06.
+
+**MP-06D candidate status:** `MP-06D_BACKGROUND_HUMAN_APPROVAL_INTEGRATION_COMPLETE`; the local
+candidate composes the accepted MP-05 `prepareApproval` and `recoverOrRefresh` surfaces for
+bounded approval parking and restart-safe recovery. It is not published or independently
+accepted in this slice.
 
 **Runtime classification:** `MP-06_RUNTIME_IMPLEMENTED_AS_CANDIDATE`; no timer, external queue,
 provider, cloud credential, or autonomous production runtime is added.
@@ -846,3 +852,31 @@ The machine-readable MP-06C evidence distinguishes deterministic unit coverage, 
 integration coverage, real-Fates regressions, offline guarded skips, and process-level limitations.
 The accepted scope is local and deterministic; distributed/cloud queue durability, provider
 semantics, dead-letter operations, and full concurrent stress remain outside this slice.
+
+## 25. MP-06D implementation candidate facts
+
+MP-06D composes the accepted MP-05 public boundary rather than copying its native approval
+schemas, hashes, presentation binding, semantic/context rebinding, durable reread, decision
+identity, expiry, revocation, or post-decision MP-03/MP-04 logic. Initial
+`WAITING_FOR_APPROVAL` processing calls MP-05 `prepareApproval`, parks the scheduling claim, and
+returns. The worker never waits for a human and never manufactures a decision.
+
+The queue persists only a versioned `QueueApprovalReferenceV1` correlation record containing the
+approval identity, optional observed decision identity, descriptive observation state, and trusted
+observation time. This record is not approval authority. Every later processing generation rereads
+MP-05 through `recoverOrRefresh`; pending work remains parked without consuming retry budget,
+while approved recovery receives MP-05's fresh MP-03/MP-04 result. Rejected, expired, revoked,
+consumed, missing, malformed, and storage-failure states fail closed without MP-04 or effect
+calls. `CONFIRMED`, `UNKNOWN`, and `ABSENT` retain the accepted MP-04 recovery meanings.
+
+The focused MP-06D suite covers all three supported fixture actions, pending redelivery and
+restart, approval while no worker is active, stable approval/decision identities, response loss,
+semantic and context mutation, cross-action/tool substitution, rejection, expiry, revocation,
+consumption, missing/malformed/unreadable native state, crash/reclaim, confirmed repair,
+unknown reconciliation, retry-budget separation, forged queue observations, two-worker claim
+arbitration, and bounded no-polling behavior. Effects are synthetic only.
+
+Deferred from MP-06D are independent MP-06E end-to-end acceptance, main promotion, and the
+MP-06 acceptance tag. The local candidate does not claim product UI integration, cloud/event
+wakeups, a second approval ledger, distributed durability, or any replacement for MP-05/FATES-008
+native truth. `MNEMOSYNE_NOT_REQUIRED_FOR_MP06D` and `SOL_FRONTEND_LUNA_BACKEND_PRESERVED`.

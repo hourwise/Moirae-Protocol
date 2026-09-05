@@ -21,6 +21,7 @@ import type {
   ActivitySink,
   LocalQueueOptions,
   LocalQueuePort,
+  QueueApprovalReferenceV1,
   QueueAcquireResultV1,
   QueueDeliverySnapshotV1,
   QueueDurableStateV1,
@@ -220,8 +221,17 @@ export class DurableFilesystemLocalQueue implements LocalQueuePort {
     readonly outcome: QueueTerminalOutcomeV1;
     readonly observedAt: string;
     readonly mp04DurableExecutionId?: string;
+    readonly approvalReference?: QueueApprovalReferenceV1;
   }): QueueDeliverySnapshotV1 {
     return this.mutate((queue) => queue.complete(input));
+  }
+
+  parkForApproval(input: {
+    readonly claim: SchedulingClaimV1;
+    readonly approvalId: string;
+    readonly observedAt: string;
+  }): QueueDeliverySnapshotV1 {
+    return this.mutate((queue) => queue.parkForApproval(input));
   }
 
   release(input: {

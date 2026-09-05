@@ -9,6 +9,10 @@ import {
   type ActionIntentV1,
 } from "../../action-compiler/src/index.js";
 import type {
+  Mp05ApprovalRequestV1,
+  Mp05RecoveryResultV1,
+} from "../../human-approval/src/index.js";
+import type {
   Mp03AuthenticatedContext,
   MoiraeAdmissionResultV1,
 } from "../../fates-adapter/src/index.js";
@@ -17,6 +21,7 @@ import type { Mp04ExecutionResultV1 } from "../../execution-coordinator/src/inde
 export const MP06B_QUEUE_WORK_VERSION = "mp06b-queue-work-v1" as const;
 export const MP06B_CLAIM_VERSION = "mp06b-scheduling-claim-v1" as const;
 export const MP06B_ACTIVITY_VERSION = "mp06b-activity-v1" as const;
+export const MP06D_APPROVAL_REFERENCE_VERSION = "mp06d-approval-reference-v1" as const;
 
 const digestPattern = /^[a-f0-9]{64}$/;
 const timestampPattern = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
@@ -28,6 +33,28 @@ export type QueueProtocolReferencesV1 = Readonly<{
   }>;
   approval?: Readonly<{ approvalId: string }>;
   durableExecution?: Readonly<{ durableExecutionId: string }>;
+}>;
+
+/**
+ * Queue-owned approval material is a bounded observation/reference only. It
+ * is never accepted as approval authority; MP-05 durable truth is reread for
+ * every recovery attempt.
+ */
+export type QueueApprovalReferenceV1 = Readonly<{
+  schemaVersion: typeof MP06D_APPROVAL_REFERENCE_VERSION;
+  approvalId: string;
+  decisionId?: string;
+  observationState:
+    | "PENDING"
+    | "APPROVED"
+    | "REJECTED"
+    | "EXPIRED"
+    | "REVOKED"
+    | "CONSUMED"
+    | "MISSING"
+    | "INVALID"
+    | "BOUNDARY_FAILURE";
+  observedAt: string;
 }>;
 
 /**
@@ -95,6 +122,7 @@ export type QueueDeliverySnapshotV1 = Readonly<{
   retryAttempt: number;
   retryBudget: number;
   lastFailureClass?: RetryFailureClassV1;
+  approvalReference?: QueueApprovalReferenceV1;
 }>;
 
 export type QueueOutcomeSnapshotV1 = Readonly<{
@@ -108,6 +136,7 @@ export type QueueOutcomeSnapshotV1 = Readonly<{
   retryBudget: number;
   nextEligibleAt?: string;
   lastFailureClass?: RetryFailureClassV1;
+  approvalReference?: QueueApprovalReferenceV1;
 }>;
 
 export type QueueAcquireResultV1 =
@@ -175,6 +204,8 @@ export type ActivityRecordV1 = Readonly<{
   admissionAuditId?: string;
   nativeActionHash?: string;
   approvalId?: string;
+  decisionId?: string;
+  approvalObservationState?: QueueApprovalReferenceV1["observationState"];
   durableExecutionId?: string;
   mp04Status?: Mp04ExecutionResultV1["status"];
 }>;
@@ -250,6 +281,35 @@ function requireIdentifier(value: unknown, label: string): asserts value is stri
     throw new TypeError(`${label} must be a non-empty bounded identifier.`);
 }
 
+function assertApprovalReference(reference: QueueApprovalReferenceV1): void {
+  if (
+    reference.schemaVersion !== MP06D_APPROVAL_REFERENCE_VERSION ||
+    typeof reference.approvalId !== "string" ||
+    reference.approvalId.trim().length === 0 ||
+    reference.approvalId.length > 200 ||
+    !validTimestamp(reference.observedAt) ||
+    (reference.decisionId !== undefined &&
+      (typeof reference.decisionId !== "string" ||
+        reference.decisionId.trim().length === 0 ||
+        reference.decisionId.length > 200))
+  )
+    throw new TypeError("Approval correlation reference is malformed.");
+  if (
+    ![
+      "PENDING",
+      "APPROVED",
+      "REJECTED",
+      "EXPIRED",
+      "REVOKED",
+      "CONSUMED",
+      "MISSING",
+      "INVALID",
+      "BOUNDARY_FAILURE",
+    ].includes(reference.observationState)
+  )
+    throw new TypeError("Approval correlation observation state is invalid.");
+}
+
 function assertQueueWork(work: QueueWorkV1, identity: QueueIdentityDeriver): void {
   if (work.schemaVersion !== MP06B_QUEUE_WORK_VERSION)
     throw new TypeError("Unsupported MP-06B queue-work schema version.");
@@ -302,6 +362,7 @@ type InternalLogicalWork = {
   retryBudget: number;
   nextEligibleAt?: string;
   lastFailureClass?: RetryFailureClassV1;
+  approvalReference?: QueueApprovalReferenceV1;
 };
 
 export interface LocalQueueOptions {
@@ -326,6 +387,12 @@ export interface LocalQueuePort {
     readonly outcome: QueueTerminalOutcomeV1;
     readonly observedAt: string;
     readonly mp04DurableExecutionId?: string;
+    readonly approvalReference?: QueueApprovalReferenceV1;
+  }): QueueDeliverySnapshotV1;
+  parkForApproval(input: {
+    readonly claim: SchedulingClaimV1;
+    readonly approvalId: string;
+    readonly observedAt: string;
   }): QueueDeliverySnapshotV1;
   release(input: {
     readonly claim: SchedulingClaimV1;
@@ -353,6 +420,7 @@ export type QueueDurableStateV1 = Readonly<{
         retryBudget: number;
         nextEligibleAt?: string;
         lastFailureClass?: RetryFailureClassV1;
+        approvalReference?: QueueApprovalReferenceV1;
       }>
     >
   >;
@@ -455,7 +523,11 @@ export class InMemoryLocalQueue implements LocalQueuePort {
     const trustedAvailableAt = normalizedTimestamp(availableAt);
     const delivery = this.deliveries.get(deliveryId);
     if (!delivery) throw new Error("Queue delivery was not found.");
-    if (delivery.state === "QUEUED" || delivery.state === "RETRY_SCHEDULED") {
+    if (
+      delivery.state === "QUEUED" ||
+      delivery.state === "RETRY_SCHEDULED" ||
+      delivery.state === "WAITING_FOR_APPROVAL"
+    ) {
       delivery.state = "AVAILABLE";
       delivery.availableAt = trustedAvailableAt;
       delivery.stateVersion += 1;
@@ -492,7 +564,6 @@ export class InMemoryLocalQueue implements LocalQueuePort {
         delivery.state === "DENIED" ||
         delivery.state === "BOUNDARY_BLOCKED" ||
         delivery.state === "TERMINAL_FAILURE" ||
-        delivery.state === "WAITING_FOR_APPROVAL" ||
         delivery.state === "EFFECT_ABSENT" ||
         delivery.state === "RETRY_EXHAUSTED"
       )
@@ -544,6 +615,7 @@ export class InMemoryLocalQueue implements LocalQueuePort {
     readonly outcome: QueueTerminalOutcomeV1;
     readonly observedAt: string;
     readonly mp04DurableExecutionId?: string;
+    readonly approvalReference?: QueueApprovalReferenceV1;
   }): QueueDeliverySnapshotV1 {
     const observedAt = trustedNow(this.clock, input.observedAt);
     const delivery = this.deliveries.get(input.claim.deliveryId);
@@ -567,11 +639,45 @@ export class InMemoryLocalQueue implements LocalQueuePort {
     delivery.stateVersion += 1;
     const logical = this.logical.get(delivery.work.workId);
     if (!logical) throw new Error("Queue logical work disappeared during completion.");
+    if (input.approvalReference) assertApprovalReference(input.approvalReference);
     logical.outcome = input.outcome;
     logical.lastDeliveryId = delivery.work.deliveryId;
     logical.observedAt = observedAt;
     logical.nextEligibleAt = undefined;
     if (input.mp04DurableExecutionId) logical.mp04DurableExecutionId = input.mp04DurableExecutionId;
+    if (input.approvalReference) logical.approvalReference = clone(input.approvalReference);
+    return this.snapshot(delivery);
+  }
+
+  parkForApproval(input: {
+    readonly claim: SchedulingClaimV1;
+    readonly approvalId: string;
+    readonly observedAt: string;
+  }): QueueDeliverySnapshotV1 {
+    const observedAt = trustedNow(this.clock, input.observedAt);
+    requireIdentifier(input.approvalId, "approvalId");
+    const delivery = this.deliveries.get(input.claim.deliveryId);
+    if (!delivery || !delivery.claim) throw new Error("No active scheduling claim exists.");
+    assertClaim(input.claim, delivery.claim);
+    const logical = this.logical.get(delivery.work.workId);
+    if (!logical) throw new Error("Queue logical work disappeared while parking approval.");
+    if (logical.approvalReference && logical.approvalReference.approvalId !== input.approvalId)
+      throw new Error("Approval correlation cannot change for one logical work item.");
+    const approvalReference: QueueApprovalReferenceV1 = {
+      schemaVersion: MP06D_APPROVAL_REFERENCE_VERSION,
+      approvalId: input.approvalId,
+      observationState: "PENDING",
+      observedAt,
+    };
+    delivery.state = "WAITING_FOR_APPROVAL";
+    delivery.claim = undefined;
+    delivery.availableAt = observedAt;
+    delivery.stateVersion += 1;
+    logical.outcome = "WAITING_FOR_APPROVAL";
+    logical.lastDeliveryId = delivery.work.deliveryId;
+    logical.observedAt = observedAt;
+    logical.nextEligibleAt = undefined;
+    logical.approvalReference = approvalReference;
     return this.snapshot(delivery);
   }
 
@@ -658,6 +764,7 @@ export class InMemoryLocalQueue implements LocalQueuePort {
       retryBudget: logical.retryBudget,
       ...(logical.nextEligibleAt ? { nextEligibleAt: logical.nextEligibleAt } : {}),
       ...(logical.lastFailureClass ? { lastFailureClass: logical.lastFailureClass } : {}),
+      ...(logical.approvalReference ? { approvalReference: clone(logical.approvalReference) } : {}),
     };
   }
 
@@ -677,6 +784,7 @@ export class InMemoryLocalQueue implements LocalQueuePort {
         retryBudget: value.retryBudget,
         ...(value.nextEligibleAt ? { nextEligibleAt: value.nextEligibleAt } : {}),
         ...(value.lastFailureClass ? { lastFailureClass: value.lastFailureClass } : {}),
+        ...(value.approvalReference ? { approvalReference: clone(value.approvalReference) } : {}),
       };
     }
     const deliveries: Record<string, QueueDurableStateV1["deliveries"][string]> = {};
@@ -705,6 +813,9 @@ export class InMemoryLocalQueue implements LocalQueuePort {
       retryBudget: this.logical.get(delivery.work.workId)?.retryBudget ?? this.retryBudget,
       ...(this.logical.get(delivery.work.workId)?.lastFailureClass
         ? { lastFailureClass: this.logical.get(delivery.work.workId)?.lastFailureClass }
+        : {}),
+      ...(this.logical.get(delivery.work.workId)?.approvalReference
+        ? { approvalReference: clone(this.logical.get(delivery.work.workId)?.approvalReference) }
         : {}),
     };
   }
@@ -736,6 +847,7 @@ export class InMemoryLocalQueue implements LocalQueuePort {
         retryBudget: value.retryBudget,
         ...(value.nextEligibleAt ? { nextEligibleAt: value.nextEligibleAt } : {}),
         ...(value.lastFailureClass ? { lastFailureClass: value.lastFailureClass } : {}),
+        ...(value.approvalReference ? { approvalReference: clone(value.approvalReference) } : {}),
       });
     }
     for (const [deliveryId, value] of Object.entries(state.deliveries)) {
@@ -780,6 +892,7 @@ function validateQueueDurableState(state: QueueDurableStateV1): void {
       throw new Error("MP-06C durable retry budget is invalid.");
     if (value.nextEligibleAt && !validTimestamp(value.nextEligibleAt))
       throw new Error("MP-06C durable retry time is invalid.");
+    if (value.approvalReference) assertApprovalReference(value.approvalReference);
   }
   for (const [deliveryId, value] of Object.entries(state.deliveries)) {
     assertQueueWork(value.work, deterministicQueueIdentity);
@@ -863,6 +976,16 @@ export interface Mp04ExecutionPort {
   executeAdmittedAction(input: unknown): Promise<Mp04ExecutionResultV1>;
   recoverActionExecution?(input: unknown): Promise<Mp04ExecutionResultV1>;
 }
+
+/** Exact accepted MP-05 public surface used by background recovery. */
+export type Mp05ApprovalPort = Readonly<{
+  prepareApproval(request: Mp05ApprovalRequestV1): Promise<unknown>;
+  recoverOrRefresh(input: {
+    readonly intent: unknown;
+    readonly authenticatedContext: unknown;
+    readonly approvalId: string;
+  }): Promise<Mp05RecoveryResultV1>;
+}>;
 
 export type WorkerCheckpointV1 =
   | "BEFORE_CLAIM"
@@ -1003,6 +1126,7 @@ export class DeterministicLocalWorker {
       readonly protocol: TrustedProtocolBoundary;
       readonly admission: Mp03AdmissionPort;
       readonly execution: Mp04ExecutionPort;
+      readonly approval?: Mp05ApprovalPort;
       readonly activity: ActivitySink;
       readonly identity?: QueueIdentityDeriver;
       readonly clock?: TrustedTimeSource;
@@ -1084,6 +1208,22 @@ export class DeterministicLocalWorker {
     const priorOutcome = this.options.queue.inspectOutcome(delivery.work.workId);
     if (priorOutcome?.outcome === "RECONCILIATION_REQUIRED")
       return this.recoverReconciliation(delivery.work, claim, verified, now, priorOutcome);
+    if (priorOutcome?.outcome === "WAITING_FOR_APPROVAL" && this.options.approval) {
+      if (!priorOutcome.approvalReference)
+        return this.finishBlocked(
+          delivery.work,
+          claim,
+          now,
+          "Waiting work has no durable MP-05 approval correlation reference.",
+        );
+      return this.recoverApproval(
+        delivery.work,
+        claim,
+        verified,
+        now,
+        priorOutcome.approvalReference,
+      );
+    }
 
     let admission: MoiraeAdmissionResultV1;
     try {
@@ -1120,9 +1260,51 @@ export class DeterministicLocalWorker {
     });
 
     if (admission.status === "WAITING_FOR_APPROVAL") {
-      this.options.queue.complete({
+      if (!admission.approvalId && !this.options.approval) {
+        this.options.queue.complete({
+          claim,
+          outcome: "WAITING_FOR_APPROVAL",
+          observedAt: now,
+        });
+        this.checkpoint("AFTER_TERMINAL_QUEUE_PERSISTENCE");
+        this.appendActivity(delivery.work, claim, "WAITING_FOR_APPROVAL", now, references);
+        return {
+          status: "waiting",
+          workId: delivery.work.workId,
+          deliveryId: delivery.work.deliveryId,
+          queueOutcome: "WAITING_FOR_APPROVAL",
+        };
+      }
+      if (!admission.approvalId)
+        return this.finishBlocked(
+          delivery.work,
+          claim,
+          now,
+          "MP-03 approval-required result has no approval identity.",
+          references,
+        );
+      if (this.options.approval) {
+        try {
+          await this.options.approval.prepareApproval({
+            intent: verified.intent,
+            authenticatedContext: verified.authenticatedContext,
+            waitingAdmission: admission,
+          });
+        } catch (error) {
+          return this.finishBlocked(
+            delivery.work,
+            claim,
+            now,
+            error instanceof Error
+              ? error.message
+              : "MP-05 rejected the pending approval boundary.",
+            references,
+          );
+        }
+      }
+      this.options.queue.parkForApproval({
         claim,
-        outcome: "WAITING_FOR_APPROVAL",
+        approvalId: admission.approvalId,
         observedAt: now,
       });
       this.checkpoint("AFTER_TERMINAL_QUEUE_PERSISTENCE");
@@ -1251,14 +1433,227 @@ export class DeterministicLocalWorker {
     );
   }
 
+  private async recoverApproval(
+    work: QueueWorkV1,
+    claim: SchedulingClaimV1,
+    verified: VerifiedProtocolMaterial,
+    now: string,
+    priorReference: QueueApprovalReferenceV1,
+  ): Promise<Mp06WorkerResultV1> {
+    if (!this.options.approval)
+      return this.finishBlocked(work, claim, now, "MP-05 approval recovery is unavailable.");
+    let recovery: Mp05RecoveryResultV1;
+    try {
+      recovery = await this.options.approval.recoverOrRefresh({
+        intent: verified.intent,
+        authenticatedContext: verified.authenticatedContext,
+        approvalId: priorReference.approvalId,
+      });
+    } catch (error) {
+      if (isInjectedWorkerCrash(error)) throw error;
+      return this.finishBlocked(
+        work,
+        claim,
+        now,
+        error instanceof Error ? error.message : "MP-05 approval recovery failed closed.",
+        { approvalId: priorReference.approvalId },
+        this.approvalReference(priorReference.approvalId, "BOUNDARY_FAILURE", now),
+      );
+    }
+
+    if (recovery.kind === "PRESENTATION") {
+      this.options.queue.parkForApproval({
+        claim,
+        approvalId: priorReference.approvalId,
+        observedAt: now,
+      });
+      this.checkpoint("AFTER_TERMINAL_QUEUE_PERSISTENCE");
+      this.appendActivity(work, claim, "WAITING_FOR_APPROVAL", now, {
+        approvalId: priorReference.approvalId,
+        approvalObservationState: "PENDING",
+      });
+      return {
+        status: "waiting",
+        workId: work.workId,
+        deliveryId: work.deliveryId,
+        queueOutcome: "WAITING_FOR_APPROVAL",
+      };
+    }
+
+    const approval = recovery.result.approval;
+    const reference = this.approvalReference(
+      approval.approvalId,
+      this.approvalObservationState(approval),
+      now,
+      approval.decisionId,
+    );
+    const activityReferences: Partial<ActivityRecordV1> = {
+      approvalId: approval.approvalId,
+      ...(approval.decisionId ? { decisionId: approval.decisionId } : {}),
+      approvalObservationState: reference.observationState,
+    };
+
+    if (approval.status === "REJECTED") {
+      this.options.queue.complete({
+        claim,
+        outcome: "DENIED",
+        observedAt: now,
+        approvalReference: reference,
+      });
+      this.checkpoint("AFTER_TERMINAL_QUEUE_PERSISTENCE");
+      this.appendActivity(work, claim, "DENIED", now, activityReferences);
+      return {
+        status: "denied",
+        workId: work.workId,
+        deliveryId: work.deliveryId,
+        queueOutcome: "DENIED",
+        reason: "MP-05 durably rejected the approval.",
+      };
+    }
+
+    if (approval.status !== "APPROVED")
+      return this.finishBlocked(
+        work,
+        claim,
+        now,
+        `MP-05 did not produce executable approval truth: ${approval.status}.`,
+        activityReferences,
+        reference,
+      );
+
+    const execution = recovery.result.execution;
+    if (!execution)
+      return this.finishBlocked(
+        work,
+        claim,
+        now,
+        "MP-05 approved recovery returned no MP-04 execution result.",
+        activityReferences,
+        reference,
+      );
+    return this.finishApprovedExecution(work, claim, now, execution, activityReferences, reference);
+  }
+
+  private finishApprovedExecution(
+    work: QueueWorkV1,
+    claim: SchedulingClaimV1,
+    observedAt: string,
+    execution: Mp04ExecutionResultV1,
+    extra: Partial<ActivityRecordV1>,
+    approvalReference: QueueApprovalReferenceV1,
+  ): Mp06WorkerResultV1 {
+    if (execution.status === "CONFIRMED") {
+      this.checkpoint("AFTER_MP04_CONFIRMED_BEFORE_QUEUE_COMPLETION");
+      this.options.queue.complete({
+        claim,
+        outcome: "COMPLETED",
+        observedAt,
+        ...(execution.durableExecutionId
+          ? { mp04DurableExecutionId: execution.durableExecutionId }
+          : {}),
+        approvalReference,
+      });
+      this.checkpoint("AFTER_TERMINAL_QUEUE_PERSISTENCE");
+      this.appendActivity(work, claim, "COMPLETED", observedAt, {
+        ...extra,
+        durableExecutionId: execution.durableExecutionId,
+        mp04Status: execution.status,
+      });
+      return {
+        status: "completed",
+        workId: work.workId,
+        deliveryId: work.deliveryId,
+        queueOutcome: "COMPLETED",
+        mp04Status: execution.status,
+      };
+    }
+    if (execution.status === "UNKNOWN" || execution.status === "RECOVERY_REQUIRED")
+      return this.finishReconciliation(
+        work,
+        claim,
+        observedAt,
+        "MP-04 requires native recovery or reconciliation after approved recovery.",
+        extra,
+        execution,
+        approvalReference,
+      );
+    if (execution.status === "ABSENT") {
+      this.options.queue.complete({
+        claim,
+        outcome: "EFFECT_ABSENT",
+        observedAt,
+        ...(execution.durableExecutionId
+          ? { mp04DurableExecutionId: execution.durableExecutionId }
+          : {}),
+        approvalReference,
+      });
+      this.checkpoint("AFTER_TERMINAL_QUEUE_PERSISTENCE");
+      this.appendActivity(work, claim, "EFFECT_ABSENT", observedAt, {
+        ...extra,
+        durableExecutionId: execution.durableExecutionId,
+        mp04Status: execution.status,
+      });
+      return {
+        status: "effect-absent",
+        workId: work.workId,
+        deliveryId: work.deliveryId,
+        queueOutcome: "EFFECT_ABSENT",
+        mp04Status: execution.status,
+      };
+    }
+    return this.finishBlocked(
+      work,
+      claim,
+      observedAt,
+      execution.message ?? "MP-04 blocked approved execution.",
+      { ...extra, mp04Status: execution.status },
+      approvalReference,
+    );
+  }
+
+  private approvalReference(
+    approvalId: string,
+    observationState: QueueApprovalReferenceV1["observationState"],
+    observedAt: string,
+    decisionId?: string,
+  ): QueueApprovalReferenceV1 {
+    return {
+      schemaVersion: MP06D_APPROVAL_REFERENCE_VERSION,
+      approvalId,
+      observationState,
+      observedAt,
+      ...(decisionId ? { decisionId } : {}),
+    };
+  }
+
+  private approvalObservationState(approval: {
+    status: "APPROVED" | "REJECTED" | "EXPIRED" | "STALE" | "CONFLICT" | "BOUNDARY_FAILURE";
+    approvalState?: string;
+  }): QueueApprovalReferenceV1["observationState"] {
+    if (approval.status === "APPROVED") return "APPROVED";
+    if (approval.status === "REJECTED") return "REJECTED";
+    if (approval.status === "EXPIRED") return "EXPIRED";
+    if (approval.approvalState === "revoked") return "REVOKED";
+    if (approval.approvalState === "consumed") return "CONSUMED";
+    if (approval.status === "STALE") return "MISSING";
+    if (approval.status === "CONFLICT") return "INVALID";
+    return "BOUNDARY_FAILURE";
+  }
+
   private finishBlocked(
     work: QueueWorkV1,
     claim: SchedulingClaimV1,
     observedAt: string,
     reason: string,
     extra: Partial<ActivityRecordV1> = {},
+    approvalReference?: QueueApprovalReferenceV1,
   ): Mp06WorkerResultV1 {
-    this.options.queue.complete({ claim, outcome: "BOUNDARY_BLOCKED", observedAt });
+    this.options.queue.complete({
+      claim,
+      outcome: "BOUNDARY_BLOCKED",
+      observedAt,
+      ...(approvalReference ? { approvalReference } : {}),
+    });
     this.checkpoint("AFTER_TERMINAL_QUEUE_PERSISTENCE");
     this.appendActivity(work, claim, "BOUNDARY_BLOCKED", observedAt, { ...extra, reason });
     return {
@@ -1277,6 +1672,7 @@ export class DeterministicLocalWorker {
     reason: string,
     extra: Partial<ActivityRecordV1> = {},
     execution?: Mp04ExecutionResultV1,
+    approvalReference?: QueueApprovalReferenceV1,
   ): Mp06WorkerResultV1 {
     this.options.queue.complete({
       claim,
@@ -1285,6 +1681,7 @@ export class DeterministicLocalWorker {
       ...(execution?.durableExecutionId
         ? { mp04DurableExecutionId: execution.durableExecutionId }
         : {}),
+      ...(approvalReference ? { approvalReference } : {}),
     });
     this.checkpoint("AFTER_TERMINAL_QUEUE_PERSISTENCE");
     this.appendActivity(work, claim, "RECONCILIATION_REQUIRED", observedAt, {

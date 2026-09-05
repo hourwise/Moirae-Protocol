@@ -139,8 +139,12 @@ the existing MP-04 coordinator. It remains `MP-05_NOT_ACCEPTED` until independen
   `codex/mp06b-deterministic-local-worker-core`; synthetic/local evidence only, with MP-06C and
   MP-06D explicitly deferred and MP-06 still not accepted.
 - **MP-06C status:** Concurrency, crash, retry, and reconciliation hardening implemented as a
-  local candidate on `codex/mp06c-concurrency-crash-retry-hardening`; publication, MP-06D, and
-  MP-06 acceptance remain deferred.
+  published and independently validated candidate on `codex/mp06c-concurrency-crash-retry-hardening`;
+  MP-06D and MP-06 acceptance remain deferred.
+- **MP-06D status:** Background human-approval integration implemented as a local candidate on
+  `codex/mp06d-background-human-approval-integration`; it composes the accepted MP-05 durable
+  approval workflow, preserves MP-06C recovery guarantees, and remains unpublished pending
+  independent MP-06E acceptance.
 - **Entry:** MP-04 and MP-05 enforce bounded execution and exact approval binding.
 - **Build:** Add an actual queue/worker loop. Route ALLOW silently, surface approval-required work,
   and record DENY without effect. Make worker claims and retries observable.

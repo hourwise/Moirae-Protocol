@@ -1,0 +1,120 @@
+{
+  "schemaVersion": "mp06d-evidence-v1",
+  "classification": {
+    "implementation": "MP-06D_BACKGROUND_HUMAN_APPROVAL_INTEGRATION_COMPLETE",
+    "localValidation": "MP-06D_LOCAL_VALIDATION_PASS",
+    "publication": "NOT_AUTHORIZED",
+    "mp06": "MP-06_NOT_ACCEPTED",
+    "mp06e": "MP-06E_NOT_STARTED"
+  },
+  "source": {
+    "repository": "https://github.com/hourwise/Moirae-Protocol.git",
+    "branch": "codex/mp06d-background-human-approval-integration",
+    "parent": "650404c0c69bd4ca3f70e818b36d0fb546a94cca",
+    "mp06c": "650404c0c69bd4ca3f70e818b36d0fb546a94cca",
+    "mp06b": "cc1336287b999aa8e90d1ff4763e05666908ddf6",
+    "mp06a": "6ae5d7e2fb83aabbd8c60a8d88217b33c4e975b9",
+    "acceptedMp05": "e264538c6c88a12afc3c1cddd0761e37d41d0974",
+    "acceptedMp05Tag": "mp-05-accepted-v1"
+  },
+  "implemented": {
+    "acceptedMp05Surface": [
+      "Mp05HumanApprovalCoordinator.prepareApproval",
+      "Mp05HumanApprovalCoordinator.recoverOrRefresh"
+    ],
+    "queue": [
+      "resumable WAITING_FOR_APPROVAL parking",
+      "versioned approval correlation reference",
+      "MP-05 decision identity observation only",
+      "pending redelivery without retry-budget consumption"
+    ],
+    "worker": [
+      "bounded approval observation",
+      "no polling or long-lived human wait",
+      "fresh MP-05 reread before approved continuation",
+      "MP-04 CONFIRMED/UNKNOWN/ABSENT routing preserved"
+    ],
+    "authorityBoundaries": [
+      "queue state is not approval",
+      "approvalId is not a decision",
+      "decisionId is not execution authority",
+      "activity is descriptive only",
+      "MP-05 native durable truth is authoritative",
+      "MP-04 remains the effect boundary"
+    ]
+  },
+  "deterministicUnitEvidence": {
+    "testFile": "tests/mp06d-background-human-approval-integration.test.ts",
+    "tests": 28,
+    "passed": 28,
+    "failed": 0,
+    "skipped": 0,
+    "syntheticEffectsOnly": true,
+    "coverage": [
+      "all three supported approval-required actions",
+      "pending parking, repeated delivery, and restart",
+      "approval while no worker is active and response loss",
+      "stable approval and decision identities",
+      "reject, expiry, revocation, consumption, missing, malformed, and unreadable approval state",
+      "semantic, tool, tenant, and resource substitution rejection",
+      "crash/reclaim and CONFIRMED repair",
+      "approved-path UNKNOWN reconciliation",
+      "retry-budget separation, forged queue observation, and two-worker arbitration",
+      "bounded no-polling worker behavior"
+    ]
+  },
+  "realFatesIntegrationEvidence": {
+    "dependencyVerification": "passed",
+    "mp03Tests": { "passed": 37, "failed": 0, "skipped": 0 },
+    "mp04Tests": { "passed": 13, "failed": 0, "skipped": 0 },
+    "mp05Tests": { "passed": 74, "failed": 0, "skipped": 0 },
+    "mp06bTests": { "passed": 15, "failed": 0, "skipped": 0 },
+    "mp06cTests": { "passed": 17, "failed": 0, "skipped": 0 },
+    "mp06dTests": { "passed": 28, "failed": 0, "skipped": 0 },
+    "fullProtocolTests": { "passed": 233, "failed": 0, "skipped": 0 },
+    "dependencyLineage": {
+      "ananke007a": "114063e03332af3389fe805193e88a62111d9323",
+      "ananke008a": "b888d61adf180d33e2ae2e61d276cb9b0f13bd12",
+      "horae007a": "aa296b420fbcf578089ca66dc03f6d09d9b06f00",
+      "adrasteia": "a1c01bf9e6f9d6a126cfdcc1acfacd488b214210",
+      "fates007bEvidence": "3c7b1f9916833728882e71f79a7276e9a806f808",
+      "fates008hEvidence": "cc889456dc16a908041d8d70425438ad56d483c8"
+    }
+  },
+  "offlineComparison": {
+    "fullProtocolTests": { "passed": 217, "failed": 0, "skipped": 16 },
+    "skipsAreExistingGuardedFatesSkips": true
+  },
+  "canonicalValidation": {
+    "npmCi": "passed",
+    "typecheck": "passed",
+    "lint": "passed",
+    "formatCheck": "passed",
+    "npmTestRealFates": "passed",
+    "npmTestOffline": "passed-with-16-existing-guarded-skips",
+    "build": "passed",
+    "check": "passed-with-16-existing-guarded-skips",
+    "diffCheck": "passed",
+    "npmAuditLow": "passed-zero-root-vulnerabilities",
+    "packageJsonUnchanged": true,
+    "packageLockUnchanged": true,
+    "packageLockBlobSha1": "306e1aabdc870ab2370bd084e8bf276a3101e3b6",
+    "newDependency": false
+  },
+  "deferred": [
+    "MP-06E independent end-to-end acceptance",
+    "MP-06 publication and acceptance tag",
+    "main promotion",
+    "cloud/event wakeups and distributed durability",
+    "product UI integration",
+    "new approval ledger or provider SDK"
+  ],
+  "isolation": {
+    "fatesHoraeModified": false,
+    "mnemosyneUsed": false,
+    "mnemosyneBoundary": "MNEMOSYNE_NOT_REQUIRED_FOR_MP06D",
+    "solLunaBoundary": "SOL_FRONTEND_LUNA_BACKEND_PRESERVED",
+    "firecrackerInvoked": false,
+    "moiraeConsoleModified": false
+  }
+}
