@@ -1,0 +1,110 @@
+{
+  "schemaVersion": "mp06c-evidence-v1",
+  "classification": {
+    "implementation": "MP-06C_CONCURRENCY_CRASH_RETRY_HARDENING_COMPLETE",
+    "localValidation": "MP-06C_LOCAL_VALIDATION_PASS",
+    "publication": "NOT_AUTHORIZED",
+    "mp06": "MP-06_NOT_ACCEPTED"
+  },
+  "source": {
+    "repository": "https://github.com/hourwise/Moirae-Protocol.git",
+    "branch": "codex/mp06c-concurrency-crash-retry-hardening",
+    "parent": "cc1336287b999aa8e90d1ff4763e05666908ddf6",
+    "mp06b": "cc1336287b999aa8e90d1ff4763e05666908ddf6",
+    "mp06a": "6ae5d7e2fb83aabbd8c60a8d88217b33c4e975b9",
+    "acceptedMp05": "e264538c6c88a12afc3c1cddd0761e37d41d0974"
+  },
+  "implemented": {
+    "backend": "DurableFilesystemLocalQueue",
+    "coordination": [
+      "versioned JSON state",
+      "atomic temp-file fsync and rename replacement",
+      "per-store atomic lock file",
+      "strict malformed-state validation",
+      "trusted injected time",
+      "lease generation and state-version binding"
+    ],
+    "worker": [
+      "bounded one-item invocation",
+      "deterministic crash checkpoints",
+      "typed pre-authority retry classification",
+      "bounded deterministic backoff",
+      "native MP-04 recovery routing"
+    ],
+    "authorityBoundaries": [
+      "queue delivery is not authority",
+      "lease ownership is not authority",
+      "retry state is not authority",
+      "activity is not authority",
+      "fresh MP-03 remains required",
+      "MP-04 remains the sole effect boundary"
+    ]
+  },
+  "deterministicUnitEvidence": {
+    "testFile": "tests/mp06c-concurrency-crash-retry-hardening.test.ts",
+    "tests": 17,
+    "passed": 17,
+    "failed": 0,
+    "skipped": 0,
+    "coverage": [
+      "lease race and valid-lease theft prevention",
+      "expired reclaim and stale-generation rejection",
+      "crash checkpoints before and after authority/effect boundaries",
+      "fresh authority after crash",
+      "CONFIRMED, UNKNOWN, ABSENT, and RECOVERY_REQUIRED routing",
+      "bounded retry and retry exhaustion",
+      "duplicate-delivery retry-storm resistance",
+      "malformed durable state fail-closed behavior",
+      "restart materialization",
+      "approval waiting and DENY isolation"
+    ]
+  },
+  "durableLocalIntegrationEvidence": {
+    "backend": "filesystem-backed local coordination state under test-controlled temporary directories",
+    "independentInstances": true,
+    "atomicPersistence": true,
+    "malformedStateFailsClosed": true,
+    "effectLedgerAdded": false,
+    "claimIsAuthority": false
+  },
+  "processLevelEvidence": {
+    "executed": true,
+    "method": "two independent Node child processes opened the same durable queue store",
+    "result": "one CLAIMED winner and one ALREADY_CLAIMED loser",
+    "productionChildProcessCalls": false,
+    "temporaryDiagnosticRemoved": true
+  },
+  "realFatesRegressionEvidence": {
+    "dependencyVerification": "passed",
+    "mp03Tests": { "passed": 37, "failed": 0, "skipped": 0 },
+    "mp04RequiredTests": { "passed": 13, "failed": 0, "skipped": 0 },
+    "mp05Tests": { "passed": 74, "failed": 0, "skipped": 0 },
+    "fullProtocolTests": { "passed": 205, "failed": 0, "skipped": 0 },
+    "dependencyLineage": {
+      "ananke007a": "114063e03332af3389fe805193e88a62111d9323",
+      "ananke008a": "b888d61adf180d33e2ae2e61d276cb9b0f13bd12",
+      "horae007a": "aa296b420fbcf578089ca66dc03f6d09d9b06f00",
+      "adrasteia": "a1c01bf9e6f9d6a126cfdcc1acfacd488b214210",
+      "fates008Evidence": "cc889456dc16a908041d8d70425438ad56d483c8"
+    }
+  },
+  "offlineComparison": {
+    "fullProtocolTests": { "passed": 189, "failed": 0, "skipped": 16 },
+    "skipsAreExistingGuardedFatesSkips": true
+  },
+  "deferred": [
+    "MP-06D complete human-approval presentation and decision recovery",
+    "MP-06E independent end-to-end acceptance",
+    "distributed or cloud queue durability",
+    "provider idempotency semantics",
+    "dead-letter operations and full concurrent stress",
+    "MP-06 publication and MP-06 acceptance"
+  ],
+  "isolation": {
+    "fatesHoraeModified": false,
+    "mnemosyneUsed": false,
+    "solLunaBoundaryPreserved": true,
+    "firecrackerInvoked": false,
+    "moiraeConsoleModified": false
+  }
+}

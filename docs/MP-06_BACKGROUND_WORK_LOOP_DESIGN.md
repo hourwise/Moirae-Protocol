@@ -7,6 +7,11 @@ contract was completed and published at `6ae5d7e2fb83aabbd8c60a8d88217b33c4e975b
 local queue/worker core exists on the candidate branch. It is synthetic/local evidence only and
 does not accept MP-06.
 
+**MP-06C candidate status:** `MP-06C_CONCURRENCY_CRASH_RETRY_HARDENING_COMPLETE`; bounded local
+durability, scheduling leases, crash checkpoints, typed retries, and MP-04 reconciliation routing
+are implemented on a fresh candidate branch. This remains a local candidate and does not publish
+or accept MP-06.
+
 **Runtime classification:** `MP-06_RUNTIME_IMPLEMENTED_AS_CANDIDATE`; no timer, external queue,
 provider, cloud credential, or autonomous production runtime is added.
 
@@ -795,8 +800,49 @@ ActionIntent bindings, tenant/context substitution, forged claims, duplicate del
 work, completed-work replay through MP-04 durable truth, approval redelivery, competing workers,
 and activity/prior-admission tampering. No external connector or real effect is used.
 
-Explicitly deferred to MP-06C are process-crash handling, lease expiry races, retry budgets and
-storms, durable cross-process backends, dead letters, full stress, and MP-04 `UNKNOWN` recovery
-or reconciliation. Explicitly deferred to MP-06D are MP-05 presentation parking, durable human
-decision observation, expiry/rejection/revocation recovery, repeated waiting deliveries, and
-post-decision fresh MP-03 → MP-04 continuation. MP-06E and MP-06 acceptance remain unstarted.
+At the MP-06B terminal, process-crash handling, lease expiry races, retry budgets and storms,
+durable cross-process backends, dead letters, full stress, and MP-04 `UNKNOWN` recovery or
+reconciliation were explicitly deferred. MP-06D remains responsible for MP-05 presentation
+parking, durable human decision observation, expiry/rejection/revocation recovery, repeated
+waiting deliveries, and post-decision fresh MP-03 → MP-04 continuation. MP-06E and MP-06 acceptance
+remain unstarted.
+
+## 24. MP-06C implementation candidate facts
+
+MP-06C extends the MP-06B port without widening authority ownership. The candidate now provides a
+filesystem-backed local coordination backend, `DurableFilesystemLocalQueue`, with a versioned JSON
+state document, a per-store atomic lock file, temporary-file recovery rules, `fsync` plus rename
+replacement, and strict schema/identity validation. A malformed, partial, unsupported, or
+ambiguous coordination record fails closed; it is never treated as a new empty queue. The backend
+stores logical work, delivery state, scheduling claims, lease generations, bounded retry state,
+terminal queue outcomes, and MP-04 identity references only. It stores no credentials, provider
+secrets, or queue-owned authority.
+
+Scheduling claims are bounded leases. A lease binds the logical work ID, delivery ID, worker ID,
+claim ID, generation, state version, injected trusted acquisition time, and injected trusted expiry
+time. Compare-and-set arbitration permits one owner per generation. Reclaim is possible only after
+trusted expiry, increments the generation, and invalidates the old claim. A stale claim cannot
+release, complete, retry, or mutate the reclaimed generation. Lease acquisition, reclaim, retry
+count, retry budget, and activity records remain operational state and never become Ananke or
+MP-04 authority.
+
+Worker execution remains bounded to one work item per invocation. Deterministic checkpoints cover
+claim persistence, current MP-03 admission, the MP-04 boundary, terminal queue persistence, and
+retry persistence. A crash after MP-03 `ADMITTED` does not preserve execution authority; recovery
+performs current MP-03 again. A response-loss or `UNKNOWN` result becomes
+`RECONCILIATION_REQUIRED` and uses the optional accepted MP-04 native recovery port when present.
+`CONFIRMED` repairs the queue terminal state without a second effect; `ABSENT` becomes
+`EFFECT_ABSENT`; no queue retry blindly redispatches an uncertain execution identity.
+
+Retry classification is explicit and narrow. Only typed pre-authority operational failures can
+enter deterministic exponential backoff. Retry budgets and attempts are durable, monotonic, and
+shared by duplicate deliveries; duplicate delivery, restart, stale worker state, and activity
+mutation cannot reset them. Exhaustion is terminal and redelivery cannot restart the budget.
+`DENIED`, `WAITING_FOR_APPROVAL`, malformed state, integrity failure, approval failure, and
+MP-04 uncertainty are not generic retry cases. Approval work remains parked/observable without
+decision observation or auto-approval; the complete MP-05 approval lifecycle remains MP-06D.
+
+The machine-readable MP-06C evidence distinguishes deterministic unit coverage, durable local
+integration coverage, real-Fates regressions, offline guarded skips, and process-level limitations.
+The accepted scope is local and deterministic; distributed/cloud queue durability, provider
+semantics, dead-letter operations, and full concurrent stress remain outside this slice.
