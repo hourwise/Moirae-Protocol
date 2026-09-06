@@ -1,0 +1,28 @@
+flowchart TD
+    A[Human request] --> B[Strands Agent]
+    B --> C[Untrusted structured proposal]
+    C --> D[Deterministic ActionIntent compiler]
+    D --> E[Independent Fates admission]
+
+    E -->|ALLOW| F[Governed execution]
+    E -->|NEEDS HUMAN| G[Exact action details]
+    E -->|DENY / BLOCK| H[Blocked outcome]
+
+    G --> I[Human APPROVE or REJECT]
+    I --> J[Trusted approval boundary]
+    J --> F
+
+    F --> K[Moirae product view]
+    H --> K
+    K --> L[Handled automatically]
+    K --> M[Needs you]
+    K --> N[Blocked]
+    K --> O[Activity]
+
+    P[Model proposes; deterministic Protocol and Fates decide.] -. boundary .-> C
+    P -. boundary .-> E
+
+    classDef boundary fill:#fff4d6,stroke:#9a6700,color:#3d2b00;
+    classDef product fill:#e8f3ff,stroke:#1769aa,color:#0b2d4d;
+    class P boundary;
+    class K,L,M,N,O product;
