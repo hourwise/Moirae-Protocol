@@ -105,7 +105,11 @@ npm run mp01:live
 
 That command requires the normal AWS credential-provider chain and accepted Anthropic model-use-case access. It runs the three synthetic administrative fixtures and records no credentials. At the time of this draft, the command is not evidence of successful live inference because model-use-case activation remains blocked.
 
-The accepted local dashboard and host transport are implemented and tested, but there is no single supported dashboard launcher in the current repository. **Local dashboard launcher to be added in the deployment implementation slice.** No hosted URL is claimed.
+The accepted local dashboard and host transport are implemented and tested. The
+integrated runtime prerequisite now provides `npm run start`, a loopback-only
+`SYNTHETIC_LOCAL_DEMO` launcher with bounded `HOST`/`PORT` configuration, and
+`/health`/`/ready` routes. This is a supported local launcher, not a hosted
+deployment; no hosted URL or live MP-05-to-effect path is claimed.
 
 ## Public demo link
 
@@ -202,7 +206,7 @@ Moirae Protocol is a governed professional-operations demo for AWS-hosted agent 
 - Strands implementation details are visible in source and evidence.
 - Current README now distinguishes live-capable code from successful live inference.
 - AWS demo URL, live Strands result, video URL, and screenshots remain pending.
-- The local dashboard needs a supported launcher before a judge can run it without repository knowledge.
+- The local dashboard has a supported `npm run start` launcher for synthetic local demonstration; hosted URL, live Strands, and live MP-05-to-effect evidence remain pending.
 - No Devpost, Builder, AWS, or other external publication has been performed by this documentation candidate.
 
 ## Known limitations
@@ -211,7 +215,7 @@ Moirae Protocol is a governed professional-operations demo for AWS-hosted agent 
 - The local product demo uses synthetic bounded fixtures and does not claim a live hosted MP-05-to-effect path.
 - No MP-08B deployment or hosted URL exists.
 - No AgentCore resource or integration exists.
-- The current repository does not provide a single dashboard launcher.
+- The current repository provides a synthetic local dashboard launcher, but no hosted/public launcher or deployment.
 - External Fates licensing and compatibility considerations remain separately recorded and require review before redistribution of runtime artifacts.
 
 ## TODO Official Form Fields
@@ -219,6 +223,6 @@ Moirae Protocol is a governed professional-operations demo for AWS-hosted agent 
 - Final official hackathon field names and limits: verify against the event form before entry.
 - Public demo URL: `AWS_DEMO_URL_PENDING`.
 - Demo video URL: `VIDEO_URL_PENDING`.
-- Screenshots: capture after the local demo launcher is available.
+- Screenshots: capture after the local demo launcher is exercised and the hosted/deployment evidence requirements are separately satisfied.
 - Live Strands status: `LIVE_STRANDS_STATUS_PENDING` until the exact three-call smoke succeeds.
 - MP-08B deployment status: `MP08B_DEPLOYMENT_PENDING`.

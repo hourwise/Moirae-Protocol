@@ -3,7 +3,11 @@
 ## 1. Purpose and scope
 
 This document prepares the smallest truthful MP-08B deployment and acceptance
-runbook from the accepted MP-07 repository. It is documentation-only.
+runbook from the accepted MP-07 repository. It is documentation-only. The
+launcher, host/port configuration, health/readiness routes, and runtime
+identity described by the later MP08B-RUNTIME-01 slice are reconciled below;
+the earlier absence findings in this audit remain historical observations from
+before that slice.
 
 `MP08B_DEPLOYMENT_READINESS != MP08B_DEPLOYMENT`
 
@@ -136,9 +140,9 @@ and synthetic local control-plane behavior. It cannot honestly claim a hosted
 live sequence of proposal → ActionIntent → Fates admission → MP-05 durable
 approval → MP-04/Horae effect from the existing dashboard server alone.
 
-## 4. Launcher status
+## 4. Launcher status at the time of the pre-RUNTIME-01 audit
 
-**Classification: ABSENT.**
+**Historical classification: ABSENT.**
 
 The repository has:
 
@@ -148,9 +152,24 @@ The repository has:
 - a tested `listenMp07LocalServer()` library helper;
 - no supported command a judge/operator can use to launch the MP-07 dashboard.
 
-Adding that launcher is an `MP08B_REQUIRES_PREDEPLOYMENT_IMPLEMENTATION`
-prerequisite. It must be a separately bounded implementation slice and must
-not be implied by this documentation.
+The later, separately bounded `MP08B-RUNTIME-01` slice now provides
+`npm run start` through `apps/host/src/main.ts`. That launcher is limited to
+the synthetic local demo and does not resolve hosted binding, ingress,
+authentication, live Fates composition, or durable hosted state.
+
+### 4.1 Integrated current-state reconciliation
+
+On the integrated predeployment candidate, the supported local runtime is:
+
+- `npm run start` → `npm run build` → `node dist/apps/host/src/main.js`;
+- loopback default `HOST=127.0.0.1`, `PORT=3000`;
+- `GET /health` and `GET /ready` with the fixed
+  `SYNTHETIC_LOCAL_DEMO` descriptor;
+- all live Strands, live Fates, durable approval, hosted queue, and external
+  effect capability flags remain false.
+
+This reconciliation does not resolve any AWS, live Strands, hosted URL, public
+HTTPS, authentication, or MP-08B deployment prerequisite.
 
 ## 5. Network and configuration audit
 
@@ -167,13 +186,11 @@ code are in `scripts/mp01-live-smoke.mjs`:
 | `AWS_REGION`              | AWS-derived/non-secret region               | Passed to the Bedrock model configuration when present       |
 
 The AWS SDK/provider chain supplies credentials through normal runtime
-mechanisms; no credential values are read or documented here. The MP-07 local
-server does not currently consume `PORT`, `HOST`, a state-root variable, a
-public URL, or an authentication secret.
-
-Future names such as `PORT`, `HOST`, `MOIRAE_STATE_ROOT`, or an ingress/auth
-configuration are not current repository capabilities. They may be introduced
-only by a separately reviewed launcher/runtime slice.
+mechanisms; no credential values are read or documented here. The earlier
+MP-07 local server did not consume `PORT` or `HOST`; the later synthetic
+runtime prerequisite now consumes and validates those two names. A state-root
+variable, public URL, and authentication configuration remain future hosted
+deployment concerns.
 
 ### 5.2 Proposed future runtime configuration contract
 
@@ -185,7 +202,8 @@ configuration and not values:
 - `MOIRAE_STRANDS_PROVIDER`: fixed to `bedrock` for the hosted path;
 - `MOIRAE_STRANDS_MODEL_ID`: fixed to the accepted model unless a new explicit
   model decision is approved;
-- `PORT`: required future listener port supplied by the runtime platform;
+- `PORT`: local synthetic launcher port today; hosted deployment port supplied
+  by the runtime platform later;
 - a future state-root or durable-store configuration only if the runtime adds a
   real persistent adapter;
 - future ingress/auth configuration required for a public decision endpoint.
@@ -231,9 +249,10 @@ architecture evidence records a single bounded Node service in an ECS Fargate
 task behind narrow HTTPS ingress as the leading candidate.
 
 This minimizes CORS, browser trust, and service coordination. It fits the
-existing inline dashboard and routes. It is viable for a synthetic demo after
-adding a supported launcher, configurable binding, health/readiness, and
-public-ingress controls.
+existing inline dashboard and routes. It is viable for the synthetic local
+demo because the reviewed runtime slice now supplies the launcher,
+configurable binding, and health/readiness. It still requires hosted
+public-ingress controls before deployment.
 
 It is not yet viable for a truthful live MP-05-to-effect claim because the
 accepted tree lacks the runtime composition, durable hosted state, worker
@@ -315,7 +334,8 @@ Current facts:
 - `npm run check` covers typecheck, lint, format, tests, and build;
 - `npm run build` writes `dist/` with declarations and source maps;
 - there is no current container or immutable artifact mechanism;
-- there is no current `npm start` or dashboard launch command.
+- the integrated candidate has `npm run start` for the synthetic local demo,
+  but no hosted artifact or public launch contract.
 
 The future implementation must record the exact source SHA, tree, build command
 result, artifact digest, runtime image/artifact identity, and the service
@@ -341,15 +361,12 @@ Before calling it started, the operator must prove:
 
 ## 10. Health, readiness, and same-origin contract
 
-Current routes are listed in Section 3.3. Current health/readiness endpoints:
-
-**ABSENT.**
-
-Future MP-08B implementation must add a bounded health/readiness contract before
-deployment. It must not be invented or treated as present in this preparation
-slice. The contract should distinguish process health from application
-readiness, including whether the trusted state provider and required Fates
-composition are available.
+Current routes are listed in Section 3.3. The integrated synthetic local
+runtime provides `GET /health` and `GET /ready`. These routes report local
+process/runtime readiness only; they do not probe AWS, Bedrock, Fates, hosted
+durable state, or live effect composition. A future MP-08B deployment must
+extend the contract to report the actual hosted application state and required
+Fates composition without relabeling the synthetic runtime as live.
 
 The preferred hosted origin shape is:
 
@@ -477,7 +494,7 @@ placeholders, which this documentation does not resolve:
 - `AWS_DEMO_URL_PENDING`
 - `MP08B_DEPLOYMENT_PENDING`
 - `LIVE_STRANDS_STATUS_PENDING`
-- local/supported dashboard launcher pending
+- supported local launcher present (`npm run start`); hosted/public launcher and deployment pending
 - screenshots pending
 - `VIDEO_URL_PENDING`
 

@@ -99,7 +99,16 @@ npm run mp01:live
 
 That live command requires a working provider chain and the accepted model-use-case access. It must not be treated as a substitute for the deterministic Protocol/Fates checks.
 
-The accepted local dashboard and trusted host transport are implemented and tested, but this repository currently has no single supported dashboard launcher. **Local dashboard launcher to be added in the deployment implementation slice.** Do not infer a hosted URL from the local modules.
+The accepted local dashboard and trusted host transport are implemented and tested, and the integrated runtime prerequisite now provides a supported synthetic launcher:
+
+```sh
+npm run start
+```
+
+This starts the loopback-only `SYNTHETIC_LOCAL_DEMO` with bounded `HOST`/`PORT`
+configuration, `/health`, and `/ready`. A supported local launcher is not a
+hosted deployment: do not infer a hosted URL, live Strands result, live Fates
+composition, or live MP-05-to-effect path from the local modules.
 
 ## Incorporated pre-existing work
 
