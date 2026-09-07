@@ -17,6 +17,7 @@ import {
   type Mp07TrustedHostStateProvider,
 } from "./transport.js";
 import { createMp07LocalServer } from "./server.js";
+import type { Mp08bRuntimeIdentityV1 } from "./runtime.js";
 import type { Mp07ExactActionV1, Mp07ProductViewV1 } from "./index.js";
 
 /**
@@ -322,8 +323,8 @@ export function createMp07DemoTransport(): Mp07LocalHostTransport {
   return new Mp07LocalHostTransport(provider);
 }
 
-export function createMp07LocalDemoServer(): Server {
-  return createMp07LocalServer(createMp07DemoTransport());
+export function createMp07LocalDemoServer(runtime?: Mp08bRuntimeIdentityV1): Server {
+  return createMp07LocalServer(createMp07DemoTransport(), runtime ? { runtime } : {});
 }
 
 export async function readMp07DemoState(

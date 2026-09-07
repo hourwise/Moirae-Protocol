@@ -1,11 +1,12 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import { MP07_DASHBOARD_DOCUMENT } from "../../web/src/index.js";
 import {
-  MP07_MAX_DECISION_BODY_BYTES,
-  Mp07LocalHostTransport,
-  type Mp07LocalTransportResult,
-  type Mp07TransportErrorV1,
-} from "./transport.js";
+  MP08B_HEALTH_VERSION,
+  MP08B_READINESS_VERSION,
+  createSyntheticRuntimeIdentity,
+  type Mp08bRuntimeIdentityV1,
+} from "./runtime.js";
+import { MP07_MAX_DECISION_BODY_BYTES, Mp07LocalHostTransport } from "./transport.js";
 
 const LOCAL_CSP =
   "default-src 'self'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'";
@@ -20,15 +21,15 @@ function responseHeaders(contentType: string): Record<string, string> {
   };
 }
 
-function writeJson(
-  response: ServerResponse,
-  statusCode: number,
-  body: Mp07LocalTransportResult["body"] | Mp07TransportErrorV1,
-): void {
+function writeJson(response: ServerResponse, statusCode: number, body: unknown): void {
   const encoded = JSON.stringify(body);
   response.writeHead(statusCode, responseHeaders("application/json; charset=utf-8"));
   response.end(encoded);
 }
+
+export type Mp07LocalServerOptions = Readonly<{
+  readonly runtime?: Mp08bRuntimeIdentityV1;
+}>;
 
 function writeError(response: ServerResponse, statusCode: number, message: string): void {
   writeJson(response, statusCode, {
@@ -59,9 +60,28 @@ async function handleRequest(
   request: IncomingMessage,
   response: ServerResponse,
   transport: Mp07LocalHostTransport,
+  runtime: Mp08bRuntimeIdentityV1,
 ): Promise<void> {
   const path = requestPath(request);
   const method = request.method ?? "GET";
+
+  if (method === "GET" && path === "/health") {
+    writeJson(response, 200, {
+      schemaVersion: MP08B_HEALTH_VERSION,
+      status: "ok",
+      runtime,
+    });
+    return;
+  }
+
+  if (method === "GET" && path === "/ready") {
+    writeJson(response, 200, {
+      schemaVersion: MP08B_READINESS_VERSION,
+      ready: true,
+      runtime,
+    });
+    return;
+  }
 
   if (method === "GET" && (path === "/" || path === "/index.html")) {
     response.writeHead(200, responseHeaders("text/html; charset=utf-8"));
@@ -121,9 +141,13 @@ async function handleRequest(
   writeError(response, 404, "The local MP-07 route was not found.");
 }
 
-export function createMp07LocalServer(transport: Mp07LocalHostTransport): Server {
+export function createMp07LocalServer(
+  transport: Mp07LocalHostTransport,
+  options: Mp07LocalServerOptions = {},
+): Server {
+  const runtime = options.runtime ?? createSyntheticRuntimeIdentity({});
   return createServer((request, response) => {
-    void handleRequest(request, response, transport).catch(() => {
+    void handleRequest(request, response, transport, runtime).catch(() => {
       if (!response.headersSent)
         writeError(response, 500, "The local host boundary failed closed.");
       else response.destroy();
@@ -134,8 +158,9 @@ export function createMp07LocalServer(transport: Mp07LocalHostTransport): Server
 export function listenMp07LocalServer(
   server: Server,
   port = 0,
+  host = "127.0.0.1",
 ): Promise<{
-  readonly host: "127.0.0.1";
+  readonly host: string;
   readonly port: number;
   readonly close: () => Promise<void>;
 }> {
@@ -152,7 +177,7 @@ export function listenMp07LocalServer(
         return;
       }
       resolve({
-        host: "127.0.0.1",
+        host,
         port: address.port,
         close: () =>
           new Promise<void>((closeResolve, closeReject) => {
@@ -162,6 +187,6 @@ export function listenMp07LocalServer(
     };
     server.once("error", onError);
     server.once("listening", onListening);
-    server.listen(port, "127.0.0.1");
+    server.listen(port, host);
   });
 }

@@ -19,6 +19,7 @@
     "test": "vitest run",
     "test:mp04:required": "node scripts/mp04-required-test.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.json",
+    "start": "npm run build && node dist/apps/host/src/main.js",
     "verify:sealed-fates": "node scripts/verify-sealed-fates.mjs",
     "verify:mp05:fates-dependency": "node scripts/verify-mp05-fates-dependency.mjs",
     "check": "npm run typecheck && npm run lint && npm run format:check && npm test && npm run build",
