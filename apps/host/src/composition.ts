@@ -23,6 +23,20 @@ import {
   type AdministrativeProposalResult,
   type InvokeAdministrativeAgentOptions,
 } from "../../../packages/strands-agent/src/agent.js";
+import {
+  createMp08bVerifiedExternalFatesDependency,
+  type Mp08bVerifiedFatesMaterializationIdentity,
+} from "./fates-runtime.js";
+
+export {
+  verifyMp08bVerifiedFatesCheckout,
+  type Mp08bVerifiedFatesDependency,
+  type Mp08bVerifiedFatesMaterializationIdentity,
+} from "./fates-runtime.js";
+
+export function createMp08bVerifiedFatesDependency(root?: string): Promise<Mp08bFatesDependency> {
+  return createMp08bVerifiedExternalFatesDependency(root);
+}
 
 /**
  * RUNTIME-02 deliberately stops at the injected MP-03 admission port. The
@@ -65,6 +79,7 @@ export type Mp08bFatesDependency = Readonly<{
   readonly boundary: "MP03_FATES_ADMISSION";
   readonly runtimeKind: Mp08bFatesRuntimeKind;
   readonly admission: Mp03AdmissionAdapter;
+  readonly materialization?: Mp08bVerifiedFatesMaterializationIdentity;
 }>;
 
 /**

@@ -88,6 +88,21 @@ The following downstream boundaries are also not composed by the current host:
 These are genuine future prerequisites, not reasons to fabricate a longer
 chain. The current dashboard remains explicitly synthetic.
 
+### FATES-01 follow-on
+
+The historical RUNTIME-02 boundary above was resolved in the separately
+bounded FATES-01 slice. The exact accepted Ananke FATES-006B checkout is now
+verified and loaded behind the existing `FatesAdmissionGateway`; the test
+adapter remains an explicit test-only constructor. This does not rewrite the
+RUNTIME-02 finding: it records the boundary that was unavailable at that
+terminal.
+
+The current honest chain reaches the real Fates admission result and stops at
+`WAITING_FOR_APPROVAL → MP05_APPROVAL`. Durable MP-05 approval persistence and
+a trusted host-authenticated context remain unavailable to the hosted
+composition. `liveFates = true` does not imply durable approval, hosted queue
+state, execution, or external effects.
+
 ## 4. Implemented runtime composition
 
 `apps/host/src/composition.ts` adds:
@@ -97,6 +112,8 @@ chain. The current dashboard remains explicitly synthetic.
 - `createMp08bTestFatesDependency`, which is intentionally a test-only
   construction of the existing MP-03 adapter and marks its runtime kind
   `TEST_ADAPTER`;
+- `createMp08bVerifiedFatesDependency`, which verifies the exact accepted
+  external Ananke checkout and initializes its real admission-only gateway;
 - `createMp08bComposedRuntime`, whose `compose` method performs proposal
   validation, MP-02 compilation, and MP-03 admission in that order;
 - strict failure results for unavailable/malformed proposal, rejected compiler
@@ -124,13 +141,13 @@ current host cannot honestly supply all required live dependencies.
 
 Capabilities are derived from supplied dependency facts:
 
-| Capability           | Test RUNTIME-02 value | Meaning                                                                                                                                                                                                   |
-| -------------------- | --------------------: | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `liveStrands`        |               `false` | The focused suite uses `createAdministrativeAgentWithModelFactory` and an explicit synthetic model. A configured Bedrock agent would be recognized as a live proposal boundary, but was not invoked here. |
-| `liveFates`          |               `false` | Only `TEST_ADAPTER` is constructible in this slice.                                                                                                                                                       |
-| `durableApproval`    |               `false` | No approval store is supplied.                                                                                                                                                                            |
-| `hostedDurableQueue` |               `false` | No hosted queue/state adapter is supplied.                                                                                                                                                                |
-| `externalEffects`    |               `false` | No effect provider is supplied or called.                                                                                                                                                                 |
+| Capability           |                     Test RUNTIME-02 value | Meaning                                                                                                                                                                                                   |
+| -------------------- | ----------------------------------------: | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `liveStrands`        |                                   `false` | The focused suite uses `createAdministrativeAgentWithModelFactory` and an explicit synthetic model. A configured Bedrock agent would be recognized as a live proposal boundary, but was not invoked here. |
+| `liveFates`          | `false` in RUNTIME-02; `true` in FATES-01 | RUNTIME-02 had only `TEST_ADAPTER`; FATES-01 requires successful immutable external FATES-006B verification before reporting `true`.                                                                      |
+| `durableApproval`    |                                   `false` | No approval store is supplied.                                                                                                                                                                            |
+| `hostedDurableQueue` |                                   `false` | No hosted queue/state adapter is supplied.                                                                                                                                                                |
+| `externalEffects`    |                                   `false` | No effect provider is supplied or called.                                                                                                                                                                 |
 
 The mode string cannot turn a capability on. In particular, setting an
 environment variable or choosing `COMPOSED_LOCAL` cannot manufacture Fates,
@@ -232,14 +249,14 @@ trusted host request
   → Strands proposal source (mock in tests)
   → AgentProposalV1
   → MP-02 ActionIntent
-  → MP-03 adapter with deterministic test gateway
+  → MP-03 adapter with the verified external FATES-006B Gateway
   → typed admission observation
 ```
 
-The flow stops before durable approval, queue/worker scheduling, MP-04/Horae,
-external effects, and MP-07 projection because those host dependencies are not
-available in the accepted runtime assembly. The existing local dashboard flow
-remains separately available as `SYNTHETIC_LOCAL_DEMO`.
+The FATES-01 follow-on flow stops at `WAITING_FOR_APPROVAL → MP05_APPROVAL`,
+before durable approval, queue/worker scheduling, MP-04/Horae, external
+effects, and MP-07 projection. The existing local dashboard flow remains
+separately available as `SYNTHETIC_LOCAL_DEMO`.
 
 ## 10. Remaining MP-08B prerequisites
 
@@ -247,8 +264,8 @@ remains separately available as `SYNTHETIC_LOCAL_DEMO`.
 
 - Build a trusted host state/context source that can create compiler and MP-03
   context from authenticated server state rather than browser input.
-- Materialize a reviewed external Fates runtime at the exact accepted
-  dependency/provenance boundary.
+- Package the verified external Fates runtime with an immutable deployment
+  manifest rather than relying on a Git checkout at deployment time.
 - Add a host-owned durable MP-05 approval port and operator authentication
   boundary.
 - Add hosted durable MP-06 queue/activity state and a bounded worker startup
