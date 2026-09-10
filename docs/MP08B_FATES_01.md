@@ -213,3 +213,11 @@ NO_AWS_CALLS
 NO_DEPLOYMENT
 NO_PUBLICATION
 ```
+
+### Queue-01 follow-on state
+
+The durable approval and local queue follow-on slices are recorded separately.
+Queue-01 re-reads native approved MP-05 truth, persists an exact local MP-06
+work item, and records a bounded worker claim before stopping at the MP-04
+boundary. It does not alter the FATES-006B admission semantics recorded in
+this document.

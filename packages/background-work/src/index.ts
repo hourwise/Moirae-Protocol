@@ -31,7 +31,7 @@ export type QueueProtocolReferencesV1 = Readonly<{
     auditId: string;
     nativeActionHash: string;
   }>;
-  approval?: Readonly<{ approvalId: string }>;
+  approval?: Readonly<{ approvalId: string; decisionId?: string }>;
   durableExecution?: Readonly<{ durableExecutionId: string }>;
 }>;
 

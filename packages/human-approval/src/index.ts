@@ -211,6 +211,20 @@ export interface Mp05ApprovalOutcomeV1 {
   message?: string;
 }
 
+export type Mp05ApprovalObservationStateV1 =
+  "PENDING" | "APPROVED" | "REJECTED" | "EXPIRED" | "REVOKED" | "CONSUMED";
+
+export interface Mp05ApprovalObservationV1 {
+  schemaVersion: "mp05-approval-observation-v1";
+  approvalId: string;
+  state: Mp05ApprovalObservationStateV1;
+  decisionId?: string;
+  actionHash: string;
+  presentationBindingHash: string;
+  expiresAt: string;
+  observedAt: string;
+}
+
 export interface Mp05WorkflowResultV1 {
   schemaVersion: "mp05-workflow-result-v1";
   approval: Mp05ApprovalOutcomeV1;
@@ -354,6 +368,29 @@ export class Mp05HumanApprovalCoordinator {
       schemaVersion: "mp05-approval-preparation-v1",
       presentation,
       request,
+    };
+  }
+
+  /**
+   * Read and verify native approval truth without deciding or continuing into
+   * MP-04. Queue admission uses this observation after a durable APPROVE so a
+   * queue replay cannot treat a prior transport result as authority.
+   */
+  async readApprovalOnly(request: Mp05ApprovalRequestV1): Promise<Mp05ApprovalObservationV1> {
+    const trusted = this.parseRequest(request);
+    const now = this.readTrustedNow();
+    const waiting = parseWaitingAdmission(trusted.waitingAdmission);
+    const native = await this.readNativeApproval(waiting.approvalId, now);
+    this.assertExactBinding(native, trusted.intent, trusted.context, waiting, false);
+    return {
+      schemaVersion: "mp05-approval-observation-v1",
+      approvalId: native.id,
+      state: native.status.toUpperCase() as Mp05ApprovalObservationStateV1,
+      ...(native.decisionId ? { decisionId: native.decisionId } : {}),
+      actionHash: native.actionHash,
+      presentationBindingHash: native.presentationBindingHash!,
+      expiresAt: native.expiresAt,
+      observedAt: now,
     };
   }
 

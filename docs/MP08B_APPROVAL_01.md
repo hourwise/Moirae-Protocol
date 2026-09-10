@@ -248,6 +248,19 @@ accepted MP-06 durable queue/worker contract without turning approval into
 execution permission. MP-04/Horae and external effects remain later
 boundaries. They are not implemented here.
 
+### Queue-01 follow-on state
+
+The queue boundary identified above was crossed in the separately bounded
+Queue-01 slice. A fresh native MP-05 APPROVED reread now admits an exact
+ActionIntent into the accepted local filesystem MP-06 queue, and a bounded
+worker can persist a claim and lease before returning `READY_FOR_MP04`. Queue
+state remains local durable, not hosted durable. The worker does not invoke
+MP-04, Horae, or an effect, and queued or claimed work is not
+`HANDLED_AUTOMATICALLY`.
+
+The current next unavailable boundary is
+`POST_APPROVAL_MP04_HORAE_EXECUTION_AND_RECONCILIATION`.
+
 ## Classification
 
 ```text

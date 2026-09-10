@@ -34,6 +34,7 @@ import {
   type Mp05ApprovalPreparationV1,
   type Mp05ApprovalRequestV1,
   type Mp05ApprovalOutcomeV1,
+  type Mp05ApprovalObservationV1,
   type Mp05TrustedDecisionContext,
   type Mp05TrustedTimeSource,
 } from "../../../packages/human-approval/src/index.js";
@@ -555,6 +556,21 @@ export class Mp08bDurableApprovalRuntime {
     if (!binding)
       throw new Mp08bApprovalRuntimeError("No durable host binding exists for the approval.");
     return this.coordinator.prepareApproval({
+      intent: binding.intent,
+      authenticatedContext: binding.authenticatedContext,
+      waitingAdmission: binding.waitingAdmission,
+    });
+  }
+
+  getApprovalBinding(approvalId: string): Mp08bApprovalBindingV1 | undefined {
+    return this.bindings.get(approvalId);
+  }
+
+  async readApproval(approvalId: string): Promise<Mp05ApprovalObservationV1> {
+    const binding = this.bindings.get(approvalId);
+    if (!binding)
+      throw new Mp08bApprovalRuntimeError("No durable host binding exists for the approval.");
+    return this.coordinator.readApprovalOnly({
       intent: binding.intent,
       authenticatedContext: binding.authenticatedContext,
       waitingAdmission: binding.waitingAdmission,

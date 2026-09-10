@@ -334,3 +334,10 @@ NO_AWS_INFERENCE
 NO_DEPLOYMENT
 NO_PUBLICATION
 ```
+
+### Queue-01 follow-on state
+
+The later Approval-01 and Queue-01 slices crossed the durable MP-05 and local
+MP-06 queue/claim boundaries identified by this historical RUNTIME-02 report.
+The current Queue-01 state is recorded in `docs/MP08B_QUEUE_01.md`; it remains
+offline, local durable, and stops at `READY_FOR_MP04` without effect execution.
