@@ -320,3 +320,16 @@ NO_REAL_EXTERNAL_EFFECT
 NO_DEPLOYMENT
 NO_PUBLICATION
 ```
+
+## Provider-01B follow-on reconciliation
+
+The dependency gate recorded above was the correct Provider-01 state. It has
+now been crossed in the separate Provider-01B candidate with the exact pinned
+dependency `@aws-sdk/client-sesv2@3.1129.0`, a governed offline request mapper,
+an explicit real-transport boundary, and an independent observation seam.
+Provider-01 remains historical selection evidence; the current adapter and
+dependency state is documented in `docs/MP08B_PROVIDER_01B.md`.
+
+No AWS/SES call was made, no email was sent, and `externalEffects` remains
+`false`. The next boundary is the separately authorized Provider-02 sandbox
+setup and one-write live effect smoke.

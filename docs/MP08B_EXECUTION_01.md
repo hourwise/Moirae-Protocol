@@ -274,6 +274,12 @@ The current execution result remains local deterministic fixture evidence only:
 
 `LOCAL_DETERMINISTIC_EFFECT_FIXTURE != REAL_EXTERNAL_EFFECT`
 
-The next boundary is `PROVIDER_DEPENDENCY_AUTHORIZATION`, followed by a
-separately authorized one-write Provider-02 smoke. `externalEffects` remains
+Provider-01B has now crossed the dependency gate with a pinned
+`@aws-sdk/client-sesv2@3.1129.0` package, a governed offline SES request
+mapper, an explicit disabled-by-default real transport, and an independent
+observation seam. No AWS/SES call was made and `externalEffects` remains
 `false`.
+
+The next boundary is the separately authorized
+`PROVIDER_02_AWS_SES_SANDBOX_SETUP_AND_LIVE_EFFECT_SMOKE`. The local
+deterministic fixture remains distinct from a real external effect.
