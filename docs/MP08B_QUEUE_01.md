@@ -239,3 +239,14 @@ NO_AWS_CALLS
 NO_DEPLOYMENT
 NO_PUBLICATION
 ```
+
+### Execution-01 follow-on state
+
+The separately bounded Execution-01 slice now consumes `READY_FOR_MP04` only
+after rereading durable MP-05 approval truth and obtaining a fresh exact MP-03
+`ADMITTED` handoff. The existing MP-04 coordinator and a local deterministic
+Horae-shaped fixture can persist `COMPLETED`, `EFFECT_ABSENT`, or
+`RECONCILIATION_REQUIRED` outcomes. The fixture is not an external effect and
+`HANDLED_AUTOMATICALLY` is not inferred from queue or worker state.
+
+The current next unavailable boundary is `REAL_EXTERNAL_EFFECT_PROVIDER`.

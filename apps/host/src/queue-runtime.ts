@@ -4,6 +4,8 @@ import {
   createQueueWork,
   deterministicQueueIdentity,
   type ActivityRecordV1,
+  type ActivityStateV1,
+  type Mp04ExecutionPort,
   type QueueAcquireResultV1,
   type QueueDeliverySnapshotV1,
   type QueueEnqueueResultV1,
@@ -11,6 +13,7 @@ import {
   type QueueWorkV1,
   type SchedulingClaimV1,
 } from "../../../packages/background-work/src/index.js";
+import type { Mp04ExecutionResultV1 } from "../../../packages/execution-coordinator/src/index.js";
 import {
   DurableFilesystemActivitySink,
   DurableFilesystemLocalQueue,
@@ -41,6 +44,20 @@ export type Mp08bQueueWorkerResultV1 = Readonly<{
   readonly deliveryId: string;
   readonly claim?: SchedulingClaimV1;
   readonly reclaimed?: boolean;
+  readonly reason?: string;
+}>;
+
+export type Mp08bQueueExecutionResultV1 = Readonly<{
+  readonly status:
+    | "COMPLETED"
+    | "RECONCILIATION_REQUIRED"
+    | "EFFECT_ABSENT"
+    | "BOUNDARY_BLOCKED"
+    | "CLAIM_REJECTED";
+  readonly workId: string;
+  readonly deliveryId: string;
+  readonly queueOutcome?: QueueOutcomeSnapshotV1["outcome"];
+  readonly execution?: Mp04ExecutionResultV1;
   readonly reason?: string;
 }>;
 
@@ -156,6 +173,71 @@ function activityFor(
         }
       : {}),
   };
+}
+
+function executionActivityFor(
+  work: QueueWorkV1,
+  claim: SchedulingClaimV1,
+  observedAt: string,
+  state: ActivityStateV1,
+  execution?: Mp04ExecutionResultV1,
+  reason?: string,
+): ActivityRecordV1 {
+  const activityId = createHash("sha256")
+    .update(
+      `moirae-protocol/mp08b/execution-01/activity/v1\0${canonicalizeJsonV1({
+        claimId: claim.claimId,
+        ...(execution?.durableExecutionId ? { executionId: execution.durableExecutionId } : {}),
+        state,
+        workId: work.workId,
+      })}`,
+      "utf8",
+    )
+    .digest("hex");
+  const approval = work.protocolReferences?.approval;
+  return {
+    schemaVersion: "mp06b-activity-v1",
+    activityId: `mp08b-execution-activity-${activityId}`,
+    workId: work.workId,
+    deliveryId: work.deliveryId,
+    state,
+    observedAt,
+    workerId: claim.workerId,
+    claimId: claim.claimId,
+    sourceRequestId: work.sourceRequestId,
+    actionIntentDigest: work.actionIntentDigest,
+    ...(reason ? { reason } : {}),
+    ...(approval
+      ? {
+          approvalId: approval.approvalId,
+          ...(approval.decisionId ? { decisionId: approval.decisionId } : {}),
+          approvalObservationState: "APPROVED" as const,
+        }
+      : {}),
+    ...(execution?.durableExecutionId ? { durableExecutionId: execution.durableExecutionId } : {}),
+    ...(execution?.status ? { mp04Status: execution.status } : {}),
+  };
+}
+
+function sameClaim(left: SchedulingClaimV1, right: SchedulingClaimV1): boolean {
+  return canonicalizeJsonV1(left) === canonicalizeJsonV1(right);
+}
+
+function isAcceptedMp04Result(value: Mp04ExecutionResultV1): boolean {
+  if (value.schemaVersion !== "1" || !value.evidence || !value.executionState) return false;
+  if (value.status === "CONFIRMED" || value.status === "ABSENT") {
+    return (
+      value.executionState === "terminal" &&
+      value.evidence.durableState === "terminal" &&
+      value.evidence.nativeResult === value.status &&
+      value.evidence.reconciliationRequired === false &&
+      typeof value.durableExecutionId === "string" &&
+      value.evidence.durableExecutionId === value.durableExecutionId
+    );
+  }
+  if (value.status === "UNKNOWN" || value.status === "RECOVERY_REQUIRED")
+    return value.evidence.reconciliationRequired === true;
+  return value.status === "BOUNDARY_FAILURE";
 }
 
 export class Mp08bDurableQueueRuntime {
@@ -320,6 +402,216 @@ export class Mp08bDurableQueueRuntime {
       claim,
       reclaimed: acquired.reclaimed,
     };
+  }
+
+  /**
+   * Cross the Queue-01 READY_FOR_MP04 boundary through an injected accepted
+   * MP-04 coordinator. The coordinator, not this host, owns execution and
+   * reconciliation truth; queue state is updated only from its validated
+   * result.
+   */
+  async executeClaimed(input: {
+    readonly deliveryId: string;
+    readonly claim: SchedulingClaimV1;
+    readonly execution: Mp04ExecutionPort;
+  }): Promise<Mp08bQueueExecutionResultV1> {
+    const delivery = this.queue.inspectDelivery(input.deliveryId);
+    if (!delivery)
+      return {
+        status: "CLAIM_REJECTED",
+        workId: "unknown",
+        deliveryId: input.deliveryId,
+        reason: "NOT_FOUND",
+      };
+    const now = optionsNow(this.options);
+    if (!delivery.claim || !sameClaim(delivery.claim, input.claim))
+      return {
+        status: "CLAIM_REJECTED",
+        workId: delivery.work.workId,
+        deliveryId: input.deliveryId,
+        reason: "CLAIM_MISMATCH",
+      };
+    if (Date.parse(input.claim.expiresAt) <= Date.parse(now))
+      return {
+        status: "CLAIM_REJECTED",
+        workId: delivery.work.workId,
+        deliveryId: input.deliveryId,
+        reason: "LEASE_EXPIRED",
+      };
+
+    const approvalReference = delivery.work.protocolReferences?.approval;
+    const durableApprovalReference = approvalReference
+      ? {
+          schemaVersion: "mp06d-approval-reference-v1" as const,
+          approvalId: approvalReference.approvalId,
+          ...(approvalReference.decisionId ? { decisionId: approvalReference.decisionId } : {}),
+          observationState: "APPROVED" as const,
+          observedAt: now,
+        }
+      : undefined;
+
+    const finishBoundary = (
+      reason: string,
+      execution?: Mp04ExecutionResultV1,
+      approvalReference?: typeof durableApprovalReference,
+    ): Mp08bQueueExecutionResultV1 => {
+      this.queue.complete({
+        claim: input.claim,
+        outcome: "BOUNDARY_BLOCKED",
+        observedAt: now,
+        ...(approvalReference ? { approvalReference } : {}),
+      });
+      this.activity.append(
+        executionActivityFor(
+          delivery.work,
+          input.claim,
+          now,
+          "BOUNDARY_BLOCKED",
+          execution,
+          reason,
+        ),
+      );
+      return {
+        status: "BOUNDARY_BLOCKED",
+        workId: delivery.work.workId,
+        deliveryId: input.deliveryId,
+        queueOutcome: "BOUNDARY_BLOCKED",
+        ...(execution ? { execution } : {}),
+        reason,
+      };
+    };
+
+    if (!approvalReference?.approvalId || !approvalReference.decisionId)
+      return finishBoundary("The claimed work has no complete MP-05 approval reference.");
+
+    let approved: Awaited<ReturnType<Mp08bDurableApprovalRuntime["admitApproved"]>>;
+    try {
+      approved = await this.options.approvalRuntime.admitApproved(approvalReference.approvalId);
+      if (approved.approval.decisionId !== approvalReference.decisionId)
+        return finishBoundary("The durable MP-05 decision identity does not match queue truth.");
+    } catch (error) {
+      return finishBoundary(
+        error instanceof Error ? error.message : "The approved MP-05 boundary failed closed.",
+      );
+    }
+
+    let execution: Mp04ExecutionResultV1;
+    try {
+      execution = await input.execution.executeAdmittedAction({
+        intent: approved.binding.intent,
+        authenticatedContext: approved.binding.authenticatedContext,
+        admission: approved.admission,
+        now,
+      });
+    } catch {
+      this.queue.complete({
+        claim: input.claim,
+        outcome: "RECONCILIATION_REQUIRED",
+        observedAt: now,
+        approvalReference: durableApprovalReference,
+      });
+      this.activity.append(
+        executionActivityFor(
+          delivery.work,
+          input.claim,
+          now,
+          "RECONCILIATION_REQUIRED",
+          undefined,
+          "MP-04 response was unavailable; native reconciliation is required.",
+        ),
+      );
+      return {
+        status: "RECONCILIATION_REQUIRED",
+        workId: delivery.work.workId,
+        deliveryId: input.deliveryId,
+        queueOutcome: "RECONCILIATION_REQUIRED",
+        reason: "MP-04 response was unavailable; native reconciliation is required.",
+      };
+    }
+
+    if (!isAcceptedMp04Result(execution))
+      return finishBoundary(
+        "The MP-04 result was malformed or lacked accepted reconciliation evidence.",
+        execution,
+        durableApprovalReference,
+      );
+
+    if (execution.status === "CONFIRMED") {
+      this.queue.complete({
+        claim: input.claim,
+        outcome: "COMPLETED",
+        observedAt: now,
+        mp04DurableExecutionId: execution.durableExecutionId,
+        approvalReference: durableApprovalReference,
+      });
+      this.activity.append(
+        executionActivityFor(delivery.work, input.claim, now, "COMPLETED", execution),
+      );
+      return {
+        status: "COMPLETED",
+        workId: delivery.work.workId,
+        deliveryId: input.deliveryId,
+        queueOutcome: "COMPLETED",
+        execution,
+      };
+    }
+
+    if (execution.status === "ABSENT") {
+      this.queue.complete({
+        claim: input.claim,
+        outcome: "EFFECT_ABSENT",
+        observedAt: now,
+        ...(execution.durableExecutionId
+          ? { mp04DurableExecutionId: execution.durableExecutionId }
+          : {}),
+        approvalReference: durableApprovalReference,
+      });
+      this.activity.append(
+        executionActivityFor(delivery.work, input.claim, now, "EFFECT_ABSENT", execution),
+      );
+      return {
+        status: "EFFECT_ABSENT",
+        workId: delivery.work.workId,
+        deliveryId: input.deliveryId,
+        queueOutcome: "EFFECT_ABSENT",
+        execution,
+      };
+    }
+
+    if (execution.status === "UNKNOWN" || execution.status === "RECOVERY_REQUIRED") {
+      this.queue.complete({
+        claim: input.claim,
+        outcome: "RECONCILIATION_REQUIRED",
+        observedAt: now,
+        ...(execution.durableExecutionId
+          ? { mp04DurableExecutionId: execution.durableExecutionId }
+          : {}),
+        approvalReference: durableApprovalReference,
+      });
+      this.activity.append(
+        executionActivityFor(
+          delivery.work,
+          input.claim,
+          now,
+          "RECONCILIATION_REQUIRED",
+          execution,
+          "MP-04 requires native recovery or reconciliation.",
+        ),
+      );
+      return {
+        status: "RECONCILIATION_REQUIRED",
+        workId: delivery.work.workId,
+        deliveryId: input.deliveryId,
+        queueOutcome: "RECONCILIATION_REQUIRED",
+        execution,
+      };
+    }
+
+    return finishBoundary(
+      execution.message ?? "MP-04 blocked execution.",
+      execution,
+      durableApprovalReference,
+    );
   }
 
   inspectDelivery(deliveryId: string): QueueDeliverySnapshotV1 | undefined {

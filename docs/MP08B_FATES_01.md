@@ -221,3 +221,12 @@ Queue-01 re-reads native approved MP-05 truth, persists an exact local MP-06
 work item, and records a bounded worker claim before stopping at the MP-04
 boundary. It does not alter the FATES-006B admission semantics recorded in
 this document.
+
+### Execution-01 follow-on state
+
+Execution-01 consumes the real FATES-008A durable approval record produced by
+the later approval slice, then uses the existing MP-03 adapter with the exact
+approval ID to obtain an executable ADMITTED observation. It does not alter
+Fates policy or claim model output as authority. MP-04/Horae reconciliation is
+exercised only through the accepted Moirae port and a local deterministic
+fixture; a real external effect remains unavailable.

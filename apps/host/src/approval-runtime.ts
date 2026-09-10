@@ -21,6 +21,8 @@ import {
   Mp03AuthenticatedContextSchema,
   MoiraeAdmissionResultV1Schema,
   createMp03AdmissionAdapter,
+  type Mp03AdmissionAdapter,
+  type MoiraeAdmissionResultV1,
 } from "../../../packages/fates-adapter/src/index.js";
 import {
   ActionIntentV1Schema,
@@ -45,6 +47,7 @@ import {
   type Mp08bFatesDependency,
   type Mp08bProposalSource,
 } from "./composition.js";
+import type { Mp04AnankePort } from "../../../packages/execution-coordinator/src/index.js";
 
 export const MP08B_APPROVAL_01_VERSION = "mp08b-approval-01-v1" as const;
 export const MP08B_FATES_008A_MATERIALIZATION_VERSION =
@@ -120,11 +123,20 @@ type RealGateway = {
     args: Record<string, unknown>,
     options: Record<string, unknown>,
   ): Promise<unknown>;
+  createExecutionAuthority(
+    operation: unknown,
+    args: Record<string, unknown>,
+    admission: unknown,
+    options: Record<string, unknown>,
+  ): unknown;
   close(): void;
 };
 
 type RealRuntimeModule = {
   readonly Gateway: new (config: Record<string, unknown>) => RealGateway;
+  readonly FileDurableAuthorityStore: new (options: { filePath: string }) => unknown;
+  readonly hashArgumentsDigest: (args: Record<string, unknown>) => string;
+  readonly hashTargetDigest: (resourceScope: Record<string, unknown>) => string;
 };
 
 type RealProfileModule = {
@@ -398,6 +410,7 @@ export class Mp08bDurableApprovalBindingStore {
 export type Mp08bApprovalRuntimeOptions = Readonly<{
   readonly fatesRoot: string;
   readonly approvalStorePath: string;
+  readonly executionAuthorityStorePath?: string;
   readonly bindingStorePath: string;
   readonly proposal: Mp08bProposalSource;
   readonly trustedTime: Mp05TrustedTimeSource;
@@ -411,6 +424,12 @@ export type Mp08bPreparedApprovalV1 = Readonly<{
   readonly binding: Mp08bApprovalBindingV1;
 }>;
 
+export type Mp08bApprovedAdmissionV1 = Readonly<{
+  readonly binding: Mp08bApprovalBindingV1;
+  readonly approval: Mp05ApprovalObservationV1;
+  readonly admission: Extract<MoiraeAdmissionResultV1, { status: "ADMITTED" }>;
+}>;
+
 export class Mp08bDurableApprovalRuntime {
   readonly mode = "COMPOSED_LOCAL_DURABLE_APPROVAL" as const;
   readonly capabilities: Mp08bApprovalCapabilitiesV1;
@@ -419,8 +438,11 @@ export class Mp08bDurableApprovalRuntime {
     private readonly gateway: RealGateway,
     private readonly composition: ReturnType<typeof createMp08bComposedRuntime>,
     private readonly coordinator: ReturnType<typeof createMp05HumanApprovalCoordinator>,
+    private readonly admission: Mp03AdmissionAdapter,
+    private readonly ananke: Mp04AnankePort,
     private readonly bindings: Mp08bDurableApprovalBindingStore,
     private readonly trustedOperator: Mp05TrustedDecisionContext,
+    private readonly trustedTime: Mp05TrustedTimeSource,
     readonly materialization: Mp08bFates008aMaterializationIdentity,
   ) {
     this.capabilities = Object.freeze({
@@ -449,6 +471,13 @@ export class Mp08bDurableApprovalRuntime {
       pathToFileURL(join(materialization.root, "packages/authority-engine/dist/index.js")).href
     )) as unknown as RealHashModule;
 
+    const authorityStorePath = assertSafeStorePath(
+      options.executionAuthorityStorePath ?? `${options.approvalStorePath}.authority.json`,
+    );
+    const authorityStore = new runtime.FileDurableAuthorityStore({
+      filePath: authorityStorePath,
+    });
+
     const gateway = new runtime.Gateway({
       developmentMode: true,
       autoLoadPolicy: false,
@@ -459,6 +488,10 @@ export class Mp08bDurableApprovalRuntime {
         required: true,
         storePath: assertSafeStorePath(options.approvalStorePath),
         requirePresentationBinding: true,
+      },
+      claimAwareExecution: {
+        authorityStore,
+        trustedTime: { now: () => options.trustedTime.now() },
       },
     });
     profile.registerMoiraeAdministrativeOperationProfile(gateway);
@@ -503,6 +536,45 @@ export class Mp08bDurableApprovalRuntime {
       { admit: gateway.admit.bind(gateway) },
       MP03_DEPENDENCY_PROVENANCE,
     );
+    const ananke: Mp04AnankePort = {
+      createExecutionAuthority: (input) => {
+        const approval = input.admission.approvalGrantId
+          ? gateway.approvals.get(input.admission.approvalGrantId, input.now)
+          : undefined;
+        const grant =
+          approval && typeof approval === "object" && !Array.isArray(approval)
+            ? (approval as Record<string, unknown>)
+            : undefined;
+        if (input.admission.approvalGrantId && !grant)
+          throw new Mp08bApprovalRuntimeError(
+            "The approved native grant was not available for the MP-04 authority handoff.",
+          );
+        return gateway.createExecutionAuthority(
+          input.operation,
+          input.args,
+          {
+            status: "ADMITTED",
+            decision: "ALLOW",
+            operation: input.operation,
+            actionHash: input.admission.actionHash,
+            ...(grant
+              ? {
+                  approvalGrantId: grant.id,
+                  approvalActionHash: grant.actionHash,
+                  approvalExpiresAt: grant.expiresAt,
+                }
+              : {}),
+          },
+          {
+            executionContext: input.executionContext,
+            effectAdapter: input.effectAdapter,
+            now: input.now,
+          },
+        );
+      },
+      hashArgumentsDigest: runtime.hashArgumentsDigest,
+      hashTargetDigest: runtime.hashTargetDigest,
+    };
     const fates: Mp08bFatesDependency = {
       boundary: "MP03_FATES_ADMISSION",
       runtimeKind: "VERIFIED_EXTERNAL",
@@ -526,8 +598,11 @@ export class Mp08bDurableApprovalRuntime {
       gateway,
       composition,
       coordinator,
+      admission,
+      ananke,
       new Mp08bDurableApprovalBindingStore(options.bindingStorePath),
       options.trustedOperator ?? { operator: TRUSTED_LOCAL_OPERATOR_CONTEXT },
+      options.trustedTime,
       materialization,
     );
   }
@@ -575,6 +650,47 @@ export class Mp08bDurableApprovalRuntime {
       authenticatedContext: binding.authenticatedContext,
       waitingAdmission: binding.waitingAdmission,
     });
+  }
+
+  /**
+   * Re-read approved MP-05 truth and request the existing MP-03 adapter to
+   * produce the exact ADMITTED handoff required by MP-04. No client material
+   * participates in this transition.
+   */
+  async admitApproved(approvalId: string): Promise<Mp08bApprovedAdmissionV1> {
+    const binding = this.bindings.get(approvalId);
+    if (!binding)
+      throw new Mp08bApprovalRuntimeError("No durable host binding exists for the approval.");
+    const approval = await this.readApproval(approvalId);
+    if (approval.state !== "APPROVED" || !approval.decisionId)
+      throw new Mp08bApprovalRuntimeError(
+        "Only a durably reread APPROVED MP-05 record with a decision identity may enter MP-04.",
+      );
+    const waiting = MoiraeAdmissionResultV1Schema.safeParse(binding.waitingAdmission);
+    if (!waiting.success || waiting.data.status !== "WAITING_FOR_APPROVAL")
+      throw new Mp08bApprovalRuntimeError("The durable host binding is not a waiting admission.");
+    const raw = await this.admission.admitActionIntent({
+      intent: binding.intent,
+      authenticatedContext: binding.authenticatedContext,
+      now: this.trustedTime.now(),
+      approvalId,
+    });
+    const admission = MoiraeAdmissionResultV1Schema.safeParse(raw);
+    if (
+      !admission.success ||
+      admission.data.status !== "ADMITTED" ||
+      admission.data.approvalId !== approvalId ||
+      admission.data.nativeActionHash !== waiting.data.nativeActionHash
+    )
+      throw new Mp08bApprovalRuntimeError(
+        "Fresh MP-03 admission did not produce the exact executable boundary for the approved intent.",
+      );
+    return { binding, approval, admission: admission.data };
+  }
+
+  /** The accepted Ananke execution-authority port over the same native gateway. */
+  getMp04AnankePort(): Mp04AnankePort {
+    return this.ananke;
   }
 
   async submitDecision(input: {

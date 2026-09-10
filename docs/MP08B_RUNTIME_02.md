@@ -341,3 +341,12 @@ The later Approval-01 and Queue-01 slices crossed the durable MP-05 and local
 MP-06 queue/claim boundaries identified by this historical RUNTIME-02 report.
 The current Queue-01 state is recorded in `docs/MP08B_QUEUE_01.md`; it remains
 offline, local durable, and stops at `READY_FOR_MP04` without effect execution.
+
+### Execution-01 current state
+
+The next bounded slice crossed the local MP-04/Horae reconciliation seam from
+`READY_FOR_MP04` using the existing execution coordinator and an injected
+accepted port. Durable MP-06 state records validated `CONFIRMED`, `ABSENT`, or
+`UNKNOWN`/reconciliation outcomes. No real provider or external effect was
+introduced, and the current remaining boundary is
+`REAL_EXTERNAL_EFFECT_PROVIDER`.

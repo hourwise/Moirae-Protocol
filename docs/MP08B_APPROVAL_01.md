@@ -278,3 +278,11 @@ NO_AWS_CALLS
 NO_DEPLOYMENT
 NO_PUBLICATION
 ```
+
+### Execution-01 follow-on state
+
+Execution-01 adds no approval semantics. It rereads the durable APPROVED
+record, preserves its decision identity, and requests the existing MP-03
+ADMITTED handoff before entering MP-04. Approval remains distinct from queue,
+execution, and effect truth. The current next unavailable boundary is
+`REAL_EXTERNAL_EFFECT_PROVIDER`.
