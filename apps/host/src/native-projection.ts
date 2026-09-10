@@ -3,7 +3,10 @@ import type {
   QueueDeliverySnapshotV1,
   QueueOutcomeSnapshotV1,
 } from "../../../packages/background-work/src/index.js";
-import type { Mp04ExecutionResultV1 } from "../../../packages/execution-coordinator/src/index.js";
+import type {
+  Mp04ExecutionCoordinator,
+  Mp04ExecutionResultV1,
+} from "../../../packages/execution-coordinator/src/index.js";
 import type {
   ApprovalPresentationV1,
   Mp05ApprovalObservationV1,
@@ -38,7 +41,10 @@ export type Mp08bNativeExecutionReadRequestV1 = Readonly<{
   readonly durableExecutionId: string;
   readonly workId: string;
   readonly approvalId: string;
+  readonly sourceRequestId: string;
   readonly actionIntentDigest: string;
+  readonly actionIntentIdempotencyKey: string;
+  readonly expectedNativeActionHash?: string;
 }>;
 
 export type Mp08bNativeProjectionSources = Readonly<{
@@ -112,6 +118,12 @@ function queueForProjection(
   };
 }
 
+function nativeActionHashFromWaitingAdmission(value: unknown): string | undefined {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return undefined;
+  const nativeActionHash = (value as { nativeActionHash?: unknown }).nativeActionHash;
+  return typeof nativeActionHash === "string" ? nativeActionHash : undefined;
+}
+
 /**
  * Build the trusted read-side projection from host-owned native readers.
  * Neither this adapter nor the existing MP-07 mapper mutates approval, queue,
@@ -176,14 +188,22 @@ export function createMp08bTrustedNativeProductProjection(
           durableExecutionId,
           workId: queue.delivery.work.workId,
           approvalId: approval.approvalId,
+          sourceRequestId: binding.intent.sourceRequestId,
           actionIntentDigest: binding.intent.canonicalDigest,
+          actionIntentIdempotencyKey: binding.intent.idempotencyKey,
+          expectedNativeActionHash: nativeActionHashFromWaitingAdmission(binding.waitingAdmission),
         });
         if (execution) {
           assertExecutionBinding(execution, {
             durableExecutionId,
             workId: queue.delivery.work.workId,
             approvalId: approval.approvalId,
+            sourceRequestId: binding.intent.sourceRequestId,
             actionIntentDigest: binding.intent.canonicalDigest,
+            actionIntentIdempotencyKey: binding.intent.idempotencyKey,
+            expectedNativeActionHash: nativeActionHashFromWaitingAdmission(
+              binding.waitingAdmission,
+            ),
           });
         }
       }
@@ -223,8 +243,22 @@ export function createMp08bNativeProjectionSources(options: {
     "inspectDelivery" | "inspectOutcome" | "listActivity"
   >;
   readonly readExecution?: Mp08bNativeProjectionSources["readExecution"];
+  readonly executionCoordinator?: Pick<Mp04ExecutionCoordinator, "readExecution">;
   readonly trustedNow: () => string;
 }): Mp08bNativeProjectionSources {
+  const readExecution = options.executionCoordinator
+    ? async (input: Mp08bNativeExecutionReadRequestV1) =>
+        options.executionCoordinator!.readExecution({
+          durableExecutionId: input.durableExecutionId,
+          sourceRequestId: input.sourceRequestId,
+          actionIntentDigest: input.actionIntentDigest,
+          actionIntentIdempotencyKey: input.actionIntentIdempotencyKey,
+          ...(input.approvalId ? { approvalId: input.approvalId } : {}),
+          ...(input.expectedNativeActionHash
+            ? { expectedNativeActionHash: input.expectedNativeActionHash }
+            : {}),
+        })
+    : options.readExecution;
   return {
     readBinding: (approvalId) => options.approvalRuntime.getApprovalBinding(approvalId),
     readApproval: (approvalId) => options.approvalRuntime.readApproval(approvalId),
@@ -239,7 +273,7 @@ export function createMp08bNativeProjectionSources(options: {
         options.queueRuntime.listActivity(delivery.work.workId),
       );
     },
-    ...(options.readExecution ? { readExecution: options.readExecution } : {}),
+    ...(readExecution ? { readExecution } : {}),
     trustedNow: options.trustedNow,
   };
 }

@@ -255,3 +255,21 @@ MP08B_NOT_DEPLOYED
 MP08B_NOT_ACCEPTED
 MP09_NOT_ACCEPTED
 ```
+
+## Reconciliation-Read-01 current-state reconciliation
+
+The historical Projection-01 blocker above was resolved by
+`MP08B_RECONCILIATION_READ_01`. The accepted Horae-backed `get` operation is
+now exposed through the read-only `Mp04ExecutionCoordinator.readExecution`
+port and wired into the native projection without calling execution or
+recovery. The historical Projection-01 findings and synthetic-route boundary
+remain unchanged; the current state is:
+
+```text
+TRUSTED_NATIVE_MP07_PROJECTION_COMPLETE
+PROJECTION_01_READ_PORT_BLOCKER_RESOLVED
+NO_FAKE_EFFECT_TRUTH
+```
+
+See `docs/MP08B_RECONCILIATION_READ_01.md` for the exact read contract,
+missing-record semantics, identity validation, and mutation-free evidence.

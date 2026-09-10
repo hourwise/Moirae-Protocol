@@ -203,6 +203,24 @@ export interface Mp04ExecutionResultV1 {
   evidence: Mp04ExecutionEvidenceV1;
 }
 
+export type Mp04ExecutionReadRequestV1 = Readonly<{
+  readonly durableExecutionId: string;
+  readonly sourceRequestId: string;
+  readonly actionIntentDigest: string;
+  readonly actionIntentIdempotencyKey: string;
+  readonly approvalId?: string;
+  readonly expectedNativeActionHash?: string;
+}>;
+
+export class Mp04ExecutionReadError extends Error {
+  readonly code = "MP04_EXECUTION_READ_FAILURE" as const;
+
+  constructor(message: string) {
+    super(message);
+    this.name = "Mp04ExecutionReadError";
+  }
+}
+
 export interface Mp04ExecutionCoordinatorOptions {
   ananke: Mp04AnankePort;
   horae: Mp04HoraePort;
@@ -400,48 +418,71 @@ export class Mp04ExecutionCoordinator {
     }
   }
 
+  /**
+   * Read the already-persisted Horae record without entering execution or
+   * recovery. A missing durable execution has no effect meaning: callers must
+   * keep NOT_FOUND distinct from ABSENT.
+   */
+  readExecution(input: Mp04ExecutionReadRequestV1): Mp04ExecutionResultV1 | undefined {
+    const request = validateExecutionReadRequest(input);
+    const raw = this.options.horae.get(request.durableExecutionId);
+    if (raw === undefined) return undefined;
+
+    let record: HoraeRecord;
+    try {
+      record = parseHoraeRecord(raw);
+    } catch (error) {
+      throw new Mp04ExecutionReadError(
+        error instanceof Error
+          ? `The persisted MP-04/Horae record is invalid: ${error.message}`
+          : "The persisted MP-04/Horae record is invalid.",
+      );
+    }
+
+    if (record.durableExecutionId !== request.durableExecutionId)
+      throw new Mp04ExecutionReadError(
+        "The persisted MP-04/Horae record has a different durable execution identity.",
+      );
+    if (
+      request.expectedNativeActionHash &&
+      record.nativeActionHash !== request.expectedNativeActionHash
+    )
+      throw new Mp04ExecutionReadError(
+        "The persisted MP-04/Horae record has a different native action hash.",
+      );
+
+    const requestIdentity = record.authority.requestIdentity;
+    if (!isObject(requestIdentity) || requestIdentity.requestId !== request.sourceRequestId)
+      throw new Mp04ExecutionReadError(
+        "The persisted MP-04/Horae record is bound to a different source request.",
+      );
+    if (request.approvalId) {
+      const approval = record.authority.approval;
+      if (!isObject(approval) || approval.grantId !== request.approvalId)
+        throw new Mp04ExecutionReadError(
+          "The persisted MP-04/Horae record is bound to a different approval grant.",
+        );
+    }
+
+    const evidence: Mp04ExecutionEvidenceV1 = {
+      ...emptyEvidence(record.updatedAt),
+      sourceRequestId: request.sourceRequestId,
+      ...(request.approvalId
+        ? { approvalGrantId: request.approvalId, approvalStatus: "approved" as const }
+        : {}),
+      durableExecutionId: record.durableExecutionId,
+      nativeActionHash: record.nativeActionHash,
+    };
+    return buildMp04ExecutionResult(record, evidence);
+  }
+
   private finish(
     record: HoraeRecord,
     baseEvidence: Mp04ExecutionEvidenceV1,
   ): Mp04ExecutionResultV1 {
-    const nativeResult = record.result ?? record.receipt?.result;
-    const status: Mp04ResultStatus =
-      record.state === "terminal" && nativeResult
-        ? nativeResult
-        : record.state === "effect_reconciliation_required"
-          ? "UNKNOWN"
-          : "RECOVERY_REQUIRED";
-    const evidence: Mp04ExecutionEvidenceV1 = {
-      ...baseEvidence,
-      durableExecutionId: record.durableExecutionId,
-      nativeActionHash: record.nativeActionHash,
-      authorityInstanceDigest: record.authorityInstanceDigest,
-      durableState: record.state,
-      ...(record.claim
-        ? {
-            claimOwner: record.claim.owner,
-            claimGeneration: record.claim.generation,
-            claimDigest: record.claim.claimDigest,
-          }
-        : {}),
-      ...(record.receipt
-        ? { nativeResult: record.receipt.result, receiptChecksum: record.receipt.checksum }
-        : {}),
-      reconciliationRequired: status === "UNKNOWN" || status === "RECOVERY_REQUIRED",
-      redispatchAttempted: false,
-      events: record.history.map(({ event }) => event),
-      observedAt: record.updatedAt,
-    };
-    this.options.evidenceSink?.(evidence);
-    return {
-      schemaVersion: "1",
-      status,
-      ...(record.reason ? { message: record.reason } : {}),
-      durableExecutionId: record.durableExecutionId,
-      nativeActionHash: record.nativeActionHash,
-      executionState: record.state,
-      evidence,
-    };
+    const result = buildMp04ExecutionResult(record, baseEvidence);
+    this.options.evidenceSink?.(result.evidence);
+    return result;
   }
 
   private failure(
@@ -463,6 +504,49 @@ export class Mp04ExecutionCoordinator {
     this.options.evidenceSink?.(failureEvidence);
     return result;
   }
+}
+
+function buildMp04ExecutionResult(
+  record: HoraeRecord,
+  baseEvidence: Mp04ExecutionEvidenceV1,
+): Mp04ExecutionResultV1 {
+  const nativeResult = record.result ?? record.receipt?.result;
+  const status: Mp04ResultStatus =
+    record.state === "terminal" && nativeResult
+      ? nativeResult
+      : record.state === "effect_reconciliation_required"
+        ? "UNKNOWN"
+        : "RECOVERY_REQUIRED";
+  const evidence: Mp04ExecutionEvidenceV1 = {
+    ...baseEvidence,
+    durableExecutionId: record.durableExecutionId,
+    nativeActionHash: record.nativeActionHash,
+    authorityInstanceDigest: record.authorityInstanceDigest,
+    durableState: record.state,
+    ...(record.claim
+      ? {
+          claimOwner: record.claim.owner,
+          claimGeneration: record.claim.generation,
+          claimDigest: record.claim.claimDigest,
+        }
+      : {}),
+    ...(record.receipt
+      ? { nativeResult: record.receipt.result, receiptChecksum: record.receipt.checksum }
+      : {}),
+    reconciliationRequired: status === "UNKNOWN" || status === "RECOVERY_REQUIRED",
+    redispatchAttempted: false,
+    events: record.history.map(({ event }) => event),
+    observedAt: record.updatedAt,
+  };
+  return {
+    schemaVersion: "1",
+    status,
+    ...(record.reason ? { message: record.reason } : {}),
+    durableExecutionId: record.durableExecutionId,
+    nativeActionHash: record.nativeActionHash,
+    executionState: record.state,
+    evidence,
+  };
 }
 
 export function createMp04ExecutionCoordinator(
@@ -624,6 +708,41 @@ function parseRecoveryInput(input: unknown): {
     authenticatedContext: input.authenticatedContext,
     now: new Date(Date.parse(input.now)).toISOString(),
   };
+}
+
+function validateExecutionReadRequest(
+  input: Mp04ExecutionReadRequestV1,
+): Mp04ExecutionReadRequestV1 {
+  if (
+    typeof input.durableExecutionId !== "string" ||
+    !durableIdSchema.test(input.durableExecutionId)
+  )
+    throw new Mp04ExecutionReadError("MP-04 read requires a native durable execution ID.");
+  if (typeof input.sourceRequestId !== "string" || input.sourceRequestId.trim().length === 0)
+    throw new Mp04ExecutionReadError("MP-04 read requires the canonical source request identity.");
+  if (typeof input.actionIntentDigest !== "string" || !hashSchema.test(input.actionIntentDigest))
+    throw new Mp04ExecutionReadError("MP-04 read requires the canonical ActionIntent digest.");
+  if (
+    typeof input.actionIntentIdempotencyKey !== "string" ||
+    !hashSchema.test(input.actionIntentIdempotencyKey) ||
+    actionIntentIdempotencyKey(input.sourceRequestId, input.actionIntentDigest) !==
+      input.actionIntentIdempotencyKey
+  )
+    throw new Mp04ExecutionReadError(
+      "MP-04 read requires an idempotency key bound to the canonical source request and digest.",
+    );
+  if (
+    input.approvalId !== undefined &&
+    (typeof input.approvalId !== "string" || input.approvalId.trim().length === 0)
+  )
+    throw new Mp04ExecutionReadError("MP-04 read approval identity is invalid.");
+  if (
+    input.expectedNativeActionHash !== undefined &&
+    (typeof input.expectedNativeActionHash !== "string" ||
+      !hashSchema.test(input.expectedNativeActionHash))
+  )
+    throw new Mp04ExecutionReadError("MP-04 read native action identity is invalid.");
+  return input;
 }
 
 function validateActionAgainstRecord(
