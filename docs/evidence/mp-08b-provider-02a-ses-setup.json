@@ -1,0 +1,121 @@
+{
+  "schemaVersion": "mp08b-provider-02a-ses-setup-v1",
+  "classification": "MOIRAE_MP08B_PROVIDER_02A_COMPLETE",
+  "scope": {
+    "provider02a": "COMPLETE",
+    "provider02b": "NOT_STARTED_AND_NOT_AUTHORIZED",
+    "mp08b": "NOT_DEPLOYED_AND_NOT_ACCEPTED",
+    "mp09": "NOT_ACCEPTED"
+  },
+  "startingCandidate": {
+    "branch": "codex/mp08b-provider-02a-ses-observation-setup",
+    "commit": "8497edf2536a6339e6e3ba525d42d961402d2ddc",
+    "tree": "37554618bae65a84650bf418be4ea19c38e7e7ed",
+    "parent": "cb5655cd2642295bc09b6f8776cac577ffaa1f5b"
+  },
+  "acceptedMp07Baseline": {
+    "originMain": "983b785bd68e06d280a5af2898d3b43533688518",
+    "tag": "mp-07-accepted-v1",
+    "peeledTarget": "983b785bd68e06d280a5af2898d3b43533688518"
+  },
+  "region": "eu-west-2",
+  "operator": {
+    "principalClass": "philip-admin",
+    "nonRoot": true,
+    "sessionValid": true,
+    "accountIdRecorded": false
+  },
+  "ses": {
+    "accountMode": "SANDBOX",
+    "productionAccessEnabled": false,
+    "sendingEnabled": true,
+    "enforcementHealthy": true,
+    "senderVerified": true,
+    "recipientVerified": true,
+    "identityVerificationRequests": 2,
+    "verificationMessagesAreSetupActivity": true,
+    "configurationSet": "moirae-mp08b-demo",
+    "eventDestination": "moirae-mp08b-observation",
+    "eventDestinationEnabled": true,
+    "eventDestinationTarget": "SNS",
+    "eventTypes": ["SEND", "DELIVERY", "BOUNCE", "REJECT", "COMPLAINT", "DELIVERY_DELAY"],
+    "template": "appointment-details-v1"
+  },
+  "observation": {
+    "snsTopic": "moirae-mp08b-ses-events",
+    "sqsQueue": "moirae-mp08b-ses-events",
+    "subscriptionActive": true,
+    "deliveryMode": "SNS_ENVELOPE",
+    "sqsPolicyRestrictedToSelectedTopic": true,
+    "preSendMoiraeEventCount": 0,
+    "knownSetupValidationNotificationPresent": true,
+    "knownSetupValidationNotificationConsumed": false,
+    "noEffectAttemptYet": true
+  },
+  "providerAdapter": {
+    "provider": "aws-ses-v2",
+    "directDependency": "@aws-sdk/client-sesv2@3.1129.0",
+    "configurationSetMapping": true,
+    "trustedServerConfigurationOnly": true,
+    "deterministicCorrelationTags": [
+      "moirae-execution-id",
+      "moirae-correlation-id",
+      "moirae-idempotency-key"
+    ],
+    "providerSuccessConfirmsEffect": false,
+    "messageIdConfirmsEffect": false,
+    "independentObservationRequired": true,
+    "noTestFallback": true
+  },
+  "iam": {
+    "role": "MoiraeMp08bSesSmokeRole",
+    "trustPrincipalClass": "philip-admin",
+    "inlinePolicy": "MoiraeMp08bSesSendOnly",
+    "allowedAction": "ses:SendEmail",
+    "resourceRestrictionCount": 3,
+    "fromConditionRestricted": true,
+    "recipientsConditionRestricted": true,
+    "roleAssumptionVerified": true,
+    "staticCredentialsCreated": false
+  },
+  "capabilities": {
+    "liveFates": true,
+    "durableApproval": true,
+    "durableLocalQueue": true,
+    "boundedWorker": true,
+    "hostedDurableQueue": false,
+    "externalEffects": false,
+    "sesSandboxReady": true,
+    "sesSenderVerified": true,
+    "sesRecipientVerified": true,
+    "sesObservationReady": true,
+    "sesSendRoleReady": true,
+    "providerAdapterConfigurationCompatible": true
+  },
+  "counts": {
+    "applicationSesSendCalls": 0,
+    "realSesTransportInvocations": 0,
+    "moiraeEmailsSent": 0,
+    "realMoiraeExternalEffects": 0,
+    "bedrockCalls": 0,
+    "strandsLiveInferenceCalls": 0,
+    "awsVerificationEmailsAreMoiraeEffects": false
+  },
+  "sourceChanges": {
+    "configurationSetTrustedServerPlumbing": true,
+    "focusedOfflineTestsAdded": true,
+    "packageJsonChanged": false,
+    "packageLockChanged": false,
+    "fatesChanged": false,
+    "horaeChanged": false,
+    "deploymentChanged": false
+  },
+  "nextBoundary": "PROVIDER_02B_EXACTLY_ONE_LIVE_EFFECT",
+  "publication": {
+    "pushed": false,
+    "merged": false,
+    "tagged": false,
+    "deployed": false,
+    "published": false
+  }
+}

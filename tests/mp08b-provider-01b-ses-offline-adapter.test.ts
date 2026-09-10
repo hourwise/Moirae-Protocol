@@ -31,6 +31,7 @@ const CONFIG: SesProviderConfigV1 = {
   region: "eu-west-2",
   fromEmailAddress: "moirae-sandbox@example.test",
   allowedRecipientAddress: "alex@example.test",
+  configurationSetName: "moirae-mp08b-demo",
 };
 
 function proposalFor(action: Mp03Action) {
@@ -114,6 +115,7 @@ describe("MP-08B PROVIDER-01B governed SES adapter", () => {
     expect(prepared.region).toBe("eu-west-2");
     expect(prepared.request).toMatchObject({
       FromEmailAddress: CONFIG.fromEmailAddress,
+      ConfigurationSetName: CONFIG.configurationSetName,
       Destination: { ToAddresses: [CONFIG.allowedRecipientAddress] },
       Content: {
         Template: {
@@ -125,6 +127,29 @@ describe("MP-08B PROVIDER-01B governed SES adapter", () => {
     expect(prepared.request).toHaveProperty("EmailTags");
     expect(prepared.request).not.toHaveProperty("Credentials");
     expect(prepared.request).not.toHaveProperty("Endpoint");
+  });
+
+  it("keeps the configuration set trusted-server-only", () => {
+    const { intent } = preparedFixture();
+    expect(() =>
+      prepareSesAppointmentDetailsRequest({
+        intent: {
+          ...intent,
+          parameters: { ...intent.parameters, configurationSetName: "attacker-set" },
+        },
+        config: CONFIG,
+        identity: identityFor(intent),
+        approvedBinding: bindingFor(intent),
+      }),
+    ).toThrow();
+    expect(
+      prepareSesAppointmentDetailsRequest({
+        intent,
+        config: CONFIG,
+        identity: identityFor(intent),
+        approvedBinding: bindingFor(intent),
+      }).request.ConfigurationSetName,
+    ).toBe("moirae-mp08b-demo");
   });
 
   it("rejects the two actions outside the selected SES effect boundary", () => {

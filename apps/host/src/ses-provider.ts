@@ -33,6 +33,10 @@ const providerConfigSchema = z
       .regex(/^[a-z0-9-]{1,32}$/),
     fromEmailAddress: emailSchema,
     allowedRecipientAddress: emailSchema,
+    configurationSetName: z
+      .string()
+      .trim()
+      .regex(/^[A-Za-z0-9_-]{1,64}$/),
   })
   .strict();
 
@@ -187,6 +191,7 @@ export function prepareSesAppointmentDetailsRequest(input: {
   const correlationId = `moirae:${identity.executionId}:${identity.correlationId}`;
   const request: SendEmailCommandInput = {
     FromEmailAddress: config.fromEmailAddress,
+    ConfigurationSetName: config.configurationSetName,
     Destination: {
       ToAddresses: [intent.parameters.recipientAddress],
     },
