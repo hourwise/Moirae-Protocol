@@ -260,3 +260,20 @@ NO_REAL_EXTERNAL_EFFECT
 NO_DEPLOYMENT
 NO_PUBLICATION
 ```
+
+## Provider-01 follow-on state
+
+Provider-01 selected `SEND_APPOINTMENT_DETAILS` with a future AWS SES v2
+sandbox transport as the least-consequential real-effect candidate. The
+repository does not currently contain an SES SDK or another provider transport,
+and Provider-01 did not add one, create credentials, or invoke AWS. The
+provider request/observation design is recorded in
+`docs/MP08B_PROVIDER_01.md`.
+
+The current execution result remains local deterministic fixture evidence only:
+
+`LOCAL_DETERMINISTIC_EFFECT_FIXTURE != REAL_EXTERNAL_EFFECT`
+
+The next boundary is `PROVIDER_DEPENDENCY_AUTHORIZATION`, followed by a
+separately authorized one-write Provider-02 smoke. `externalEffects` remains
+`false`.
