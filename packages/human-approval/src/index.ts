@@ -367,6 +367,31 @@ export class Mp05HumanApprovalCoordinator {
     envelope: unknown;
     trustedDecision: Mp05TrustedDecisionContext;
   }): Promise<Mp05WorkflowResultV1> {
+    return this.submitDecisionInternal(input, true);
+  }
+
+  /**
+   * Apply and durably reread a human decision, then stop before the approved
+   * continuation. This is the bounded MP-08B approval seam: an approved
+   * record is not execution permission and must not enter MP-04 here.
+   */
+  async submitDecisionOnly(input: {
+    request: Mp05ApprovalRequestV1;
+    envelope: unknown;
+    trustedDecision: Mp05TrustedDecisionContext;
+  }): Promise<Mp05ApprovalOutcomeV1> {
+    const result = await this.submitDecisionInternal(input, false);
+    return result.approval;
+  }
+
+  private async submitDecisionInternal(
+    input: {
+      request: Mp05ApprovalRequestV1;
+      envelope: unknown;
+      trustedDecision: Mp05TrustedDecisionContext;
+    },
+    continueApproved: boolean,
+  ): Promise<Mp05WorkflowResultV1> {
     const trusted = this.parseRequest(input.request);
     const envelopeResult = HumanDecisionEnvelopeV1Schema.safeParse(input.envelope);
     if (!envelopeResult.success)
@@ -573,7 +598,7 @@ export class Mp05HumanApprovalCoordinator {
       decisionId,
       nativeGrant.status,
     );
-    if (envelope.decision === "REJECT")
+    if (envelope.decision === "REJECT" || !continueApproved)
       return { schemaVersion: "mp05-workflow-result-v1", approval };
 
     return this.continueApproved({

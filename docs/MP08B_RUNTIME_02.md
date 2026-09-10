@@ -88,6 +88,21 @@ The following downstream boundaries are also not composed by the current host:
 These are genuine future prerequisites, not reasons to fabricate a longer
 chain. The current dashboard remains explicitly synthetic.
 
+### Approval-01 follow-on state
+
+The durable MP-05 boundary identified above was crossed in the separately
+bounded Approval-01 slice. The exact accepted FATES-008A runtime now supplies
+the native durable approval store, while a host-owned durable correlation file
+preserves the exact ActionIntent/context binding required for restart-safe
+presentation recovery. A server-instantiated trusted local operator context
+can submit APPROVE or REJECT through the existing MP-05 validation path.
+
+Approval-01 still stops before MP-06 queueing, workers, MP-04/Horae, and
+effects. The original RUNTIME-02 finding remains historical: none of these
+approval capabilities existed in the RUNTIME-02 terminal. The current next
+unavailable boundary is `DURABLE_MP06_QUEUE_AND_WORKER`. The active
+`SYNTHETIC_LOCAL_DEMO` launcher remains unchanged and is not relabelled live.
+
 ### FATES-01 follow-on
 
 The historical RUNTIME-02 boundary above was resolved in the separately

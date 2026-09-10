@@ -72,7 +72,8 @@ type NativeRuntimeModule = Readonly<{
 
 function runGit(root: string, args: readonly string[]): string {
   try {
-    return execFileSync("git", ["-c", `safe.directory=${root}`, "-C", root, ...args], {
+    const safeRoot = root.replaceAll("\\", "/");
+    return execFileSync("git", ["-c", `safe.directory=${safeRoot}`, "-C", root, ...args], {
       encoding: "utf8",
       stdio: ["ignore", "pipe", "pipe"],
     }).trim();

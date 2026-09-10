@@ -158,6 +158,17 @@ No approval was created, persisted, submitted, or consumed. The next genuine
 unavailable boundary is `DURABLE_MP05_APPROVAL`, together with a real trusted
 host-authenticated context for a hosted flow.
 
+### Approval-01 follow-on state
+
+The paragraph above records the boundary at the FATES-01 terminal. It was
+resolved in the separately bounded Approval-01 slice by materializing the
+accepted FATES-008A durable approval runtime and composing it behind the
+existing MP-05 coordinator. Approval-01 adds no Fates source and does not
+change the FATES-006B admission semantics recorded here. It stops after a
+durable MP-05 APPROVE or REJECT reread, before MP-06 queueing, MP-04/Horae,
+workers, or effects. The current next unavailable boundary is
+`DURABLE_MP06_QUEUE_AND_WORKER`.
+
 ## Preserved boundaries
 
 - `MODEL_OUTPUT_NOT_AUTHORITY`
