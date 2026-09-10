@@ -1,0 +1,224 @@
+{
+  "schemaVersion": "mp08b-prelive-integration-01-v1",
+  "classification": "MOIRAE_MP08B_PRELIVE_INTEGRATION_01_COMPLETE",
+  "scope": {
+    "mp08a": "ACCEPTED_FOR_BOUNDED_LIVE_STRANDS_CHARACTERIZATION",
+    "mp08b": "NOT_DEPLOYED_AND_NOT_ACCEPTED",
+    "mp09": "NOT_ACCEPTED"
+  },
+  "candidate": {
+    "branch": "codex/mp08b-prelive-integration-01",
+    "commit": "c5923ec3c4fc9d87b3f00f124a2740e0b765fbba",
+    "tree": "4908c987ca0db03e4f3fa3b34684fae756af0a0c",
+    "parent": "4075eb8154efc39566d1a2d92f97119cc3bc4a58"
+  },
+  "acceptedMp07Baseline": {
+    "originMain": "983b785bd68e06d280a5af2898d3b43533688518",
+    "mainTree": "a9a31a37188d13d144d733a36666c78d8ac1e69f",
+    "tag": "mp-07-accepted-v1",
+    "tagObject": "c233a08ac8ef7930257f70300964e89216fa1cef",
+    "peeledTarget": "983b785bd68e06d280a5af2898d3b43533688518"
+  },
+  "linearAncestry": {
+    "verified": true,
+    "noCherryPickRequired": true,
+    "noMergeRequired": true,
+    "milestones": [
+      {
+        "name": "MP08A_EVIDENCE",
+        "commit": "0c7f8055e807e0dd62735b0c7bf86933ea912dfc",
+        "tree": "e3a9b815cf841bb0428eb7fc0960ddc340e54249",
+        "parent": "e24bf373c0a354f9bd1c0058699a949c59d6f5d5",
+        "ancestorOfCandidate": true
+      },
+      {
+        "name": "RUNTIME_02",
+        "commit": "d8034da93b5cc507a81ecf2c3efe2b54af3d85a7",
+        "tree": "3424af71b4ff38746d99f7e2ae0bbf928a9795af",
+        "parent": "0c7f8055e807e0dd62735b0c7bf86933ea912dfc",
+        "ancestorOfCandidate": true
+      },
+      {
+        "name": "FATES_01",
+        "commit": "4c4e187334b2600522b7014ad151a8a9531274b2",
+        "tree": "485ade24796bc85e57dfe78b7b74d797bf107643",
+        "parent": "d8034da93b5cc507a81ecf2c3efe2b54af3d85a7",
+        "ancestorOfCandidate": true
+      },
+      {
+        "name": "APPROVAL_01",
+        "commit": "3ad5f585be9feae6dd8c2e22a79590a8c801be3a",
+        "tree": "5769058a878fd1869eefcbe6ea46cab780a2dc09",
+        "parent": "4c4e187334b2600522b7014ad151a8a9531274b2",
+        "ancestorOfCandidate": true
+      },
+      {
+        "name": "QUEUE_01",
+        "commit": "8ef83fbc49c197b3afe3823d4b732f0f37349771",
+        "tree": "b9af7f0ed2a7dc6aac1ca040f6612ecc19875a68",
+        "parent": "3ad5f585be9feae6dd8c2e22a79590a8c801be3a",
+        "ancestorOfCandidate": true
+      },
+      {
+        "name": "EXECUTION_01",
+        "commit": "10589a815db8a171f40f56dbc579ee8a21da5d39",
+        "tree": "285bff95f95c54043dec6203a2932c91e7984293",
+        "parent": "8ef83fbc49c197b3afe3823d4b732f0f37349771",
+        "ancestorOfCandidate": true
+      },
+      {
+        "name": "PROVIDER_01",
+        "commit": "95556bfadcea904bc1c324bc92c46f9deaf27ada",
+        "tree": "a132e8feab0e423d04ddb615106fab58fa73be2f",
+        "parent": "10589a815db8a171f40f56dbc579ee8a21da5d39",
+        "ancestorOfCandidate": true
+      },
+      {
+        "name": "PROVIDER_01B",
+        "commit": "3d8cde3c73781a38946da7d8ba68e7450484364e",
+        "tree": "42e8533b7bb63eb81a71168fc10b2ca28bcd9181",
+        "parent": "95556bfadcea904bc1c324bc92c46f9deaf27ada",
+        "ancestorOfCandidate": true
+      },
+      {
+        "name": "PROJECTION_01",
+        "commit": "4075eb8154efc39566d1a2d92f97119cc3bc4a58",
+        "tree": "c8868cf9a16a3869655573709955038cbaa0ad9c",
+        "parent": "3d8cde3c73781a38946da7d8ba68e7450484364e",
+        "ancestorOfCandidate": true
+      },
+      {
+        "name": "RECONCILIATION_READ_01",
+        "commit": "c5923ec3c4fc9d87b3f00f124a2740e0b765fbba",
+        "tree": "4908c987ca0db03e4f3fa3b34684fae756af0a0c",
+        "parent": "4075eb8154efc39566d1a2d92f97119cc3bc4a58",
+        "ancestorOfCandidate": true
+      }
+    ]
+  },
+  "packageIntegrity": {
+    "packageJsonBlob": "83e0929ec5d7464ca5486d6b50a6d5ac444c99bd",
+    "packageLockBlob": "3abda7ef393cd7dc14ebcab88d8d231c3caa51e8",
+    "directSesDependency": "@aws-sdk/client-sesv2@3.1129.0",
+    "dependencyStateChanged": false
+  },
+  "provenance": {
+    "fatesAdmission": {
+      "repository": "https://github.com/hourwise/Project-Ananke.git",
+      "tag": "ananke-fates-006b-mp03-admission-v0.1.0-protocol-1.4.0",
+      "commit": "6bf8902c55c4f3f7593a987582b50783c8a7b5a0",
+      "tree": "b8c0be1170df56471930c689b8e8b6f58fdd29bd"
+    },
+    "fatesApproval": {
+      "repository": "https://github.com/hourwise/Project-Ananke.git",
+      "tag": "ananke-fates-008a-durable-human-approval-v0.1.0-protocol-1.4.0",
+      "tagObject": "0fa08f78f27e2f79c895402f3f53a8aada5837b4",
+      "commit": "b888d61adf180d33e2ae2e61d276cb9b0f13bd12",
+      "tree": "ed5e268e6b3b0630a798b9131341a2c13ef9830f"
+    },
+    "horae": {
+      "repository": "https://github.com/hourwise/Project-Horae.git",
+      "tag": "horae-fates-007a-claim-aware-execution-v0.1.0-protocol-1.4.0",
+      "commit": "aa296b420fbcf578089ca66dc03f6d09d9b06f00",
+      "tree": "2d472b9c90a0699f8902f39874760754310da473"
+    },
+    "runtimeContracts": {
+      "commit": "a1c01bf9e6f9d6a126cfdcc1acfacd488b214210",
+      "tree": "25ae38997b20ad2c50068f5a868cfb487ba3a417"
+    }
+  },
+  "validation": {
+    "focusedMp08b": {
+      "testFilesPassed": 6,
+      "testFilesGuarded": 2,
+      "passed": 50,
+      "skipped": 27,
+      "failed": 0
+    },
+    "fullCanonical": {
+      "testFilesPassed": 20,
+      "testFilesGuarded": 2,
+      "passed": 343,
+      "skipped": 43,
+      "failed": 0
+    },
+    "typecheck": "passed",
+    "lint": "passed",
+    "formatCheck": "passed",
+    "build": "passed",
+    "check": "passed",
+    "diffCheck": "passed",
+    "npmCiIgnoreScripts": "passed",
+    "secretAudit": "passed",
+    "staticAuthorityNetworkEffectAudit": "passed",
+    "npmAudit": {
+      "status": "completed",
+      "findings": 2,
+      "severity": "moderate",
+      "advisory": "GHSA-82fw-gwwq-j7x9",
+      "package": "@vitest/mocker",
+      "fixNotApplied": true
+    }
+  },
+  "guardedSkips": {
+    "total": 43,
+    "groups": {
+      "mp03RealAnankeAdmission": 7,
+      "mp04RealHoraeExecution": 6,
+      "mp05RealApproval": 3,
+      "fates01Materialization": 5,
+      "approval01RealApproval": 7,
+      "queue01RealWorker": 8,
+      "execution01RealExecution": 7
+    },
+    "ordinaryFailuresHidden": false,
+    "liveAwsOrSesTestsActiveByDefault": false
+  },
+  "capabilities": {
+    "liveStrandsInThisTask": false,
+    "mp08aLiveStrandsPreviouslyProven": true,
+    "liveFatesWithVerifiedMaterialization": true,
+    "durableApproval": true,
+    "durableLocalQueue": true,
+    "boundedWorker": true,
+    "nativeReconciliationRead": true,
+    "trustedNativeProjection": true,
+    "sesProviderAdapterReady": true,
+    "hostedDurableQueue": false,
+    "publicTrustedAuthentication": false,
+    "externalEffects": false,
+    "deployed": false
+  },
+  "networkAndEffectCounts": {
+    "awsApiCalls": 0,
+    "stsCalls": 0,
+    "sesApiCalls": 0,
+    "realSesTransportInvocations": 0,
+    "bedrockCalls": 0,
+    "strandsLiveInferenceCalls": 0,
+    "emailsSent": 0,
+    "realExternalEffects": 0
+  },
+  "sourceChanges": {
+    "productionSourceChanged": false,
+    "packageChanged": false,
+    "lockfileChanged": false,
+    "awsConfigurationChanged": false,
+    "deploymentFilesChanged": false,
+    "authorityChanged": false
+  },
+  "remainingBoundary": {
+    "next": "PROVIDER_02_AWS_SES_SANDBOX_SETUP_AND_LIVE_EFFECT_SMOKE",
+    "liveEffect": "SES sandbox sender/recipient setup, one authorized write, independent observation, and Horae reconciliation",
+    "hostedRuntime": "immutable external Fates/Horae materialization, hosted launcher, hosted durable state, trusted authentication, and deployment controls",
+    "acceptance": "MP08B and MP09 acceptance evidence after live/deployment boundaries are proven"
+  },
+  "publication": {
+    "pushed": false,
+    "merged": false,
+    "tagged": false,
+    "awsResourcesCreated": false,
+    "deploymentPerformed": false,
+    "publicationPerformed": false
+  }
+}
