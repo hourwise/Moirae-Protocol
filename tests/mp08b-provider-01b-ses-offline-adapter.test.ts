@@ -7,7 +7,8 @@ import {
   compileAgentProposal,
   type ActionIntentV1,
 } from "../packages/action-compiler/src/index.js";
-import type { SendEmailCommandOutput } from "@aws-sdk/client-sesv2";
+import { SESv2Client, type SendEmailCommandOutput } from "@aws-sdk/client-sesv2";
+import type { HttpHandler } from "@smithy/core/protocols";
 import { MP03_ACTING_AGENT, type Mp03Action } from "../packages/fates-adapter/src/index.js";
 import {
   primaryCompilerFixtures,
@@ -104,6 +105,49 @@ function fakeTransport(messageId = "ses-message-provider-01b"): {
     $metadata: {},
   }));
   return { transport: { send }, send };
+}
+
+const RETRY_ENV_KEYS = [
+  "AWS_MAX_ATTEMPTS",
+  "AWS_RETRY_MODE",
+  "AWS_ACCESS_KEY_ID",
+  "AWS_SECRET_ACCESS_KEY",
+  "AWS_EC2_METADATA_DISABLED",
+] as const;
+
+async function withRetryEnvironment<T>(
+  values: Partial<Record<(typeof RETRY_ENV_KEYS)[number], string | undefined>>,
+  callback: () => Promise<T>,
+): Promise<T> {
+  const previous = Object.fromEntries(
+    RETRY_ENV_KEYS.map((key) => [key, process.env[key]]),
+  ) as Record<(typeof RETRY_ENV_KEYS)[number], string | undefined>;
+
+  try {
+    for (const key of RETRY_ENV_KEYS) {
+      const value = values[key];
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+    return await callback();
+  } finally {
+    for (const key of RETRY_ENV_KEYS) {
+      const value = previous[key];
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  }
+}
+
+function retryableOfflineHandler() {
+  const handle = vi.fn(async () => {
+    const error = Object.assign(new Error("offline retryable SES failure"), {
+      name: "InternalServerError",
+      $metadata: { httpStatusCode: 500 },
+    });
+    throw error;
+  });
+  return { handler: { handle } as unknown as HttpHandler, handle };
 }
 
 describe("MP-08B PROVIDER-01B governed SES adapter", () => {
@@ -334,5 +378,82 @@ describe("MP-08B PROVIDER-01B governed SES adapter", () => {
     expect(vi.isMockFunction(vi.fn())).toBe(true);
     expect(SES_EFFECT_ADAPTER_ID.id).toBe("aws.ses-v2");
     expect(CONFIG.region).toBe("eu-west-2");
+  });
+
+  it("resolves the governed SES client to one attempt despite ambient retry settings", async () => {
+    await withRetryEnvironment(
+      {
+        AWS_MAX_ATTEMPTS: "10",
+        AWS_RETRY_MODE: "adaptive",
+      },
+      async () => {
+        const client = new SESv2Client({
+          region: CONFIG.region,
+          maxAttempts: 1,
+        });
+        try {
+          await expect(client.config.maxAttempts()).resolves.toBe(1);
+        } finally {
+          client.destroy();
+        }
+      },
+    );
+  });
+
+  it.each([
+    { AWS_MAX_ATTEMPTS: "3" },
+    { AWS_MAX_ATTEMPTS: "10" },
+    { AWS_RETRY_MODE: "standard" },
+    { AWS_RETRY_MODE: "adaptive", AWS_MAX_ATTEMPTS: "10" },
+  ])("does not allow ambient retry configuration to raise one attempt: %o", async (ambient) => {
+    await withRetryEnvironment(ambient, async () => {
+      const client = new SESv2Client({
+        region: CONFIG.region,
+        maxAttempts: 1,
+      });
+      try {
+        await expect(client.config.maxAttempts()).resolves.toBe(1);
+      } finally {
+        client.destroy();
+      }
+    });
+  });
+
+  it("performs exactly one underlying request-handler attempt for a retryable failure", async () => {
+    await withRetryEnvironment(
+      {
+        AWS_MAX_ATTEMPTS: "10",
+        AWS_RETRY_MODE: "adaptive",
+        AWS_ACCESS_KEY_ID: "offline-test-access",
+        AWS_SECRET_ACCESS_KEY: "offline-test-value",
+        AWS_EC2_METADATA_DISABLED: "true",
+      },
+      async () => {
+        const { prepared } = preparedFixture();
+        const { handler, handle } = retryableOfflineHandler();
+        const transport = createRealSesV2Transport({
+          region: CONFIG.region,
+          invocationAuthorization: "PROVIDER_02_EXPLICIT",
+          requestHandler: handler,
+        });
+
+        const invocation = await invokePreparedSesRequest(prepared, transport, NOW);
+
+        expect(handle).toHaveBeenCalledTimes(1);
+        expect(invocation.status).toBe("UNKNOWN");
+        expect(invocation.providerOperationId).toBeUndefined();
+        expect(invocation.reason).toContain("offline retryable SES failure");
+      },
+    );
+  });
+
+  it("does not send during real client construction", () => {
+    const { handle } = retryableOfflineHandler();
+    createRealSesV2Transport({
+      region: CONFIG.region,
+      invocationAuthorization: "PROVIDER_02_EXPLICIT",
+      requestHandler: { handle } as unknown as HttpHandler,
+    });
+    expect(handle).not.toHaveBeenCalled();
   });
 });

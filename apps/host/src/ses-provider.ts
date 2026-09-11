@@ -136,13 +136,21 @@ export function createDisabledSesV2Transport(): SesV2Transport {
 export function createRealSesV2Transport(input: {
   readonly region: string;
   readonly invocationAuthorization: "PROVIDER_02_EXPLICIT";
+  /** Offline-only request-handler injection for exercising the pinned SDK retry stack. */
+  readonly requestHandler?: NonNullable<
+    ConstructorParameters<typeof SESv2Client>[0]
+  >["requestHandler"];
 }): SesV2Transport {
   if (!providerConfigSchema.shape.region.safeParse(input.region).success)
     throw new Error("SES region configuration is invalid.");
   if (input.invocationAuthorization !== "PROVIDER_02_EXPLICIT")
     throw new Error("SES live invocation requires explicit Provider-02 authorization.");
 
-  const client = new SESv2Client({ region: input.region });
+  const client = new SESv2Client({
+    region: input.region,
+    maxAttempts: 1,
+    requestHandler: input.requestHandler,
+  });
   return {
     async send(request: SendEmailCommandInput): Promise<SendEmailCommandOutput> {
       return client.send(new SendEmailCommand(request));
