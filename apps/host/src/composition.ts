@@ -11,6 +11,7 @@ import {
   type FatesAdmissionGateway,
   type Mp03AdmissionAdapter,
   type Mp03AuthenticatedContext,
+  type Mp03TrustedAdministrativeProfileConfig,
   type MoiraeAdmissionResultV1,
 } from "../../../packages/fates-adapter/src/index.js";
 import {
@@ -34,8 +35,11 @@ export {
   type Mp08bVerifiedFatesMaterializationIdentity,
 } from "./fates-runtime.js";
 
-export function createMp08bVerifiedFatesDependency(root?: string): Promise<Mp08bFatesDependency> {
-  return createMp08bVerifiedExternalFatesDependency(root);
+export function createMp08bVerifiedFatesDependency(
+  root?: string,
+  trustedConfig?: Mp03TrustedAdministrativeProfileConfig,
+): Promise<Mp08bFatesDependency> {
+  return createMp08bVerifiedExternalFatesDependency(root, trustedConfig);
 }
 
 /**
@@ -89,11 +93,12 @@ export type Mp08bFatesDependency = Readonly<{
  */
 export function createMp08bTestFatesDependency(
   gateway: FatesAdmissionGateway,
+  trustedConfig?: Mp03TrustedAdministrativeProfileConfig,
 ): Mp08bFatesDependency {
   return Object.freeze({
     boundary: "MP03_FATES_ADMISSION" as const,
     runtimeKind: "TEST_ADAPTER" as const,
-    admission: createMp03AdmissionAdapter(gateway, MP03_DEPENDENCY_PROVENANCE),
+    admission: createMp03AdmissionAdapter(gateway, MP03_DEPENDENCY_PROVENANCE, trustedConfig),
   });
 }
 

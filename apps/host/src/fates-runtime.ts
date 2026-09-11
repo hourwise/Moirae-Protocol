@@ -7,6 +7,7 @@ import {
   MP03_DEPENDENCY_PROVENANCE,
   MP03_POLICY_VERSION,
   type FatesAdmissionGateway,
+  type Mp03TrustedAdministrativeProfileConfig,
   createMp03AdmissionAdapter,
   type Mp03AdmissionAdapter,
 } from "../../../packages/fates-adapter/src/index.js";
@@ -170,6 +171,7 @@ export function verifyMp08bVerifiedFatesCheckout(
  */
 export async function createMp08bVerifiedExternalFatesDependency(
   rootInput = process.env.FATES_ANANKE_ROOT,
+  trustedConfig?: Mp03TrustedAdministrativeProfileConfig,
 ): Promise<Mp08bVerifiedFatesDependency> {
   if (!rootInput) {
     throw new Mp08bFatesMaterializationError(
@@ -214,7 +216,7 @@ export async function createMp08bVerifiedExternalFatesDependency(
   return Object.freeze({
     boundary: "MP03_FATES_ADMISSION" as const,
     runtimeKind: "VERIFIED_EXTERNAL" as const,
-    admission: createMp03AdmissionAdapter(nativeGateway, MP03_DEPENDENCY_PROVENANCE),
+    admission: createMp03AdmissionAdapter(nativeGateway, MP03_DEPENDENCY_PROVENANCE, trustedConfig),
     materialization,
   });
 }

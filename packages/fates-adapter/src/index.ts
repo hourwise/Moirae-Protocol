@@ -145,6 +145,15 @@ export interface FatesAdmissionGateway {
   ): Promise<unknown>;
 }
 
+/**
+ * Trusted host composition may select one exact SEND recipient for this
+ * adapter instance. This is compatibility policy only; Fates remains the
+ * authority for admission and execution eligibility.
+ */
+export type Mp03TrustedAdministrativeProfileConfig = Readonly<{
+  readonly appointmentDetailsRecipient?: string;
+}>;
+
 export interface FatesOperation {
   readonly server: typeof MP03_SERVER;
   readonly toolName: (typeof MP03_TOOLS)[keyof typeof MP03_TOOLS];
@@ -290,6 +299,36 @@ const acceptedArgs = {
   },
 } as const;
 
+const trustedRecipientConfigSchema = z
+  .object({
+    appointmentDetailsRecipient: z
+      .string()
+      .min(1)
+      .email()
+      .refine(
+        (value) => value === value.trim(),
+        "Recipient must not contain surrounding whitespace",
+      )
+      .refine((value) => !value.includes("*"), "Recipient must be one exact address"),
+  })
+  .partial()
+  .strict();
+
+function effectiveAppointmentDetailsRecipient(
+  config: Mp03TrustedAdministrativeProfileConfig | undefined,
+): string {
+  const parsed = trustedRecipientConfigSchema.safeParse(config === undefined ? {} : config);
+  if (!parsed.success) {
+    throw new TypeError(
+      "MP-03 trusted recipient configuration must contain one exact email address.",
+    );
+  }
+  return (
+    parsed.data.appointmentDetailsRecipient ??
+    acceptedArgs.SEND_APPOINTMENT_DETAILS.recipientAddress
+  );
+}
+
 function exactJson(left: unknown, right: unknown): boolean {
   try {
     return canonicalizeJsonV1(left) === canonicalizeJsonV1(right);
@@ -321,7 +360,7 @@ type MappingResult =
     }
   | { ok: false; reason: "fixture_profile_mismatch" | "unsupported_action"; detail: string };
 
-function mapIntent(intent: ActionIntentV1): MappingResult {
+function mapIntent(intent: ActionIntentV1, appointmentDetailsRecipient: string): MappingResult {
   const action = intent.action as Mp03Action;
   if (!Object.hasOwn(MP03_PROFILE, action)) {
     return {
@@ -362,10 +401,13 @@ function mapIntent(intent: ActionIntentV1): MappingResult {
       intent.effectClass !== "DISCLOSE" ||
       !exactJson(intent.target, {
         kind: "email",
-        address: "alex@example.test",
+        address: appointmentDetailsRecipient,
         classification: "verified_requester",
       }) ||
-      !exactJson(intent.parameters, acceptedArgs.SEND_APPOINTMENT_DETAILS)
+      !exactJson(intent.parameters, {
+        ...acceptedArgs.SEND_APPOINTMENT_DETAILS,
+        recipientAddress: appointmentDetailsRecipient,
+      })
     ) {
       return mappingFailure(
         action,
@@ -745,6 +787,7 @@ function convertNativeResult(
 async function admitWithGateway(
   gateway: FatesAdmissionGateway,
   provenance: Mp03DependencyProvenance,
+  appointmentDetailsRecipient: string,
   input: AdmitActionIntentInput,
 ): Promise<MoiraeAdmissionResultV1> {
   if (!exactJson(provenance, MP03_DEPENDENCY_PROVENANCE)) {
@@ -780,7 +823,7 @@ async function admitWithGateway(
     );
   }
 
-  const mapped = mapIntent(intent);
+  const mapped = mapIntent(intent, appointmentDetailsRecipient);
   if (!mapped.ok) return boundaryFailure(mapped.reason, mapped.detail);
 
   const contextResult = Mp03AuthenticatedContextSchema.safeParse(
@@ -852,11 +895,16 @@ export interface Mp03AdmissionAdapter {
 export function createMp03AdmissionAdapter(
   gateway: FatesAdmissionGateway,
   provenance: Mp03DependencyProvenance,
+  trustedConfig?: Mp03TrustedAdministrativeProfileConfig,
 ): Mp03AdmissionAdapter {
   if (!gateway || typeof gateway.admit !== "function") {
     throw new TypeError("MP-03 requires an injected native Fates admission gateway.");
   }
-  return { admitActionIntent: (input) => admitWithGateway(gateway, provenance, input) };
+  const appointmentDetailsRecipient = effectiveAppointmentDetailsRecipient(trustedConfig);
+  return {
+    admitActionIntent: (input) =>
+      admitWithGateway(gateway, provenance, appointmentDetailsRecipient, input),
+  };
 }
 
 export { acceptedArgs as MP03_ACCEPTED_ARGUMENT_FIXTURES };

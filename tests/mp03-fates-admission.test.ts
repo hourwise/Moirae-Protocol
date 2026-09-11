@@ -42,6 +42,7 @@ import {
   type FatesAdmissionGateway,
   type Mp03AuthenticatedContext,
   type Mp03DependencyProvenance,
+  type Mp03TrustedAdministrativeProfileConfig,
   type MoiraeAdmissionResultV1,
 } from "../packages/fates-adapter/src/index.js";
 import {
@@ -51,6 +52,7 @@ import {
 import { SyntheticStructuredOutputModel } from "../packages/strands-agent/test/support/mock-model.js";
 
 const NOW = "2026-09-03T12:00:00.000Z";
+const TRUSTED_RECIPIENT = "trusted-demo@example.test";
 
 const contextByAction = {
   SEND_APPOINTMENT_DETAILS: {
@@ -99,6 +101,14 @@ function retagIntent(intent: ActionIntentV1, changes: Record<string, unknown>): 
     canonicalDigest,
     idempotencyKey: actionIntentIdempotencyKey(core.sourceRequestId, canonicalDigest),
   };
+}
+
+function sendIntentForRecipient(recipientAddress: string): ActionIntentV1 {
+  const intent = compileFixture("SEND_APPOINTMENT_DETAILS");
+  return retagIntent(intent, {
+    target: { ...intent.target, address: recipientAddress },
+    parameters: { ...intent.parameters, recipientAddress },
+  }) as ActionIntentV1;
 }
 
 function contextFor(action: keyof typeof MP03_PROFILE): Mp03AuthenticatedContext {
@@ -519,6 +529,223 @@ describe("MP-03 mapping and result boundary", () => {
   });
 });
 
+function nativeRejected(
+  operation: Record<string, unknown>,
+  actionHash: string,
+  decision: "DENY" | "REQUIRE_REFRESH" = "DENY",
+) {
+  return {
+    authority: "admission-only",
+    status: "REJECTED",
+    decision,
+    operation,
+    actionHash,
+    evaluatedAt: NOW,
+    auditId: "audit-rejected-001",
+    executorInvoked: false,
+    effectExecuted: false,
+  };
+}
+
+function nativeBoundary(operation: Record<string, unknown>) {
+  return {
+    authority: "admission-only",
+    status: "BOUNDARY_FAILURE",
+    operation,
+    boundaryCode: "SYNTHETIC_NATIVE_BOUNDARY",
+    message: "Synthetic native Fates boundary failure.",
+    evaluatedAt: NOW,
+    auditId: "audit-boundary-001",
+    executorInvoked: false,
+    effectExecuted: false,
+  };
+}
+
+describe("MP-03 trusted exact recipient compatibility seam", () => {
+  const trustedConfig: Mp03TrustedAdministrativeProfileConfig = Object.freeze({
+    appointmentDetailsRecipient: TRUSTED_RECIPIENT,
+  });
+
+  it("preserves the default legacy recipient and rejects an unconfigured synthetic recipient", async () => {
+    const { gateway, admit } = fakeGateway();
+    const result = await createMp03AdmissionAdapter(gateway, provenance()).admitActionIntent({
+      intent: sendIntentForRecipient(TRUSTED_RECIPIENT),
+      authenticatedContext: contextFor("SEND_APPOINTMENT_DETAILS"),
+      now: NOW,
+    });
+
+    expect(result).toMatchObject({
+      status: "BOUNDARY_FAILURE",
+      reason: "fixture_profile_mismatch",
+    });
+    expect(admit).not.toHaveBeenCalled();
+  });
+
+  it("maps the configured exact recipient and forwards it unchanged to Fates", async () => {
+    const { gateway, admit } = fakeGateway(
+      nativeWaiting(
+        MP03_PROFILE.SEND_APPOINTMENT_DETAILS.operation,
+        MP03_NATIVE_HASH_FIXTURES.SEND_APPOINTMENT_DETAILS,
+      ),
+    );
+    const intent = sendIntentForRecipient(TRUSTED_RECIPIENT);
+    const result = await createMp03AdmissionAdapter(
+      gateway,
+      provenance(),
+      trustedConfig,
+    ).admitActionIntent({
+      intent,
+      authenticatedContext: contextFor("SEND_APPOINTMENT_DETAILS"),
+      now: NOW,
+    });
+
+    expect(result).toMatchObject({
+      status: "WAITING_FOR_APPROVAL",
+      nativeDecision: "REQUIRE_APPROVAL",
+    });
+    expect(admit).toHaveBeenCalledOnce();
+    expect(admit.mock.calls[0]?.[1]).toEqual({
+      ...MP03_ACCEPTED_ARGUMENT_FIXTURES.SEND_APPOINTMENT_DETAILS,
+      recipientAddress: TRUSTED_RECIPIENT,
+    });
+    expect((admit.mock.calls[0]?.[1] as Record<string, unknown>).recipientAddress).toBe(
+      (intent.parameters as Record<string, unknown>).recipientAddress,
+    );
+  });
+
+  it.each([
+    ["one-character mismatch", "trusted-demx@example.test"],
+    ["plus-suffix mismatch", "trusted-demo+alias@example.test"],
+    ["same-domain address", "other-demo@example.test"],
+    ["configured A replaced by B", "other@example.test"],
+    ["legacy address under replacement policy", "alex@example.test"],
+  ] as const)("rejects %s under exact replacement policy", async (_label, recipientAddress) => {
+    const { gateway, admit } = fakeGateway();
+    const result = await createMp03AdmissionAdapter(
+      gateway,
+      provenance(),
+      trustedConfig,
+    ).admitActionIntent({
+      intent: sendIntentForRecipient(recipientAddress),
+      authenticatedContext: contextFor("SEND_APPOINTMENT_DETAILS"),
+      now: NOW,
+    });
+
+    expect(result).toMatchObject({
+      status: "BOUNDARY_FAILURE",
+      reason: "fixture_profile_mismatch",
+    });
+    expect(admit).not.toHaveBeenCalled();
+  });
+
+  it.each(["", "*.example.test", "*@example.test", "trusted-demo@example.test extra"])(
+    "rejects invalid trusted configuration %s",
+    (appointmentDetailsRecipient) => {
+      const { gateway } = fakeGateway();
+      expect(() =>
+        createMp03AdmissionAdapter(gateway, provenance(), { appointmentDetailsRecipient }),
+      ).toThrow(TypeError);
+    },
+  );
+
+  it.each([
+    [
+      "REQUIRE_APPROVAL",
+      nativeWaiting(
+        MP03_PROFILE.SEND_APPOINTMENT_DETAILS.operation,
+        MP03_NATIVE_HASH_FIXTURES.SEND_APPOINTMENT_DETAILS,
+      ),
+      "WAITING_FOR_APPROVAL",
+    ],
+    [
+      "DENY",
+      nativeRejected(
+        MP03_PROFILE.SEND_APPOINTMENT_DETAILS.operation,
+        MP03_NATIVE_HASH_FIXTURES.SEND_APPOINTMENT_DETAILS,
+      ),
+      "REJECTED",
+    ],
+    [
+      "BOUNDARY_FAILURE",
+      nativeBoundary(MP03_PROFILE.SEND_APPOINTMENT_DETAILS.operation),
+      "BOUNDARY_FAILURE",
+    ],
+  ] as const)(
+    "preserves the gateway %s result without creating authority",
+    async (_label, native, status) => {
+      const { gateway, admit } = fakeGateway(native);
+      const result = await createMp03AdmissionAdapter(
+        gateway,
+        provenance(),
+        trustedConfig,
+      ).admitActionIntent({
+        intent: sendIntentForRecipient(TRUSTED_RECIPIENT),
+        authenticatedContext: contextFor("SEND_APPOINTMENT_DETAILS"),
+        now: NOW,
+      });
+
+      expect(result.status).toBe(status);
+      expect(admit).toHaveBeenCalledOnce();
+      if (status !== "BOUNDARY_FAILURE")
+        expect(result).not.toHaveProperty("nativeDecision", "ALLOW");
+    },
+  );
+
+  it.each(["http", "browser", "model", "provider", "iam"] as const)(
+    "does not accept %s metadata as trusted policy",
+    async (source) => {
+      const { gateway, admit } = fakeGateway();
+      const result = await createMp03AdmissionAdapter(gateway, provenance()).admitActionIntent({
+        intent: sendIntentForRecipient(TRUSTED_RECIPIENT),
+        authenticatedContext: contextFor("SEND_APPOINTMENT_DETAILS"),
+        now: NOW,
+        [source]: { appointmentDetailsRecipient: TRUSTED_RECIPIENT },
+      } as never);
+
+      expect(result).toMatchObject({ status: "BOUNDARY_FAILURE", reason: "invalid_action_intent" });
+      expect(admit).not.toHaveBeenCalled();
+    },
+  );
+
+  it("does not accept trusted policy embedded in ActionIntentV1", async () => {
+    const { gateway, admit } = fakeGateway();
+    const intentWithPolicy = {
+      ...sendIntentForRecipient(TRUSTED_RECIPIENT),
+      appointmentDetailsRecipient: TRUSTED_RECIPIENT,
+    };
+    const result = await createMp03AdmissionAdapter(gateway, provenance()).admitActionIntent({
+      intent: intentWithPolicy,
+      authenticatedContext: contextFor("SEND_APPOINTMENT_DETAILS"),
+      now: NOW,
+    });
+
+    expect(result).toMatchObject({ status: "BOUNDARY_FAILURE", reason: "invalid_action_intent" });
+    expect(admit).not.toHaveBeenCalled();
+  });
+
+  it("applies the configuration only to SEND and keeps the other MP-03 action classes bounded", async () => {
+    for (const action of [
+      "RESCHEDULE_APPOINTMENT",
+      "TRANSMIT_CUSTOMER_CONTACT_DIRECTORY",
+    ] as const) {
+      const { gateway, admit } = fakeGateway(
+        nativeWaiting(MP03_PROFILE[action].operation, MP03_NATIVE_HASH_FIXTURES[action]),
+      );
+      const result = await createMp03AdmissionAdapter(
+        gateway,
+        provenance(),
+        trustedConfig,
+      ).admitActionIntent({
+        intent: compileFixture(action),
+        authenticatedContext: contextFor(action),
+        now: NOW,
+      });
+      expect(result.status).toBe("WAITING_FOR_APPROVAL");
+      expect(admit).toHaveBeenCalledOnce();
+    }
+  });
+});
+
 const acceptedAnankeRoot = process.env.FATES_ANANKE_ROOT;
 const describeRealAnanke = acceptedAnankeRoot ? describe : describe.skip;
 
@@ -722,6 +949,46 @@ describeRealAnanke("MP-03 real Ananke admission integration", () => {
       expect(reorderedGoverned.nativeActionHash).toBe(MP03_NATIVE_HASH_FIXTURES[action]);
       expect(reorderedGoverned.status).toBe("WAITING_FOR_APPROVAL");
     }
+  });
+
+  it("keeps the configured recipient in the native identity domain while Ananke remains authoritative", async () => {
+    const { gateway, admissionModule } = await createRealAnankeGateway();
+    const configuredArgs = {
+      ...MP03_ACCEPTED_ARGUMENT_FIXTURES.SEND_APPOINTMENT_DETAILS,
+      recipientAddress: TRUSTED_RECIPIENT,
+    };
+    const legacyHash = admissionModule.nativeAdmissionActionHash(
+      MP03_PROFILE.SEND_APPOINTMENT_DETAILS.operation,
+      MP03_ACCEPTED_ARGUMENT_FIXTURES.SEND_APPOINTMENT_DETAILS,
+      contextFor("SEND_APPOINTMENT_DETAILS"),
+    );
+    const configuredHash = admissionModule.nativeAdmissionActionHash(
+      MP03_PROFILE.SEND_APPOINTMENT_DETAILS.operation,
+      configuredArgs,
+      contextFor("SEND_APPOINTMENT_DETAILS"),
+    );
+
+    expect(legacyHash).toBe(MP03_NATIVE_HASH_FIXTURES.SEND_APPOINTMENT_DETAILS);
+    expect(configuredHash).not.toBe(legacyHash);
+
+    const nativeResult = await gateway.admit(
+      MP03_PROFILE.SEND_APPOINTMENT_DETAILS.operation,
+      configuredArgs,
+      { executionContext: contextFor("SEND_APPOINTMENT_DETAILS"), now: NOW },
+    );
+    expect(nativeResult).toMatchObject({ status: "BOUNDARY_FAILURE" });
+
+    const adapter = createMp03AdmissionAdapter(
+      { admit: gateway.admit.bind(gateway) },
+      provenance(),
+      { appointmentDetailsRecipient: TRUSTED_RECIPIENT },
+    );
+    const result = await adapter.admitActionIntent({
+      intent: sendIntentForRecipient(TRUSTED_RECIPIENT),
+      authenticatedContext: contextFor("SEND_APPOINTMENT_DETAILS"),
+      now: NOW,
+    });
+    expect(result).toMatchObject({ status: "BOUNDARY_FAILURE" });
   });
 
   it("keeps invalid approvals and foreign governance strings outside authority", async () => {
