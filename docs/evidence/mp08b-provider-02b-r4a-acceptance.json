@@ -1,0 +1,94 @@
+{
+  "schemaVersion": "mp08b-provider-02b-r4a-acceptance-v1",
+  "classification": "MOIRAE_MP08B_PROVIDER_02B_R4A_ACCEPTED",
+  "candidate": {
+    "commit": "c6e35957d6cc15e88d72d83ad84c1152f2d81d10",
+    "tree": "eb3d18d0af41576d89aa4ba3a3ad8244aaa0ceff",
+    "parent": "0c58b52f9e5911fc9c25b3654b247c4219f9fdba",
+    "branch": "codex/mp08b-provider-02b-r4a-jit-approval-rebind",
+    "subject": "fix(protocol): allow JIT approval rebind before send"
+  },
+  "base": {
+    "tag": "mp-08b-execution-02a-accepted-v1",
+    "commit": "0c58b52f9e5911fc9c25b3654b247c4219f9fdba",
+    "tree": "69816160660dd15465888e9aa6f8152adc6113c3"
+  },
+  "diff": {
+    "certified": true,
+    "changedFiles": [
+      "apps/host/src/provider-02b-runner.ts",
+      "tests/mp08b-provider-02b-r4a-jit-approval-rebind.test.ts",
+      "docs/MP08B_PROVIDER_02B_R4A_JIT_APPROVAL_REBIND.md",
+      "docs/evidence/mp08b-provider-02b-r4a-jit-approval-rebind.json"
+    ],
+    "productionScope": "provider-02b-runner-only",
+    "dependencyChange": false
+  },
+  "gates": {
+    "preparedOnly": true,
+    "durableFatesRereads": true,
+    "immutableActionIdentity": true,
+    "appendOnlyHistory": true,
+    "casProtected": true,
+    "supersededApprovalRefused": true,
+    "postSendRebindRefused": true,
+    "providerActivityRebindRefused": true,
+    "restartDurability": true,
+    "oldAuthorizationNotReplayable": true,
+    "freshOperatorAuthorizationRequired": true
+  },
+  "tests": {
+    "focused": {
+      "path": "tests/mp08b-provider-02b-r4a-jit-approval-rebind.test.ts",
+      "passed": 14,
+      "failed": 0,
+      "skipped": 0
+    },
+    "boundedRegression": {
+      "passed": 108,
+      "failed": 0,
+      "skipped": 3
+    },
+    "canonical": {
+      "testFilesPassed": 25,
+      "testFilesSkipped": 2,
+      "testsPassed": 431,
+      "testsFailed": 0,
+      "testsSkipped": 31,
+      "typecheck": "passed",
+      "lint": "passed",
+      "formatCheck": "passed",
+      "build": "passed",
+      "diffCheck": "passed"
+    }
+  },
+  "protectedAttempt001": {
+    "state": "PREPARED",
+    "providerInvocationCount": 0,
+    "automaticRetryCount": 0,
+    "sendStarted": false,
+    "decisionPresent": false,
+    "providerOperationPresent": false,
+    "reconciliationPresent": false,
+    "queueOutcomePresent": false,
+    "rebound": false
+  },
+  "privacy": {
+    "syntheticMaterialOnly": true,
+    "realRecipientCommitted": false,
+    "awsAccountIdCommitted": false,
+    "credentialsCommitted": false,
+    "sessionMaterialCommitted": false
+  },
+  "externalState": {
+    "awsCalled": false,
+    "sesCalled": false,
+    "realApprovalCreated": false,
+    "providerInvoked": false,
+    "sendStarted": false,
+    "pushed": false,
+    "merged": false,
+    "deployed": false,
+    "externalEffect": false
+  }
+}
