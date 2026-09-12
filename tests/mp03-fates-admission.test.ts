@@ -106,6 +106,7 @@ function retagIntent(intent: ActionIntentV1, changes: Record<string, unknown>): 
 function sendIntentForRecipient(recipientAddress: string): ActionIntentV1 {
   const intent = compileFixture("SEND_APPOINTMENT_DETAILS");
   return retagIntent(intent, {
+    requester: { ...intent.requester, verifiedEmail: recipientAddress },
     target: { ...intent.target, address: recipientAddress },
     parameters: { ...intent.parameters, recipientAddress },
   }) as ActionIntentV1;
@@ -165,7 +166,10 @@ function nativeWaiting(operation: Record<string, unknown>, actionHash: string) {
   };
 }
 
-function fakeGateway(result?: unknown): {
+function fakeGateway(
+  result?: unknown,
+  nativeHash?: string,
+): {
   gateway: FatesAdmissionGateway;
   admit: ReturnType<typeof vi.fn>;
 } {
@@ -173,7 +177,13 @@ function fakeGateway(result?: unknown): {
     async (operation: Record<string, unknown>) =>
       result ?? nativeWaiting(operation, MP03_NATIVE_HASH_FIXTURES.SEND_APPOINTMENT_DETAILS),
   );
-  return { gateway: { admit } as unknown as FatesAdmissionGateway, admit };
+  return {
+    gateway: {
+      admit,
+      ...(nativeHash ? { hashNativeAction: () => nativeHash } : {}),
+    } as unknown as FatesAdmissionGateway,
+    admit,
+  };
 }
 
 type GovernedResult = Exclude<MoiraeAdmissionResultV1, { status: "BOUNDARY_FAILURE" }>;
@@ -587,6 +597,7 @@ describe("MP-03 trusted exact recipient compatibility seam", () => {
         MP03_PROFILE.SEND_APPOINTMENT_DETAILS.operation,
         MP03_NATIVE_HASH_FIXTURES.SEND_APPOINTMENT_DETAILS,
       ),
+      MP03_NATIVE_HASH_FIXTURES.SEND_APPOINTMENT_DETAILS,
     );
     const intent = sendIntentForRecipient(TRUSTED_RECIPIENT);
     const result = await createMp03AdmissionAdapter(
@@ -673,7 +684,10 @@ describe("MP-03 trusted exact recipient compatibility seam", () => {
   ] as const)(
     "preserves the gateway %s result without creating authority",
     async (_label, native, status) => {
-      const { gateway, admit } = fakeGateway(native);
+      const { gateway, admit } = fakeGateway(
+        native,
+        "actionHash" in native ? native.actionHash : undefined,
+      );
       const result = await createMp03AdmissionAdapter(
         gateway,
         provenance(),

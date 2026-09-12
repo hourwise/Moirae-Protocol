@@ -48,12 +48,16 @@ import {
   type Mp08bProposalSource,
 } from "./composition.js";
 import type { Mp04AnankePort } from "../../../packages/execution-coordinator/src/index.js";
+import {
+  assertTrustedRecipientPolicyIdentity,
+  type Mp08bTrustedRecipientAuthorityConfig,
+} from "./fates-runtime.js";
 
 export const MP08B_APPROVAL_01_VERSION = "mp08b-approval-01-v1" as const;
-export const MP08B_FATES_008A_MATERIALIZATION_VERSION =
-  "mp08b-fates-008a-materialization-v1" as const;
+export const MP08B_FATES_006C_MATERIALIZATION_VERSION =
+  "mp03-fates-006c-materialization-v1" as const;
 
-export const MP08B_FATES_008A_PROVENANCE = Object.freeze({
+export const MP08B_FATES_008A_CAPABILITY_PROVENANCE = Object.freeze({
   repositoryUrl: "https://github.com/hourwise/Project-Ananke.git",
   tag: "ananke-fates-008a-durable-human-approval-v0.1.0-protocol-1.4.0",
   tagObjectSha: "0fa08f78f27e2f79c895402f3f53a8aada5837b4",
@@ -65,17 +69,35 @@ export const MP08B_FATES_008A_PROVENANCE = Object.freeze({
   materializationMechanism: "VERIFIED_EXTERNAL_CHECKOUT_WITH_DURABLE_SQLITE_RUNTIME",
 } as const);
 
-export type Mp08bFates008aMaterializationIdentity = Readonly<{
-  readonly schemaVersion: typeof MP08B_FATES_008A_MATERIALIZATION_VERSION;
-  readonly repositoryUrl: typeof MP08B_FATES_008A_PROVENANCE.repositoryUrl;
-  readonly tag: typeof MP08B_FATES_008A_PROVENANCE.tag;
-  readonly tagObjectSha: typeof MP08B_FATES_008A_PROVENANCE.tagObjectSha;
-  readonly commitSha: typeof MP08B_FATES_008A_PROVENANCE.commitSha;
-  readonly treeSha: typeof MP08B_FATES_008A_PROVENANCE.treeSha;
-  readonly runtimeSha: typeof MP08B_FATES_008A_PROVENANCE.runtimeSha;
-  readonly contractProfile: typeof MP08B_FATES_008A_PROVENANCE.contractProfile;
-  readonly license: typeof MP08B_FATES_008A_PROVENANCE.license;
-  readonly materializationMechanism: typeof MP08B_FATES_008A_PROVENANCE.materializationMechanism;
+export const MP08B_FATES_006C_PROVENANCE = Object.freeze({
+  repositoryUrl: "https://github.com/hourwise/Project-Ananke.git",
+  tag: "ananke-fates-006c-trusted-recipient-admission-v0.1.0-protocol-1.4.0",
+  tagObjectSha: "4ecb4baddc92d01cabd43f9692966cbb70d703b0",
+  commitSha: "7ce078863edde033d96a896d7e23e11a0a24292b",
+  treeSha: "d237005b96fc1c69818448d5a443a8bf7703f37f",
+  implementationCommitSha: "e96f27008891b9a5d00cb77e4f2f0c1c87f77efb",
+  implementationTreeSha: "06639f5a27f7810cb10881631f2b0e9e5b10bf93",
+  durableApprovalAncestorSha: MP08B_FATES_008A_CAPABILITY_PROVENANCE.commitSha,
+  runtimeSha: MP08B_FATES_008A_CAPABILITY_PROVENANCE.runtimeSha,
+  contractProfile: MP03_DEPENDENCY_PROVENANCE.profile,
+  license: "MIT",
+  materializationMechanism: "VERIFIED_EXTERNAL_CHECKOUT_WITH_DURABLE_SQLITE_RUNTIME",
+} as const);
+
+export type Mp08bFates006cMaterializationIdentity = Readonly<{
+  readonly schemaVersion: typeof MP08B_FATES_006C_MATERIALIZATION_VERSION;
+  readonly repositoryUrl: typeof MP08B_FATES_006C_PROVENANCE.repositoryUrl;
+  readonly tag: typeof MP08B_FATES_006C_PROVENANCE.tag;
+  readonly tagObjectSha: typeof MP08B_FATES_006C_PROVENANCE.tagObjectSha;
+  readonly commitSha: typeof MP08B_FATES_006C_PROVENANCE.commitSha;
+  readonly treeSha: typeof MP08B_FATES_006C_PROVENANCE.treeSha;
+  readonly implementationCommitSha: typeof MP08B_FATES_006C_PROVENANCE.implementationCommitSha;
+  readonly implementationTreeSha: typeof MP08B_FATES_006C_PROVENANCE.implementationTreeSha;
+  readonly durableApprovalAncestorSha: typeof MP08B_FATES_006C_PROVENANCE.durableApprovalAncestorSha;
+  readonly runtimeSha: typeof MP08B_FATES_006C_PROVENANCE.runtimeSha;
+  readonly contractProfile: typeof MP08B_FATES_006C_PROVENANCE.contractProfile;
+  readonly license: typeof MP08B_FATES_006C_PROVENANCE.license;
+  readonly materializationMechanism: typeof MP08B_FATES_006C_PROVENANCE.materializationMechanism;
   readonly root: string;
 }>;
 
@@ -137,11 +159,23 @@ type RealRuntimeModule = {
   readonly FileDurableAuthorityStore: new (options: { filePath: string }) => unknown;
   readonly hashArgumentsDigest: (args: Record<string, unknown>) => string;
   readonly hashTargetDigest: (resourceScope: Record<string, unknown>) => string;
+  readonly hashNativeAction: (
+    operation: Parameters<RealGateway["admit"]>[0],
+    args: Record<string, unknown>,
+    executionContext: Parameters<
+      NonNullable<
+        import("../../../packages/fates-adapter/src/index.js").FatesAdmissionGateway["hashNativeAction"]
+      >
+    >[2],
+  ) => string;
 };
 
 type RealProfileModule = {
   readonly MOIRAE_ADMINISTRATIVE_POLICY_CONFIG: unknown;
-  readonly registerMoiraeAdministrativeOperationProfile: (gateway: RealGateway) => void;
+  readonly registerMoiraeAdministrativeOperationProfile: (
+    gateway: RealGateway,
+    config?: Mp08bTrustedRecipientAuthorityConfig["fates"],
+  ) => void;
 };
 
 type RealAuditModule = { readonly AuditLog: new () => unknown };
@@ -200,41 +234,73 @@ function verifyAncestor(root: string, ancestor: string, descendant: string): voi
   }
 }
 
-export function verifyMp08bFates008aCheckout(
+export function verifyMp08bFates006cCheckout(
   rootInput: string,
-): Mp08bFates008aMaterializationIdentity {
+): Mp08bFates006cMaterializationIdentity {
   const root = resolve(rootInput);
-  if (!existsSync(root)) throw new Mp08bApprovalRuntimeError("FATES-008A root does not exist.");
+  if (!existsSync(root)) throw new Mp08bApprovalRuntimeError("FATES-006C root does not exist.");
   if (resolve(runGit(root, ["rev-parse", "--show-toplevel"])) !== root)
-    throw new Mp08bApprovalRuntimeError("FATES-008A root is not the Git checkout being verified.");
+    throw new Mp08bApprovalRuntimeError("FATES-006C root is not the Git checkout being verified.");
   if (
     runGit(root, ["remote", "get-url", "origin"]).replace(/\.git$/, "") !==
-    MP08B_FATES_008A_PROVENANCE.repositoryUrl.replace(/\.git$/, "")
+    MP08B_FATES_006C_PROVENANCE.repositoryUrl.replace(/\.git$/, "")
   )
-    throw new Mp08bApprovalRuntimeError("FATES-008A origin is not Project-Ananke.");
+    throw new Mp08bApprovalRuntimeError("FATES-006C origin is not Project-Ananke.");
   if (runGit(root, ["status", "--porcelain", "--untracked-files=all"]))
-    throw new Mp08bApprovalRuntimeError("FATES-008A checkout is not clean.");
-  if (runGit(root, ["rev-parse", "HEAD"]) !== MP08B_FATES_008A_PROVENANCE.commitSha)
-    throw new Mp08bApprovalRuntimeError("FATES-008A checkout is not the accepted commit.");
+    throw new Mp08bApprovalRuntimeError("FATES-006C checkout is not clean.");
+  if (runGit(root, ["rev-parse", "HEAD"]) !== MP08B_FATES_006C_PROVENANCE.commitSha)
+    throw new Mp08bApprovalRuntimeError("FATES-006C checkout is not the accepted commit.");
   if (
-    runGit(root, ["rev-parse", `refs/tags/${MP08B_FATES_008A_PROVENANCE.tag}`]) !==
-    MP08B_FATES_008A_PROVENANCE.tagObjectSha
+    runGit(root, ["rev-parse", `refs/tags/${MP08B_FATES_006C_PROVENANCE.tag}`]) !==
+    MP08B_FATES_006C_PROVENANCE.tagObjectSha
   )
-    throw new Mp08bApprovalRuntimeError("FATES-008A tag object is not the accepted tag object.");
+    throw new Mp08bApprovalRuntimeError("FATES-006C tag object is not the accepted tag object.");
   if (
-    runGit(root, ["rev-parse", `refs/tags/${MP08B_FATES_008A_PROVENANCE.tag}^{}`]) !==
-    MP08B_FATES_008A_PROVENANCE.commitSha
+    runGit(root, ["rev-parse", `refs/tags/${MP08B_FATES_006C_PROVENANCE.tag}^{}`]) !==
+    MP08B_FATES_006C_PROVENANCE.commitSha
   )
-    throw new Mp08bApprovalRuntimeError("FATES-008A tag does not peel to the accepted commit.");
+    throw new Mp08bApprovalRuntimeError("FATES-006C tag does not peel to the accepted commit.");
   if (
-    runGit(root, ["show", "-s", "--format=%T", MP08B_FATES_008A_PROVENANCE.commitSha]) !==
-    MP08B_FATES_008A_PROVENANCE.treeSha
+    runGit(root, ["show", "-s", "--format=%T", MP08B_FATES_006C_PROVENANCE.commitSha]) !==
+    MP08B_FATES_006C_PROVENANCE.treeSha
   )
-    throw new Mp08bApprovalRuntimeError("FATES-008A tree is not the accepted tree.");
+    throw new Mp08bApprovalRuntimeError("FATES-006C tree is not the accepted tree.");
+  if (
+    runGit(root, [
+      "show",
+      "-s",
+      "--format=%T",
+      MP08B_FATES_006C_PROVENANCE.implementationCommitSha,
+    ]) !== MP08B_FATES_006C_PROVENANCE.implementationTreeSha
+  )
+    throw new Mp08bApprovalRuntimeError("FATES-006C implementation tree is not accepted.");
+  if (
+    runGit(root, [
+      "diff",
+      "--name-only",
+      MP08B_FATES_006C_PROVENANCE.implementationCommitSha,
+      MP08B_FATES_006C_PROVENANCE.commitSha,
+      "--",
+      "packages",
+    ])
+  )
+    throw new Mp08bApprovalRuntimeError(
+      "FATES006C_RUNTIME_SOURCE_EQUIVALENT_TO_ACCEPTED_IMPLEMENTATION verification failed.",
+    );
   verifyAncestor(
     root,
-    MP08B_FATES_008A_PROVENANCE.runtimeSha,
-    MP08B_FATES_008A_PROVENANCE.commitSha,
+    MP08B_FATES_006C_PROVENANCE.implementationCommitSha,
+    MP08B_FATES_006C_PROVENANCE.commitSha,
+  );
+  verifyAncestor(
+    root,
+    MP08B_FATES_006C_PROVENANCE.durableApprovalAncestorSha,
+    MP08B_FATES_006C_PROVENANCE.commitSha,
+  );
+  verifyAncestor(
+    root,
+    MP08B_FATES_006C_PROVENANCE.runtimeSha,
+    MP08B_FATES_006C_PROVENANCE.commitSha,
   );
 
   for (const file of [
@@ -247,8 +313,8 @@ export function verifyMp08bFates008aCheckout(
     requiredFile(root, file);
 
   return Object.freeze({
-    schemaVersion: MP08B_FATES_008A_MATERIALIZATION_VERSION,
-    ...MP08B_FATES_008A_PROVENANCE,
+    schemaVersion: MP08B_FATES_006C_MATERIALIZATION_VERSION,
+    ...MP08B_FATES_006C_PROVENANCE,
     root,
   });
 }
@@ -415,6 +481,7 @@ export type Mp08bApprovalRuntimeOptions = Readonly<{
   readonly proposal: Mp08bProposalSource;
   readonly trustedTime: Mp05TrustedTimeSource;
   readonly trustedOperator?: Mp05TrustedDecisionContext;
+  readonly trustedRecipientPolicy?: Mp08bTrustedRecipientAuthorityConfig;
 }>;
 
 export type Mp08bPreparedApprovalV1 = Readonly<{
@@ -443,7 +510,7 @@ export class Mp08bDurableApprovalRuntime {
     private readonly bindings: Mp08bDurableApprovalBindingStore,
     private readonly trustedOperator: Mp05TrustedDecisionContext,
     private readonly trustedTime: Mp05TrustedTimeSource,
-    readonly materialization: Mp08bFates008aMaterializationIdentity,
+    readonly materialization: Mp08bFates006cMaterializationIdentity,
   ) {
     this.capabilities = Object.freeze({
       liveFates: true,
@@ -455,7 +522,8 @@ export class Mp08bDurableApprovalRuntime {
   }
 
   static async create(options: Mp08bApprovalRuntimeOptions): Promise<Mp08bDurableApprovalRuntime> {
-    const materialization = verifyMp08bFates008aCheckout(options.fatesRoot);
+    assertTrustedRecipientPolicyIdentity(options.trustedRecipientPolicy);
+    const materialization = verifyMp08bFates006cCheckout(options.fatesRoot);
     const runtime = (await import(
       pathToFileURL(join(materialization.root, "packages/runtime-core/dist/index.js")).href
     )) as unknown as RealRuntimeModule;
@@ -494,7 +562,10 @@ export class Mp08bDurableApprovalRuntime {
         trustedTime: { now: () => options.trustedTime.now() },
       },
     });
-    profile.registerMoiraeAdministrativeOperationProfile(gateway);
+    profile.registerMoiraeAdministrativeOperationProfile(
+      gateway,
+      options.trustedRecipientPolicy?.fates,
+    );
     gateway.policy.loadConfig(profile.MOIRAE_ADMINISTRATIVE_POLICY_CONFIG);
     if (gateway.approvals.store.durable !== true) {
       gateway.close();
@@ -531,10 +602,12 @@ export class Mp08bDurableApprovalRuntime {
             : {}),
         };
       },
+      deriveNativeActionHash: runtime.hashNativeAction,
     };
     const admission = createMp03AdmissionAdapter(
-      { admit: gateway.admit.bind(gateway) },
+      { admit: gateway.admit.bind(gateway), hashNativeAction: runtime.hashNativeAction },
       MP03_DEPENDENCY_PROVENANCE,
+      options.trustedRecipientPolicy?.moirae,
     );
     const ananke: Mp04AnankePort = {
       createExecutionAuthority: (input) => {

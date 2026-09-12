@@ -14,9 +14,21 @@ import {
  * This package owns only the Moirae-to-Fates mapping and result boundary; it
  * deliberately does not copy or reimplement Ananke's authority engines.
  */
-export const MP03_FATES_PROFILE = "ananke-fates-006b-mp03-admission-v0.1.0-protocol-1.4.0" as const;
-export const MP03_ANANKE_TAG_OBJECT_SHA = "6425d4b34fba62ab60381a4a2237786d0d6173ad" as const;
-export const MP03_ANANKE_SHA = "6bf8902c55c4f3f7593a987582b50783c8a7b5a0" as const;
+export const MP03_FATES_006B_HISTORICAL_PROVENANCE = Object.freeze({
+  profile: "ananke-fates-006b-mp03-admission-v0.1.0-protocol-1.4.0",
+  tagObjectSha: "6425d4b34fba62ab60381a4a2237786d0d6173ad",
+  commitSha: "6bf8902c55c4f3f7593a987582b50783c8a7b5a0",
+  treeSha: "b8c0be1170df56471930c689b8e8b6f58fdd29bd",
+} as const);
+export const MP03_FATES_PROFILE =
+  "ananke-fates-006c-trusted-recipient-admission-v0.1.0-protocol-1.4.0" as const;
+export const MP03_ANANKE_TAG_OBJECT_SHA = "4ecb4baddc92d01cabd43f9692966cbb70d703b0" as const;
+export const MP03_ANANKE_SHA = "7ce078863edde033d96a896d7e23e11a0a24292b" as const;
+export const MP03_ANANKE_TREE_SHA = "d237005b96fc1c69818448d5a443a8bf7703f37f" as const;
+export const MP03_FATES_006C_IMPLEMENTATION_SHA =
+  "e96f27008891b9a5d00cb77e4f2f0c1c87f77efb" as const;
+export const MP03_FATES_006C_IMPLEMENTATION_TREE_SHA =
+  "06639f5a27f7810cb10881631f2b0e9e5b10bf93" as const;
 export const MP03_FATES_006A_SHA = "fc318663cbed3072128355fb3697e7f2b47f5f11" as const;
 export const MP03_ADRASTEIA_SHA = "a1c01bf9e6f9d6a126cfdcc1acfacd488b214210" as const;
 export const MP03_POLICY_VERSION = "builtin:0.1.0" as const;
@@ -143,6 +155,12 @@ export interface FatesAdmissionGateway {
       approvalId?: string;
     },
   ): Promise<unknown>;
+  /** Native Fates identity derivation; required for non-legacy trusted recipients. */
+  readonly hashNativeAction?: (
+    operation: FatesOperation,
+    args: Record<string, unknown>,
+    executionContext: Mp03AuthenticatedContext,
+  ) => string;
 }
 
 /**
@@ -374,7 +392,13 @@ function mapIntent(intent: ActionIntentV1, appointmentDetailsRecipient: string):
   const commonChecks = [
     [intent.principal.agentPrincipalId, MP03_ACTING_AGENT, "compiler principal"],
     [intent.requester.customerId, "CUSTOMER-001", "requester"],
-    [intent.requester.verifiedEmail, "alex@example.test", "verified requester address"],
+    [
+      intent.requester.verifiedEmail,
+      action === "SEND_APPOINTMENT_DETAILS"
+        ? appointmentDetailsRecipient
+        : acceptedArgs.SEND_APPOINTMENT_DETAILS.recipientAddress,
+      "verified requester address",
+    ],
     [intent.sourceRequestId, "REQUEST-MP02-DETAILS-001", "source request"],
     [intent.contextTimestamp, MP03_CONTEXT_TIMESTAMP, "context timestamp"],
   ] as const;
@@ -878,7 +902,13 @@ async function admitWithGateway(
   }
   if (
     nativeResult.data.actionHash &&
-    nativeResult.data.actionHash !== MP03_NATIVE_HASH_FIXTURES[mapped.action]
+    nativeResult.data.actionHash !==
+      (gateway.hashNativeAction
+        ? gateway.hashNativeAction(mapped.operation, mapped.args, context)
+        : appointmentDetailsRecipient === acceptedArgs.SEND_APPOINTMENT_DETAILS.recipientAddress ||
+            mapped.action !== "SEND_APPOINTMENT_DETAILS"
+          ? MP03_NATIVE_HASH_FIXTURES[mapped.action]
+          : undefined)
   ) {
     return boundaryFailure(
       "native_hash_mismatch",

@@ -26,6 +26,7 @@ import {
 } from "../../../packages/strands-agent/src/agent.js";
 import {
   createMp08bVerifiedExternalFatesDependency,
+  type Mp08bTrustedRecipientAuthorityConfig,
   type Mp08bVerifiedFatesMaterializationIdentity,
 } from "./fates-runtime.js";
 
@@ -37,7 +38,7 @@ export {
 
 export function createMp08bVerifiedFatesDependency(
   root?: string,
-  trustedConfig?: Mp03TrustedAdministrativeProfileConfig,
+  trustedConfig?: Mp08bTrustedRecipientAuthorityConfig,
 ): Promise<Mp08bFatesDependency> {
   return createMp08bVerifiedExternalFatesDependency(root, trustedConfig);
 }

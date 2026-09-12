@@ -1,0 +1,107 @@
+{
+  "task": "MOIRAE-MP03-FATES006C-INTEGRATION-01",
+  "status": "local-candidate-independent-acceptance-required",
+  "startingMoirae": {
+    "commit": "cf9c6873cfe5812e965aa85c73aada3b4b60013f",
+    "tree": "9087846e9be90daab657df211859e00f791bbd1c",
+    "parent": "7e161991b4fd0b5b441d6f3fd2916da3b959403d"
+  },
+  "acceptedFates006c": {
+    "tag": "ananke-fates-006c-trusted-recipient-admission-v0.1.0-protocol-1.4.0",
+    "tagObject": "4ecb4baddc92d01cabd43f9692966cbb70d703b0",
+    "peeledCommit": "7ce078863edde033d96a896d7e23e11a0a24292b",
+    "peeledTree": "d237005b96fc1c69818448d5a443a8bf7703f37f",
+    "implementationCommit": "e96f27008891b9a5d00cb77e4f2f0c1c87f77efb",
+    "implementationTree": "06639f5a27f7810cb10881631f2b0e9e5b10bf93",
+    "runtimeSha": "c89b83de40ed0275969fe3931220f440bf082aa3",
+    "annotated": true,
+    "localOnly": true,
+    "productionEquivalentToImplementation": true
+  },
+  "historicalCapabilityProvenance": {
+    "fates006b": {
+      "capability": "MP-03 administrative admission",
+      "tag": "ananke-fates-006b-mp03-admission-v0.1.0-protocol-1.4.0",
+      "commit": "6bf8902c55c4f3f7593a987582b50783c8a7b5a0",
+      "tree": "b8c0be1170df56471930c689b8e8b6f58fdd29bd"
+    },
+    "fates008a": {
+      "capability": "durable human approval",
+      "tag": "ananke-fates-008a-durable-human-approval-v0.1.0-protocol-1.4.0",
+      "commit": "b888d61adf180d33e2ae2e61d276cb9b0f13bd12",
+      "tree": "ed5e268e6b3b0630a798b9131341a2c13ef9830f"
+    }
+  },
+  "architecture": "UNIFIED_FATES006C_RUNTIME_SAFE",
+  "trustedRecipient": "trusted-demo@example.test",
+  "policyMismatch": "TRUSTED_RECIPIENT_POLICY_MISMATCH",
+  "jointResult": {
+    "moiraeMap": "success",
+    "nativeRecipient": "trusted-demo@example.test",
+    "fatesStatus": "WAITING_FOR_APPROVAL",
+    "fatesDecision": "REQUIRE_APPROVAL",
+    "moiraeResult": "WAITING_FOR_APPROVAL",
+    "executorInvoked": false,
+    "effectExecuted": false
+  },
+  "recipientIdentityChainConfirmed": true,
+  "jointActionRecipientHashBound": true,
+  "jointApprovalPresentationBound": true,
+  "approvalForRecipientANotValidForB": true,
+  "fates008aCapabilitiesPreserved": true,
+  "legacyAlexFixturePreserved": true,
+  "validation": {
+    "canonicalMoiraeCheck": {
+      "status": "passed",
+      "testFilesPassed": 24,
+      "testsPassed": 425,
+      "testsSkipped": 9
+    },
+    "focusedJointAndBoundaryTests": {
+      "status": "passed",
+      "testFilesPassed": 4,
+      "testsPassed": 80
+    },
+    "acceptedFatesFocusedSuites": {
+      "status": "passed",
+      "testFilesPassed": 3,
+      "testsPassed": 49
+    },
+    "knownAnankeBaseline": "12 stale-clock replay failures remain accepted baseline debt; not rerun or modified"
+  },
+  "scope": {
+    "packageFilesChanged": false,
+    "dependencyFilesChanged": false,
+    "providerCodeChanged": false,
+    "queueSemanticsChanged": false,
+    "executionSemanticsChanged": false,
+    "reconciliationSemanticsChanged": false,
+    "noAwsCall": true,
+    "noSesCall": true,
+    "noProviderInvocation": true,
+    "noExternalEffect": true,
+    "provider02bR2WorktreePreserved": true,
+    "noDeployment": true,
+    "noPublication": true
+  },
+  "privacy": {
+    "noRealRecipientCommitted": true,
+    "noAwsAccountIdCommitted": true,
+    "noCredentialCommitted": true,
+    "noTemporarySessionMaterialCommitted": true,
+    "noVerificationLinkCommitted": true
+  },
+  "classification": [
+    "MOIRAE_MP03_FATES006C_INTEGRATION_01_COMPLETE",
+    "ACCEPTED_FATES006C_AUTHORITY_INTEGRATED",
+    "REAL_JOINT_REQUIRE_APPROVAL_CONFIRMED",
+    "RECIPIENT_IDENTITY_CHAIN_CONFIRMED",
+    "ACTION_RECIPIENT_HASH_BOUND",
+    "APPROVAL_PRESENTATION_BOUND",
+    "DURABLE_APPROVAL_COMPATIBILITY_PRESERVED",
+    "NO_RECIPIENT_TRANSLATION",
+    "NO_POLICY_SELF_AUTHORIZATION",
+    "NO_EXTERNAL_EFFECT",
+    "PROVIDER_02B_STILL_NOT_RESUMED"
+  ]
+}

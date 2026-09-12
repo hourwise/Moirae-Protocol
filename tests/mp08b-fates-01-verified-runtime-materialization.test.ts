@@ -114,11 +114,11 @@ describeRealFates("MP-08B FATES-01 verified external runtime", () => {
     expect(dependency.runtimeKind).toBe("VERIFIED_EXTERNAL");
     expect(dependency.materialization).toMatchObject({
       repositoryUrl: "https://github.com/hourwise/Project-Ananke.git",
-      tag: "ananke-fates-006b-mp03-admission-v0.1.0-protocol-1.4.0",
-      tagObjectSha: "6425d4b34fba62ab60381a4a2237786d0d6173ad",
-      commitSha: "6bf8902c55c4f3f7593a987582b50783c8a7b5a0",
-      treeSha: "b8c0be1170df56471930c689b8e8b6f58fdd29bd",
-      contractProfile: "ananke-fates-006b-mp03-admission-v0.1.0-protocol-1.4.0",
+      tag: "ananke-fates-006c-trusted-recipient-admission-v0.1.0-protocol-1.4.0",
+      tagObjectSha: "4ecb4baddc92d01cabd43f9692966cbb70d703b0",
+      commitSha: "7ce078863edde033d96a896d7e23e11a0a24292b",
+      treeSha: "d237005b96fc1c69818448d5a443a8bf7703f37f",
+      contractProfile: "ananke-fates-006c-trusted-recipient-admission-v0.1.0-protocol-1.4.0",
       license: "MIT",
     });
   });
@@ -208,6 +208,6 @@ describe("MP-08B FATES-01 fail-closed materialization", () => {
   it("rejects an available but wrong Ananke checkpoint", async () => {
     await expect(
       createMp08bVerifiedFatesDependency("D:\\Users\\fleur\\ananke-fates-006a"),
-    ).rejects.toThrow(/HEAD is not FATES-006B/);
+    ).rejects.toThrow(/HEAD is not accepted FATES-006C/);
   });
 });

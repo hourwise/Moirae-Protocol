@@ -29,9 +29,9 @@ import type {
   Mp08bProposalSource,
 } from "../apps/host/src/composition.js";
 import {
-  MP08B_FATES_008A_PROVENANCE,
+  MP08B_FATES_006C_PROVENANCE,
   createMp08bDurableApprovalRuntime,
-  verifyMp08bFates008aCheckout,
+  verifyMp08bFates006cCheckout,
   type Mp08bPreparedApprovalV1,
 } from "../apps/host/src/approval-runtime.js";
 
@@ -152,14 +152,14 @@ async function runtimeFor(action: Mp03Action, values: ReturnType<typeof paths>) 
 }
 
 describeReal("MP-08B APPROVAL-01 verified durable approval", () => {
-  it("verifies the accepted FATES-008A materialization identity", () => {
-    expect(verifyMp08bFates008aCheckout(FATES_ROOT!)).toMatchObject({
-      repositoryUrl: MP08B_FATES_008A_PROVENANCE.repositoryUrl,
-      tag: MP08B_FATES_008A_PROVENANCE.tag,
-      tagObjectSha: MP08B_FATES_008A_PROVENANCE.tagObjectSha,
-      commitSha: MP08B_FATES_008A_PROVENANCE.commitSha,
-      treeSha: MP08B_FATES_008A_PROVENANCE.treeSha,
-      runtimeSha: MP08B_FATES_008A_PROVENANCE.runtimeSha,
+  it("verifies accepted FATES-006C with its FATES-008A durable capability ancestry", () => {
+    expect(verifyMp08bFates006cCheckout(FATES_ROOT!)).toMatchObject({
+      repositoryUrl: MP08B_FATES_006C_PROVENANCE.repositoryUrl,
+      tag: MP08B_FATES_006C_PROVENANCE.tag,
+      tagObjectSha: MP08B_FATES_006C_PROVENANCE.tagObjectSha,
+      commitSha: MP08B_FATES_006C_PROVENANCE.commitSha,
+      treeSha: MP08B_FATES_006C_PROVENANCE.treeSha,
+      runtimeSha: MP08B_FATES_006C_PROVENANCE.runtimeSha,
     });
   });
 

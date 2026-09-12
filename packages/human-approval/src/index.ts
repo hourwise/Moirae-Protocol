@@ -177,6 +177,12 @@ export interface Mp05AnankeApprovalPort {
   deriveApprovalHashes(
     material: Mp05NativeApprovalHashMaterialV1,
   ): Mp05NativeApprovalDerivedHashesV1 | Promise<Mp05NativeApprovalDerivedHashesV1>;
+  /** Reproduces the distinct native admission hash domain for the exact action. */
+  deriveNativeActionHash?(
+    operation: Readonly<{ server: string; toolName: string; version: string }>,
+    args: Record<string, unknown>,
+    context: Mp03AuthenticatedContext,
+  ): string;
 }
 
 export interface Mp05TrustedTimeSource {
@@ -877,6 +883,9 @@ export class Mp05HumanApprovalCoordinator {
   ): void {
     const profile = MP03_PROFILE[intent.action as Mp03Action];
     const operation = profile.operation;
+    const expectedNativeActionHash = this.options.approval.deriveNativeActionHash
+      ? this.options.approval.deriveNativeActionHash(operation, intent.parameters, context)
+      : MP03_NATIVE_HASH_FIXTURES[intent.action];
     if (
       intent.principal.agentPrincipalId !== context.actingPrincipal.id ||
       intent.requester.customerId !== "CUSTOMER-001" ||
@@ -894,7 +903,7 @@ export class Mp05HumanApprovalCoordinator {
       grant.serverName !== operation.server ||
       grant.toolName !== operation.toolName ||
       grant.toolVersion !== operation.version ||
-      waiting.nativeActionHash !== MP03_NATIVE_HASH_FIXTURES[intent.action] ||
+      waiting.nativeActionHash !== expectedNativeActionHash ||
       !sameJson(grant.arguments, intent.parameters) ||
       !sameJson(grant.executionContext, context) ||
       grant.bindRequestIdentity !== true ||
