@@ -103,6 +103,13 @@ export type Provider02bApprovalBindingHistoryEntryV1 = Readonly<{
   readonly supersededAt?: string;
 }>;
 
+export type Provider02bLegacyIdentityHydrationV1 = Readonly<{
+  readonly version: 1;
+  readonly status: "HYDRATED";
+  readonly sourceSchema: "R3_PREPARED";
+  readonly hydratedAt: string;
+}>;
+
 export type Provider02bPreparedApprovalBindingV1 = Readonly<{
   readonly approvalId: string;
   readonly actionIntentDigest: string;
@@ -124,6 +131,19 @@ export type Provider02bApprovalRebindInputV1 = Readonly<{
   readonly now: string;
 }>;
 
+export type Provider02bLegacyIdentityHydrationInputV1 = Readonly<{
+  readonly attemptId: typeof MP08B_PROVIDER_02B_ATTEMPT_ID;
+  readonly expectedApprovalId: string;
+  readonly expectedApprovalBindingRevision: number;
+  readonly reconstructed: Provider02bPreparedApprovalBindingV1;
+  readonly now: string;
+}>;
+
+export type Provider02bLegacyIdentityHydrationRequestV1 = Readonly<{
+  readonly expectedApprovalId: string;
+  readonly expectedApprovalBindingRevision: number;
+}>;
+
 export type Provider02bAttemptLedgerV1 = Readonly<{
   readonly schemaVersion: typeof MP08B_PROVIDER_02B_VERSION;
   readonly attemptId: typeof MP08B_PROVIDER_02B_ATTEMPT_ID;
@@ -132,6 +152,7 @@ export type Provider02bAttemptLedgerV1 = Readonly<{
   readonly bindings?: Provider02bAttemptBindingsV1;
   readonly approvalBindingRevision: number;
   readonly approvalBindingHistory: readonly Provider02bApprovalBindingHistoryEntryV1[];
+  readonly legacyIdentityHydration?: Provider02bLegacyIdentityHydrationV1;
   readonly sendStartedAt?: string;
   readonly providerOperationId?: string;
   readonly providerInvocationCount: number;
@@ -289,10 +310,12 @@ function parseLedger(value: unknown): Provider02bAttemptLedgerV1 {
     throw new Provider02bRunnerError("Provider-02B approval binding history is not current.");
   if (record.state !== "UNUSED" && bindings && history.at(-1)?.approvalId !== bindings.approvalId)
     throw new Provider02bRunnerError("Provider-02B approval binding history lost its current ID.");
+  const legacyIdentityHydration = parseLegacyIdentityHydration(record.legacyIdentityHydration);
   return clone({
     ...(record as unknown as Provider02bAttemptLedgerV1),
     approvalBindingRevision: revision,
     approvalBindingHistory: history,
+    ...(legacyIdentityHydration ? { legacyIdentityHydration } : {}),
   });
 }
 
@@ -321,6 +344,28 @@ function parseApprovalBindingHistory(value: unknown): Provider02bApprovalBinding
       ...(record.supersededAt ? { supersededAt: record.supersededAt } : {}),
     };
   });
+}
+
+function parseLegacyIdentityHydration(
+  value: unknown,
+): Provider02bLegacyIdentityHydrationV1 | undefined {
+  if (value === undefined) return undefined;
+  if (typeof value !== "object" || value === null || Array.isArray(value))
+    throw new Provider02bRunnerError("Provider-02B legacy identity hydration marker is invalid.");
+  const record = value as Record<string, unknown>;
+  if (
+    record.version !== 1 ||
+    record.status !== "HYDRATED" ||
+    record.sourceSchema !== "R3_PREPARED" ||
+    typeof record.hydratedAt !== "string"
+  )
+    throw new Provider02bRunnerError("Provider-02B legacy identity hydration marker is invalid.");
+  return {
+    version: 1,
+    status: "HYDRATED",
+    sourceSchema: "R3_PREPARED",
+    hydratedAt: record.hydratedAt,
+  };
 }
 
 function atomicWrite(path: string, value: unknown): void {
@@ -418,6 +463,137 @@ export class Provider02bAttemptLedger {
           },
         ],
       };
+    });
+  }
+
+  /**
+   * Hydrate only the identity metadata omitted by the original R3 PREPARED
+   * ledger. The caller must derive `reconstructed` from the original durable
+   * host binding; this ledger operation never accepts replacement-approval
+   * material as a source.
+   */
+  hydrateLegacyPreparedIdentity(
+    input: Provider02bLegacyIdentityHydrationInputV1,
+  ): Provider02bAttemptLedgerV1 {
+    return this.withExclusiveLock(() => {
+      const current = parseLedger(this.read(input.now));
+      if (input.attemptId !== MP08B_PROVIDER_02B_ATTEMPT_ID)
+        throw new Provider02bRunnerError(
+          "Legacy identity hydration targeted a different attempt identity.",
+        );
+      if (
+        current.state !== "PREPARED" ||
+        current.providerInvocationCount !== 0 ||
+        current.sendStartedAt !== undefined ||
+        current.providerOperationId !== undefined ||
+        current.reconciliationStatus !== undefined ||
+        current.queueOutcome !== undefined ||
+        current.bindings?.decisionId !== undefined ||
+        current.bindings?.logicalWorkId !== undefined ||
+        current.bindings?.deliveryId !== undefined ||
+        current.bindings?.claimId !== undefined ||
+        current.bindings?.durableExecutionId !== undefined ||
+        current.bindings?.correlationId !== undefined
+      )
+        throw new Provider02bRunnerError(
+          "Legacy identity hydration requires an unconsumed PREPARED Attempt-001.",
+        );
+      if (!current.bindings)
+        throw new Provider02bRunnerError(
+          "Legacy identity hydration requires the current durable binding.",
+        );
+      if (current.bindings.approvalId !== input.expectedApprovalId)
+        throw new Provider02bRunnerError(
+          "Legacy identity hydration expected the current approval binding.",
+        );
+      if (current.approvalBindingRevision !== input.expectedApprovalBindingRevision)
+        throw new Provider02bRunnerError(
+          "Legacy identity hydration revision is stale; refusing last-write-wins.",
+        );
+
+      const reconstructed = input.reconstructed;
+      if (
+        reconstructed.approvalId !== current.bindings.approvalId ||
+        reconstructed.actionBindingDigest.length === 0 ||
+        reconstructed.contextDigest.length === 0 ||
+        reconstructed.presentationInputDigest.length === 0 ||
+        reconstructed.recipientAddress === undefined ||
+        reconstructed.recipientAddress.length === 0 ||
+        reconstructed.nativeActionHash === undefined ||
+        reconstructed.nativeActionHash.length === 0 ||
+        reconstructed.operation === undefined
+      )
+        throw new Provider02bRunnerError(
+          "LEGACY_IDENTITY_NOT_PROVABLY_RECONSTRUCTIBLE: authoritative identity material is incomplete.",
+        );
+
+      if (
+        current.bindings.actionIntentDigest !== reconstructed.actionIntentDigest ||
+        current.bindings.actionIntentIdempotencyKey !== reconstructed.actionIntentIdempotencyKey ||
+        current.bindings.requestFingerprint !== reconstructed.requestFingerprint
+      )
+        throw new Provider02bRunnerError(
+          "LEGACY_IDENTITY_EXISTING_VALUE_MISMATCH: immutable ledger identity disagrees with authoritative reconstruction.",
+        );
+
+      const optionalMatches =
+        (current.bindings.actionBindingDigest === undefined ||
+          current.bindings.actionBindingDigest === reconstructed.actionBindingDigest) &&
+        (current.bindings.nativeActionHash === undefined ||
+          current.bindings.nativeActionHash === reconstructed.nativeActionHash) &&
+        (current.bindings.recipientAddress === undefined ||
+          current.bindings.recipientAddress === reconstructed.recipientAddress) &&
+        (current.bindings.contextDigest === undefined ||
+          current.bindings.contextDigest === reconstructed.contextDigest) &&
+        (current.bindings.presentationInputDigest === undefined ||
+          current.bindings.presentationInputDigest === reconstructed.presentationInputDigest) &&
+        (current.bindings.operation === undefined ||
+          hash(current.bindings.operation) === hash(reconstructed.operation));
+      if (!optionalMatches)
+        throw new Provider02bRunnerError(
+          "LEGACY_IDENTITY_EXISTING_VALUE_MISMATCH: an existing identity field disagrees with authoritative reconstruction.",
+        );
+
+      const hydratedBindings: Provider02bAttemptBindingsV1 = {
+        ...current.bindings,
+        actionBindingDigest:
+          current.bindings.actionBindingDigest ?? reconstructed.actionBindingDigest,
+        nativeActionHash: current.bindings.nativeActionHash ?? reconstructed.nativeActionHash,
+        operation: current.bindings.operation ?? reconstructed.operation,
+        recipientAddress: current.bindings.recipientAddress ?? reconstructed.recipientAddress,
+        contextDigest: current.bindings.contextDigest ?? reconstructed.contextDigest,
+        presentationInputDigest:
+          current.bindings.presentationInputDigest ?? reconstructed.presentationInputDigest,
+      };
+
+      const identityComplete =
+        current.bindings.actionBindingDigest !== undefined &&
+        current.bindings.nativeActionHash !== undefined &&
+        current.bindings.operation !== undefined &&
+        current.bindings.recipientAddress !== undefined &&
+        current.bindings.contextDigest !== undefined &&
+        current.bindings.presentationInputDigest !== undefined;
+      if (current.legacyIdentityHydration) {
+        if (!identityComplete)
+          throw new Provider02bRunnerError(
+            "LEGACY_IDENTITY_EXISTING_VALUE_MISMATCH: hydrated identity marker is incomplete.",
+          );
+        return current;
+      }
+
+      const next: Provider02bAttemptLedgerV1 = {
+        ...current,
+        updatedAt: input.now,
+        bindings: hydratedBindings,
+        legacyIdentityHydration: {
+          version: 1,
+          status: "HYDRATED",
+          sourceSchema: "R3_PREPARED",
+          hydratedAt: input.now,
+        },
+      };
+      atomicWrite(this.path, parseLedger(next));
+      return parseLedger(next);
     });
   }
 
@@ -711,11 +887,10 @@ function actionIdentityForBinding(
   };
 }
 
-function preparedApprovalBinding(
-  prepared: Mp08bPreparedApprovalV1,
+function preparedApprovalBindingFromDurableBinding(
+  binding: Mp08bApprovalBindingV1,
   config: SesProviderConfigV1,
 ): Provider02bPreparedApprovalBindingV1 {
-  const binding = prepared.binding;
   const requestFingerprintValue = requestFingerprint(binding.intent, config);
   const actionIdentity = actionIdentityForBinding(binding, requestFingerprintValue);
   const waiting = isRecord(binding.waitingAdmission) ? binding.waitingAdmission : {};
@@ -751,6 +926,13 @@ function preparedApprovalBinding(
     contextDigest,
     presentationInputDigest,
   };
+}
+
+function preparedApprovalBinding(
+  prepared: Mp08bPreparedApprovalV1,
+  config: SesProviderConfigV1,
+): Provider02bPreparedApprovalBindingV1 {
+  return preparedApprovalBindingFromDurableBinding(prepared.binding, config);
 }
 
 function createHoraeRecord(input: {
@@ -841,6 +1023,45 @@ export class Provider02bRunner {
     const bindings: Provider02bAttemptBindingsV1 = preparedBinding;
     const ledger = this.ledger.prepare(bindings, this.options.trustedTime.now());
     return { prepared, ledger };
+  }
+
+  /**
+   * Reconstruct omitted R3 identity metadata from the current durable host
+   * binding and expired/revoked Fates history. No replacement approval or
+   * request-provided material participates in this operation.
+   */
+  async hydrateLegacyPreparedIdentity(
+    input: Provider02bLegacyIdentityHydrationRequestV1,
+  ): Promise<Provider02bAttemptLedgerV1> {
+    const current = this.readLedger();
+    if (!current.bindings || current.bindings.approvalId !== input.expectedApprovalId)
+      throw new Provider02bRunnerError(
+        "Legacy identity hydration expected the current approval binding.",
+      );
+    const binding = this.options.approvalRuntime.getApprovalBinding(input.expectedApprovalId);
+    if (!binding)
+      throw new Provider02bRunnerError(
+        "Legacy identity hydration requires the original durable host binding.",
+      );
+    const observation = await this.options.approvalRuntime.readApproval(input.expectedApprovalId);
+    if (
+      (observation.state !== "EXPIRED" && observation.state !== "REVOKED") ||
+      observation.decisionId !== undefined
+    )
+      throw new Provider02bRunnerError(
+        "Legacy identity hydration requires expired/revoked approval history without a decision.",
+      );
+    const reconstructed = preparedApprovalBindingFromDurableBinding(
+      binding,
+      this.options.providerConfig,
+    );
+    return this.ledger.hydrateLegacyPreparedIdentity({
+      attemptId: MP08B_PROVIDER_02B_ATTEMPT_ID,
+      expectedApprovalId: input.expectedApprovalId,
+      expectedApprovalBindingRevision: input.expectedApprovalBindingRevision,
+      reconstructed,
+      now: this.options.trustedTime.now(),
+    });
   }
 
   async rebindPreparedApproval(

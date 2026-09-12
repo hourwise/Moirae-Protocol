@@ -1,0 +1,107 @@
+{
+  "schemaVersion": "mp08b-provider-02b-r4c-evidence-v1",
+  "classification": "MOIRAE_MP08B_PROVIDER_02B_R4C_CANDIDATE",
+  "base": {
+    "tag": "mp-08b-provider-02b-r4a-jit-rebind-accepted-v1",
+    "commit": "a4246201d5c42b92dac9d04b9f1a60b10d68ca83",
+    "tree": "3716a76d3b0627a4ba06b9131d7efc947768f888",
+    "implementation": "R4A strict prepared-state approval rebind"
+  },
+  "scope": {
+    "production": "apps/host/src/provider-02b-runner.ts",
+    "focusedTest": "tests/mp08b-provider-02b-r4c-legacy-ledger-hydration.test.ts",
+    "realAttemptMutated": false,
+    "freshUnboundApprovalTouched": false,
+    "aws": false,
+    "ses": false,
+    "provider": false,
+    "sendStarted": false,
+    "externalEffect": false
+  },
+  "blocker": "BLOCKED_JIT_APPROVAL_REBIND_UNSUPPORTED_FOR_EXISTING_PREPARED_ATTEMPT_001",
+  "legacyShape": {
+    "state": "PREPARED",
+    "providerInvocationCount": 0,
+    "sendStartedPresent": false,
+    "decisionPresent": false,
+    "optionalIdentityFieldsPresent": false,
+    "approvalBindingRevisionPresent": false,
+    "approvalBindingHistoryPresent": false
+  },
+  "provenanceMatrix": {
+    "actionBindingDigest": {
+      "source": "recomputed from original durable host binding",
+      "classification": "C"
+    },
+    "nativeActionHash": {
+      "source": "original waitingAdmission.nativeActionHash",
+      "classification": "B"
+    },
+    "recipientAddress": {
+      "source": "original bound ActionIntent target and parameters",
+      "classification": "B"
+    },
+    "contextDigest": {
+      "source": "hash of original trusted authenticated context",
+      "classification": "C"
+    },
+    "presentationInputDigest": {
+      "source": "recomputed from original binding presentation inputs",
+      "classification": "C"
+    },
+    "operation": { "source": "original waiting-admission operation", "classification": "B" }
+  },
+  "replacementApprovalExcludedAsMigrationSource": true,
+  "expiredApprovalHistoryIsIdentityProvenanceOnly": true,
+  "invariants": [
+    "ATTEMPT_IDENTITY_IMMUTABLE",
+    "ACTION_IDENTITY_IMMUTABLE",
+    "APPROVAL_BINDING_REPLACEABLE_ONLY_BEFORE_SEND",
+    "EXPIRED_APPROVAL_NOT_REVIVED",
+    "SUPERSEDED_APPROVAL_CANNOT_DECIDE_ATTEMPT",
+    "JIT_APPROVAL_REBIND_CAS_PROTECTED",
+    "OLD_AUTHORIZATION_NOT_REPLAYABLE",
+    "NO_APPROVAL_REBIND_AFTER_SEND_STARTED",
+    "LEGACY_IDENTITY_HYDRATION_IDEMPOTENT",
+    "ATTEMPT_001_REAL_STATE_UNTOUCHED"
+  ],
+  "tests": {
+    "focused": { "passed": 9, "failed": 0, "skipped": 0 },
+    "boundedRegression": { "passed": 131, "failed": 0, "skipped": 3 },
+    "canonical": { "files": 28, "passed": 462, "failed": 0, "skipped": 9 }
+  },
+  "validation": {
+    "npmCi": "passed",
+    "npmAudit": "completed-2-moderate-no-fix",
+    "typecheck": "passed",
+    "lint": "passed",
+    "formatCheck": "passed",
+    "build": "passed",
+    "diffCheck": "passed"
+  },
+  "packageIntegrity": {
+    "packageJsonBlob": "83e0929ec5d7464ca5486d6b50a6d5ac444c99bd",
+    "packageLockBlob": "3abda7ef393cd7dc14ebcab88d8d231c3caa51e8",
+    "dependencyMutation": false
+  },
+  "privacy": {
+    "realRecipientCommitted": false,
+    "realSenderCommitted": false,
+    "awsAccountIdCommitted": false,
+    "credentialCommitted": false,
+    "tokenCommitted": false
+  },
+  "externalState": [
+    "NOT_PUSHED",
+    "NOT_MERGED",
+    "NOT_TAGGED",
+    "NO_AWS_CALL",
+    "NO_SES_CALL",
+    "NO_PROVIDER_INVOCATION",
+    "NO_SEND_STARTED",
+    "NO_EXTERNAL_EFFECT",
+    "PROTECTED_ATTEMPT_001_UNCHANGED",
+    "UNBOUND_FRESH_APPROVAL_LEFT_UNCHANGED"
+  ],
+  "candidateCommitRecordedInFinalReport": true
+}
