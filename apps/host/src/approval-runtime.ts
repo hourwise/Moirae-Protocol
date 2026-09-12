@@ -647,6 +647,7 @@ export class Mp08bDurableApprovalRuntime {
       },
       hashArgumentsDigest: runtime.hashArgumentsDigest,
       hashTargetDigest: runtime.hashTargetDigest,
+      hashNativeAction: runtime.hashNativeAction,
     };
     const fates: Mp08bFatesDependency = {
       boundary: "MP03_FATES_ADMISSION",

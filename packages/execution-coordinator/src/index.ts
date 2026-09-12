@@ -88,6 +88,12 @@ export interface Mp04AnankePort {
   }): unknown | Promise<unknown>;
   hashArgumentsDigest(args: Record<string, unknown>): string;
   hashTargetDigest(resourceScope: Record<string, unknown>): string;
+  /** Existing native Fates identity derivation for configured MP-03 actions. */
+  hashNativeAction?(
+    operation: Mp04OperationV1,
+    args: Record<string, unknown>,
+    executionContext: Mp03AuthenticatedContext,
+  ): string;
 }
 
 export type Mp04HoraeExecutionStateV1 =
@@ -229,7 +235,13 @@ export interface Mp04ExecutionCoordinatorOptions {
   provenance: unknown;
   index?: Mp04ExecutionIndex;
   evidenceSink?: (evidence: Mp04ExecutionEvidenceV1) => void;
+  /** Trusted host policy; never read from ActionIntent or provider input. */
+  trustedExecutionConfig?: Mp04TrustedExecutionConfig;
 }
+
+export type Mp04TrustedExecutionConfig = Readonly<{
+  readonly appointmentDetailsRecipient?: string;
+}>;
 
 interface ValidatedActionInput {
   intent: ActionIntentV1;
@@ -274,6 +286,7 @@ class BoundaryError extends Error {
 
 export class Mp04ExecutionCoordinator {
   private readonly index: Mp04ExecutionIndex;
+  private readonly trustedAppointmentDetailsRecipient?: string;
 
   constructor(private readonly options: Mp04ExecutionCoordinatorOptions) {
     if (!options.ananke || typeof options.ananke.createExecutionAuthority !== "function")
@@ -285,13 +298,21 @@ export class Mp04ExecutionCoordinator {
       throw new TypeError("MP-04 requires an effect-adapter identity.");
     if (!sameJson(options.provenance, MP04_DEPENDENCY_PROVENANCE))
       throw new TypeError("MP-04 dependency provenance does not match the sealed Fates pair.");
+    this.trustedAppointmentDetailsRecipient = trustedAppointmentDetailsRecipient(
+      options.trustedExecutionConfig,
+    );
     this.index = options.index ?? new InMemoryMp04ExecutionIndex();
   }
 
   async executeAdmittedAction(input: unknown): Promise<Mp04ExecutionResultV1> {
     let validated: ValidatedActionInput;
     try {
-      validated = validateActionInput(input, true);
+      validated = validateActionInput(
+        input,
+        true,
+        this.options,
+        this.trustedAppointmentDetailsRecipient,
+      );
     } catch (error) {
       return this.failure(error, "admission_not_executable");
     }
@@ -393,6 +414,7 @@ export class Mp04ExecutionCoordinator {
         parsed.authenticatedContext,
         record,
         this.options,
+        this.trustedAppointmentDetailsRecipient,
       );
       const baseEvidence = evidenceFor(validated, this.options.effectAdapter, parsed.now);
       if (record.state === "terminal") return this.finish(record, baseEvidence);
@@ -555,12 +577,90 @@ export function createMp04ExecutionCoordinator(
   return new Mp04ExecutionCoordinator(options);
 }
 
+const exactRecipientPattern = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+
+function trustedAppointmentDetailsRecipient(
+  config: Mp04TrustedExecutionConfig | undefined,
+): string | undefined {
+  if (config === undefined) return undefined;
+  if (!isObject(config) || Object.keys(config).some((key) => key !== "appointmentDetailsRecipient"))
+    throw new TypeError(
+      "MP-04 trusted execution configuration is not a bounded exact-recipient policy.",
+    );
+  const recipient = config.appointmentDetailsRecipient;
+  if (recipient === undefined) return undefined;
+  if (
+    typeof recipient !== "string" ||
+    recipient.length === 0 ||
+    recipient !== recipient.trim() ||
+    /\s/.test(recipient) ||
+    recipient.includes("*") ||
+    !exactRecipientPattern.test(recipient)
+  )
+    throw new TypeError(
+      "MP-04 trusted execution configuration must contain one exact email recipient.",
+    );
+  return recipient;
+}
+
+function acceptedArgumentsFor(
+  action: Mp03Action,
+  configuredRecipient?: string,
+): Record<string, unknown> {
+  if (action !== "SEND_APPOINTMENT_DETAILS" || configuredRecipient === undefined)
+    return { ...MP03_ACCEPTED_ARGUMENT_FIXTURES[action] };
+  return {
+    ...MP03_ACCEPTED_ARGUMENT_FIXTURES.SEND_APPOINTMENT_DETAILS,
+    recipientAddress: configuredRecipient,
+  };
+}
+
+function nativeActionHashFor(
+  options: Mp04ExecutionCoordinatorOptions,
+  operation: Mp04OperationV1,
+  args: Record<string, unknown>,
+  context: Mp03AuthenticatedContext,
+  action: Mp03Action,
+): string {
+  const nativeHash = options.ananke.hashNativeAction?.(operation, args, context);
+  if (nativeHash !== undefined) {
+    if (!hashSchema.test(nativeHash))
+      throw new BoundaryError(
+        "dependency_checkpoint_mismatch",
+        "The native Fates hash is not a valid action identity.",
+      );
+    return nativeHash;
+  }
+  if (
+    action === "SEND_APPOINTMENT_DETAILS" &&
+    args.recipientAddress !==
+      MP03_ACCEPTED_ARGUMENT_FIXTURES.SEND_APPOINTMENT_DETAILS.recipientAddress
+  )
+    throw new BoundaryError(
+      "dependency_checkpoint_mismatch",
+      "Configured MP-04 recipient requires the accepted native Fates hash function.",
+    );
+  return MP03_NATIVE_HASH_FIXTURES[action];
+}
+
 function validateActionInput(
   input: unknown,
   requireAdmission: true,
+  options: Mp04ExecutionCoordinatorOptions,
+  configuredRecipient?: string,
 ): ValidatedActionInput & { approvalId: string; now: string };
-function validateActionInput(input: unknown, requireAdmission: false): ValidatedActionInput;
-function validateActionInput(input: unknown, requireAdmission: boolean): ValidatedActionInput {
+function validateActionInput(
+  input: unknown,
+  requireAdmission: false,
+  options: Mp04ExecutionCoordinatorOptions,
+  configuredRecipient?: string,
+): ValidatedActionInput;
+function validateActionInput(
+  input: unknown,
+  requireAdmission: boolean,
+  options: Mp04ExecutionCoordinatorOptions,
+  configuredRecipient?: string,
+): ValidatedActionInput {
   if (!isObject(input))
     throw new BoundaryError("invalid_action_intent", "MP-04 input must be an object.");
   const intentResult = ActionIntentV1Schema.safeParse(input.intent);
@@ -606,7 +706,8 @@ function validateActionInput(input: unknown, requireAdmission: boolean): Validat
       "mp03_binding_mismatch",
       "ActionIntentV1 and authenticated MP-03 context differ.",
     );
-  if (!sameJson(intent.parameters, MP03_ACCEPTED_ARGUMENT_FIXTURES[action]))
+  const expectedArguments = acceptedArgumentsFor(action, configuredRecipient);
+  if (!sameJson(intent.parameters, expectedArguments))
     throw new BoundaryError(
       "mp03_binding_mismatch",
       "ActionIntentV1 parameters are outside the accepted fixture.",
@@ -620,7 +721,13 @@ function validateActionInput(input: unknown, requireAdmission: boolean): Validat
     args: { ...intent.parameters },
     canonicalDigest,
     idempotencyKey,
-    nativeActionHash: MP03_NATIVE_HASH_FIXTURES[action],
+    nativeActionHash: nativeActionHashFor(
+      options,
+      profile.operation,
+      { ...intent.parameters },
+      context,
+      action,
+    ),
   };
   if (!requireAdmission) return base;
 
@@ -750,10 +857,13 @@ function validateActionAgainstRecord(
   contextInput: unknown,
   record: HoraeRecord,
   options: Mp04ExecutionCoordinatorOptions,
+  configuredRecipient?: string,
 ): ValidatedActionInput {
   const base = validateActionInput(
     { intent: intentInput, authenticatedContext: contextInput },
     false,
+    options,
+    configuredRecipient,
   );
   const expectedRequestIdentity = {
     requestId: base.context.correlation.requestId,

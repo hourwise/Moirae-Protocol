@@ -680,6 +680,9 @@ export class Provider02bRunner {
       effectAdapter: SES_EFFECT_ADAPTER_ID as Mp04EffectAdapterIdentityV1,
       owner: this.options.workerId,
       provenance: MP04_DEPENDENCY_PROVENANCE,
+      trustedExecutionConfig: {
+        appointmentDetailsRecipient: this.options.providerConfig.allowedRecipientAddress,
+      },
     });
     this.lastExecution = coordinator;
     const queue = await this.options.queueRuntime.executeClaimed({

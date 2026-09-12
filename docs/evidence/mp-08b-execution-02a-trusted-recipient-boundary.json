@@ -1,0 +1,89 @@
+{
+  "schemaVersion": "mp08b-execution-02a-v1",
+  "classification": "MP08B_EXECUTION_02A_CANDIDATE_COMPLETE",
+  "repository": "Moirae Protocol",
+  "branch": "codex/mp08b-execution-02a-trusted-recipient-boundary",
+  "base": {
+    "commit": "5268b3b01d32488f7fc753da1ec4613e0c1231a5",
+    "tree": "954a762a6142778f82a601bb899278d3abff69c4",
+    "parent": "0c7cf24778e3091ebdcad24c45cc34be1614e4c9"
+  },
+  "ownership": {
+    "classification": "MOIRAE_MP04_EXECUTION_MAPPING_OWNER",
+    "file": "packages/execution-coordinator/src/index.ts",
+    "symbol": "validateActionInput",
+    "failure": "legacy MP-03 argument fixture rejected the trusted recipient before Ananke authority creation",
+    "horaeChanged": false,
+    "runtimeContractsChanged": false
+  },
+  "policy": {
+    "mode": "REPLACE",
+    "type": "Mp04TrustedExecutionConfig",
+    "field": "appointmentDetailsRecipient",
+    "configuredRecipient": "trusted-demo@example.test",
+    "source": "trusted host construction only",
+    "actionInputCanConfigure": false,
+    "recipientTranslation": false,
+    "postApprovalSubstitution": false
+  },
+  "tests": {
+    "focused": {
+      "file": "tests/mp08b-execution-02a-trusted-recipient-boundary.test.ts",
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0
+    },
+    "regressions": {
+      "files": [
+        "tests/mp03-fates006c-integration-01.test.ts",
+        "tests/mp04-durable-execution.test.ts",
+        "tests/mp08b-provider-02b-r3-preparation.test.ts"
+      ],
+      "passed": 18,
+      "failed": 0,
+      "skipped": 6
+    },
+    "canonicalCheck": {
+      "files": 24,
+      "passed": 417,
+      "failed": 0,
+      "skipped": 31,
+      "typecheck": "passed",
+      "lint": "passed",
+      "formatCheck": "passed",
+      "build": "passed",
+      "diffCheck": "passed"
+    },
+    "guardedSkips": "Horae-dependent real execution suites were guarded because no local Horae materialization was enabled; no provider transport was invoked."
+  },
+  "binding": {
+    "fatesAdmission": "WAITING_FOR_APPROVAL then fresh ADMITTED",
+    "mp04Authority": "created after exact policy and approved-action checks",
+    "providerRequest": "constructed offline only",
+    "requestRecipient": "trusted-demo@example.test",
+    "nativeActionHash": "recipient-sensitive via existing native Fates hash function",
+    "decisionIdentity": "preserved from synthetic durable approval",
+    "legacyDefault": "alex@example.test preserved without configuration"
+  },
+  "externalState": {
+    "attempt001": "UNCONSUMED",
+    "oldAuthorization": "NOT_REPLAYABLE",
+    "liveSend": false,
+    "awsCall": false,
+    "sesCall": false,
+    "providerEffect": false,
+    "mainPromotion": false,
+    "push": false,
+    "merge": false,
+    "tag": false,
+    "horaeChange": false,
+    "fatesChange": false,
+    "dependencyChange": false
+  },
+  "privacy": {
+    "syntheticRecipientsOnly": true,
+    "realRecipientCommitted": false,
+    "awsAccountIdCommitted": false,
+    "credentialsCommitted": false
+  }
+}
