@@ -1,0 +1,87 @@
+{
+  "schemaVersion": "mp08b-provider-02b-attempt-002-observation-recovery-v1",
+  "liveEvidence": {
+    "commit": "90add9c100ed81e2eb1a825f894dd966fd5cc52c",
+    "tree": "60ade9e3ab838adbae2dcfae630cab2134eae3ba"
+  },
+  "attempt": {
+    "attemptId": "MP08B-PROVIDER-02B-ATTEMPT-002",
+    "state": "RECONCILED",
+    "sendStarted": true,
+    "providerInvocationCount": 1,
+    "automaticRetryCount": 0,
+    "providerOperationIdPresent": false,
+    "consumed": true,
+    "resendPermitted": false
+  },
+  "correlation": {
+    "executionIdentityPresent": true,
+    "correlationIdentityPresent": true,
+    "idempotencyIdentityPresent": true,
+    "recipientIdentityRequired": true,
+    "rawIdentitiesRecorded": false
+  },
+  "aws": {
+    "profile": "moirae-dev",
+    "intendedNonRootPrincipalVerified": true,
+    "operations": [
+      "sts:GetCallerIdentity",
+      "sqs:GetQueueUrl",
+      "sqs:GetQueueAttributes",
+      "sqs:ReceiveMessage"
+    ],
+    "mutations": 0,
+    "sesSendEmailCalls": 0
+  },
+  "observation": {
+    "queue": "moirae-mp08b-ses-events",
+    "nonDestructive": true,
+    "messagesDeleted": 0,
+    "approximateAvailable": 1,
+    "approximateNotVisible": 0,
+    "approximateDelayed": 0,
+    "uniqueMessagesObserved": 1,
+    "exactCorrelatedEventCount": 0,
+    "exactCorrelatedEventTypes": [],
+    "ambiguousEventCount": 0,
+    "residueOrUnrelatedCount": 1,
+    "classification": "NO_EXACT_CORRELATED_EVENT"
+  },
+  "reconciliation": {
+    "horae": "UNKNOWN",
+    "mp06": "RECONCILIATION_REQUIRED",
+    "mp07": "BLOCKED",
+    "independentEffectEvidenceObserved": false,
+    "durableProtocolStateMutated": false
+  },
+  "preservation": {
+    "attempt002Consumed": true,
+    "attempt001PermanentlyPreserved": true,
+    "newAttemptCreated": false,
+    "newApprovalCreated": false,
+    "newAuthorizationRequested": false,
+    "sendStartedMutated": false,
+    "queueReexecuted": false,
+    "mp04Executed": false,
+    "providerInvoked": false
+  },
+  "privacy": {
+    "realSenderCommitted": false,
+    "realRecipientCommitted": false,
+    "awsAccountIdCommitted": false,
+    "credentialCommitted": false,
+    "sessionMaterialCommitted": false
+  },
+  "classification": [
+    "MOIRAE_MP08B_PROVIDER_02B_ATTEMPT_002_FINAL_UNKNOWN",
+    "EXACTLY_ONE_PROVIDER_INVOCATION",
+    "NO_SECOND_SEND",
+    "NO_INDEPENDENT_EFFECT_EVIDENCE",
+    "HORAE_UNKNOWN",
+    "MP06_RECONCILIATION_REQUIRED",
+    "MP07_NOT_HANDLED_AUTOMATICALLY",
+    "ATTEMPT_002_CONSUMED",
+    "ATTEMPT_001_PERMANENTLY_PRESERVED",
+    "PROVIDER_02B_ENGINEERING_COMPLETE_FOR_SUBMISSION"
+  ]
+}
