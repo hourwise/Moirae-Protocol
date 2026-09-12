@@ -1,0 +1,113 @@
+{
+  "schemaVersion": "mp08b-provider-02b-r4c-acceptance-v1",
+  "classification": "MOIRAE_MP08B_PROVIDER_02B_R4C_ACCEPTED",
+  "candidate": {
+    "commit": "76d42942bf1bd0b45b10b9c7ae7db01b869f6102",
+    "tree": "d5a872f82b8cb036f4f9b6185a5fa083ffb3b77e",
+    "parent": "a4246201d5c42b92dac9d04b9f1a60b10d68ca83",
+    "subject": "fix(protocol): hydrate legacy prepared attempt identity",
+    "branch": "codex/mp08b-provider-02b-r4c-legacy-ledger-hydration"
+  },
+  "base": {
+    "tag": "mp-08b-provider-02b-r4a-jit-rebind-accepted-v1",
+    "commit": "a4246201d5c42b92dac9d04b9f1a60b10d68ca83",
+    "tree": "3716a76d3b0627a4ba06b9131d7efc947768f888"
+  },
+  "diff": {
+    "certified": true,
+    "files": [
+      "apps/host/src/provider-02b-runner.ts",
+      "tests/mp08b-provider-02b-r4c-legacy-ledger-hydration.test.ts",
+      "docs/MP08B_PROVIDER_02B_R4C_LEGACY_LEDGER_HYDRATION.md",
+      "docs/evidence/mp08b-provider-02b-r4c-legacy-ledger-hydration.json"
+    ],
+    "productionBoundary": "Provider-02B runner/ledger only",
+    "unexpectedFiles": false,
+    "sourceOrTestChangesDuringAcceptance": false
+  },
+  "legacyBlocker": {
+    "confirmed": true,
+    "state": "PREPARED",
+    "providerInvocationCount": 0,
+    "sendStartedPresent": false,
+    "decisionPresent": false,
+    "providerOperationPresent": false,
+    "reconciliationPresent": false,
+    "queueOutcomePresent": false,
+    "approvalBindingRevisionPresent": false,
+    "approvalBindingHistoryPresent": false,
+    "sixModernIdentityFieldsPresent": false,
+    "directR4ARebindBeforeHydration": "failed closed on incomplete prepared action identity"
+  },
+  "provenance": {
+    "accepted": true,
+    "replacementApprovalMigrationSource": false,
+    "expiredApprovalHistoryIsAuthority": false,
+    "fields": {
+      "actionBindingDigest": "recomputed from pre-existing durable host binding and immutable action identity",
+      "nativeActionHash": "retained from pre-existing waiting admission",
+      "recipientAddress": "retained from original ActionIntent target/recipient",
+      "contextDigest": "recomputed from pre-existing trusted authenticated context",
+      "presentationInputDigest": "recomputed from pre-existing binding/presentation inputs",
+      "operation": "retained from pre-existing waiting admission"
+    }
+  },
+  "stateSafety": {
+    "preparedOnly": true,
+    "casExpectedApprovalAndRevision": true,
+    "exclusiveLock": true,
+    "atomicWrite": true,
+    "idempotent": true,
+    "conflictingExistingValueFailsClosed": true,
+    "postSendHydrationRefused": true,
+    "strictR4ARebindPreserved": true
+  },
+  "realState": {
+    "attempt001ReadOnly": true,
+    "attempt001MatchesTestedLegacyFixture": true,
+    "attempt001Hydrated": false,
+    "unboundFreshApprovalTouched": false,
+    "protectedFilesUnchanged": true
+  },
+  "tests": {
+    "focusedR4C": { "files": 1, "passed": 9, "failed": 0, "skipped": 0 },
+    "boundedRegression": { "files": 7, "passed": 131, "failed": 0, "skipped": 3 },
+    "canonical": { "files": 28, "passed": 462, "failed": 0, "skipped": 9 }
+  },
+  "validation": {
+    "typecheck": "passed",
+    "lint": "passed",
+    "prettier": "passed",
+    "build": "passed",
+    "gitDiffCheck": "passed",
+    "npmAuditFix": false
+  },
+  "packageIntegrity": {
+    "packageJsonBlob": "83e0929ec5d7464ca5486d6b50a6d5ac444c99bd",
+    "packageLockBlob": "3abda7ef393cd7dc14ebcab88d8d231c3caa51e8",
+    "dependencyChange": false
+  },
+  "privacy": {
+    "realRecipientCommitted": false,
+    "realSenderCommitted": false,
+    "awsAccountIdCommitted": false,
+    "credentialCommitted": false,
+    "tokenCommitted": false,
+    "liveApprovalIdentifierCommitted": false
+  },
+  "externalState": {
+    "awsCall": false,
+    "sesCall": false,
+    "realApprovalCreated": false,
+    "providerInvocation": false,
+    "sendStarted": false,
+    "externalEffect": false,
+    "deployment": false,
+    "pushed": false,
+    "merged": false,
+    "sourceOrTestModified": false
+  },
+  "acceptanceTag": "mp-08b-provider-02b-r4c-legacy-hydration-accepted-v1",
+  "acceptanceEvidenceCommitRecordedAfterDocsCommit": true,
+  "recommendedNextAction": "RESUME_PROVIDER_02B_R4_LIVE_IMMEDIATELY"
+}
