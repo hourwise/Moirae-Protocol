@@ -1,3 +1,8 @@
+import { execFileSync } from "node:child_process";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
 import { describe, expect, it } from "vitest";
 
 import {
@@ -206,8 +211,65 @@ describe("MP-08B FATES-01 fail-closed materialization", () => {
   });
 
   it("rejects an available but wrong Ananke checkpoint", async () => {
-    await expect(
-      createMp08bVerifiedFatesDependency("D:\\Users\\fleur\\ananke-fates-006a"),
-    ).rejects.toThrow(/HEAD is not accepted FATES-006C/);
+    if (!ANANKE_ROOT) {
+      throw new Error("FATES_ANANKE_ROOT is required for the wrong-checkpoint fixture.");
+    }
+
+    const temporaryRoot = mkdtempSync(join(tmpdir(), "moirae-fates-wrong-checkpoint-"));
+    const wrongCheckout = join(temporaryRoot, "ananke");
+    const gitAt = (root: string, args: string[]) =>
+      execFileSync("git", ["-c", "safe.directory=*", "-C", root, ...args], {
+        encoding: "utf8",
+      }).trim();
+    const git = (args: string[]) => gitAt(ANANKE_ROOT, args);
+    const wrongRevision = git(["rev-parse", "HEAD^"]);
+    let worktreeAdded = false;
+
+    try {
+      execFileSync(
+        "git",
+        [
+          "-c",
+          "safe.directory=*",
+          "-C",
+          ANANKE_ROOT,
+          "worktree",
+          "add",
+          "--detach",
+          wrongCheckout,
+          wrongRevision,
+        ],
+        { stdio: "pipe" },
+      );
+      worktreeAdded = true;
+
+      expect(gitAt(wrongCheckout, ["remote", "get-url", "origin"]).replace(/\.git$/, "")).toBe(
+        "https://github.com/hourwise/Project-Ananke",
+      );
+      expect(gitAt(wrongCheckout, ["status", "--porcelain", "--untracked-files=all"])).toBe("");
+      expect(gitAt(wrongCheckout, ["rev-parse", "HEAD"])).toBe(wrongRevision);
+
+      await expect(createMp08bVerifiedFatesDependency(wrongCheckout)).rejects.toThrow(
+        /HEAD is not accepted FATES-006C/,
+      );
+    } finally {
+      if (worktreeAdded) {
+        execFileSync(
+          "git",
+          [
+            "-c",
+            "safe.directory=*",
+            "-C",
+            ANANKE_ROOT,
+            "worktree",
+            "remove",
+            "--force",
+            wrongCheckout,
+          ],
+          { stdio: "pipe" },
+        );
+      }
+      rmSync(temporaryRoot, { recursive: true, force: true });
+    }
   });
 });
