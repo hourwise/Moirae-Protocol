@@ -1,0 +1,166 @@
+{
+  "schemaVersion": "mp09-focused-adversarial-acceptance-v1",
+  "frozenBaseline": {
+    "tag": "mp-08b-final-accepted-v1",
+    "tagObject": "3cf36675fa2409dc840b72f6558ce320776134ba",
+    "commit": "baa269a53c46e4fd8cbc3ec1640c984280d596b6",
+    "tree": "553e391c99f041e931b7841c12e89b01d24b5c78"
+  },
+  "attacks": [
+    {
+      "id": "MP09-RED-001",
+      "description": "Model or AgentProposal authority injection",
+      "boundary": "proposal schema, deterministic compiler, trusted construction",
+      "result": "REFUSED"
+    },
+    {
+      "id": "MP09-RED-002",
+      "description": "Browser/request/frontend authority injection",
+      "boundary": "boundary schemas and trusted host dependency injection",
+      "result": "REFUSED"
+    },
+    {
+      "id": "MP09-RED-003",
+      "description": "Recipient and post-approval action substitution",
+      "boundary": "exact policy, approval hashes, trusted MP-04 recipient",
+      "result": "REFUSED"
+    },
+    {
+      "id": "MP09-RED-004",
+      "description": "Approval replay and cross-attempt binding",
+      "boundary": "durable approval, presentation, action, and decision identity",
+      "result": "REFUSED"
+    },
+    {
+      "id": "MP09-RED-005",
+      "description": "Attempt identity selection and collision",
+      "boundary": "trusted selection, create-only, resume-exact ledger",
+      "result": "REFUSED"
+    },
+    {
+      "id": "MP09-RED-006",
+      "description": "Duplicate execution after point of no return",
+      "boundary": "durable SEND_STARTED and terminal lifecycle guards",
+      "result": "REFUSED"
+    },
+    {
+      "id": "MP09-RED-007",
+      "description": "Queue, delivery, and claim duplication or replay",
+      "boundary": "durable idempotency, lease generation, exact claim binding",
+      "result": "REFUSED"
+    },
+    {
+      "id": "MP09-RED-008",
+      "description": "Provider success or message ID promoted to effect truth",
+      "boundary": "independent observation reconciliation",
+      "result": "REFUSED"
+    },
+    {
+      "id": "MP09-RED-009",
+      "description": "Observation spoofing, partial matching, and historical residue",
+      "boundary": "exact observation identity correlation",
+      "result": "REFUSED"
+    },
+    {
+      "id": "MP09-RED-010",
+      "description": "UNKNOWN escalated to confirmation, completion, or handled",
+      "boundary": "durable Horae, MP-06, and native MP-07 truth",
+      "result": "REFUSED"
+    },
+    {
+      "id": "MP09-RED-011",
+      "description": "Missing execution record treated as ABSENT",
+      "boundary": "native reconciliation read semantics",
+      "result": "REFUSED"
+    },
+    {
+      "id": "MP09-RED-012",
+      "description": "History retrofit and Attempt-001 resurrection",
+      "boundary": "accepted lifecycle and historical identity constraints",
+      "result": "REFUSED"
+    },
+    {
+      "id": "MP09-RED-013",
+      "description": "Untrusted source-request identity selection",
+      "boundary": "exact trusted source-request configuration",
+      "result": "REFUSED"
+    },
+    {
+      "id": "MP09-RED-014",
+      "description": "Source-request configuration treated as Fates authority",
+      "boundary": "independent real Fates admission",
+      "result": "REFUSED"
+    },
+    {
+      "id": "MP09-RED-015",
+      "description": "Synthetic or offline result substituted for live truth",
+      "boundary": "native durable readers and no-test-fallback semantics",
+      "result": "REFUSED"
+    }
+  ],
+  "findings": {
+    "p0": [],
+    "p1": [],
+    "p2": []
+  },
+  "focusedValidation": {
+    "testFilesPassed": 15,
+    "testsPassed": 247,
+    "intentionalSkips": 3,
+    "failures": 0
+  },
+  "canonicalValidation": {
+    "command": "npm.cmd run check",
+    "typecheck": "PASS",
+    "eslint": "PASS",
+    "prettier": "PASS",
+    "tests": "PASS",
+    "build": "PASS",
+    "gitDiffCheck": "PASS"
+  },
+  "protectedState": {
+    "attempt001Unchanged": true,
+    "attempt002Sha256": "0CF9714D3EE8F897E4A5525B632D428BE434A7AE19AC80306A2F64D751723F43",
+    "attempt002State": "RECONCILED",
+    "attempt002ProviderInvocationCount": 1,
+    "attempt002SendStarted": true,
+    "attempt002Horae": "UNKNOWN",
+    "attempt002QueueOutcome": "RECONCILIATION_REQUIRED",
+    "attempt002ProviderOperationIdPresent": false
+  },
+  "externalState": {
+    "awsCalls": 0,
+    "sesSendEmailCalls": 0,
+    "providerInvocations": 0,
+    "newAttempts": 0,
+    "realApprovals": 0,
+    "liveAuthorizations": 0,
+    "deployments": 0,
+    "publications": 0
+  },
+  "classification": [
+    "MOIRAE_MP09_FOCUSED_ACCEPTED",
+    "NO_P0_SUBMISSION_BLOCKERS_FOUND",
+    "MODEL_OUTPUT_NOT_AUTHORITY_CONFIRMED",
+    "BROWSER_STATE_NOT_AUTHORITY_CONFIRMED",
+    "NO_RECIPIENT_TRANSLATION_CONFIRMED",
+    "NO_POST_APPROVAL_SUBSTITUTION_CONFIRMED",
+    "APPROVAL_REPLAY_REFUSED",
+    "CROSS_ATTEMPT_AUTHORITY_REUSE_REFUSED",
+    "SECOND_SEND_REFUSED_CONFIRMED",
+    "EXACTLY_ONCE_BOUNDARY_CONFIRMED",
+    "QUEUE_DUPLICATION_FAILS_SAFE",
+    "PROVIDER_SUCCESS_NOT_EFFECT_CONFIRMED",
+    "SES_MESSAGE_ID_NOT_EFFECT_CONFIRMED",
+    "OBSERVATION_CORRELATION_FAIL_CLOSED",
+    "UNKNOWN_NOT_CONFIRMED",
+    "NO_RECORD_NOT_ABSENT",
+    "MP07_HANDLED_REQUIRES_CONFIRMED_EFFECT",
+    "NO_HISTORY_RETROFIT_CONFIRMED",
+    "TRUSTED_SOURCE_REQUEST_CONFIGURATION_CONFIRMED",
+    "SYNTHETIC_NOT_LIVE_CONFIRMED",
+    "ATTEMPT_001_PERMANENTLY_PRESERVED",
+    "ATTEMPT_002_PERMANENTLY_CONSUMED",
+    "NO_LIVE_EFFECT_DURING_MP09"
+  ]
+}
