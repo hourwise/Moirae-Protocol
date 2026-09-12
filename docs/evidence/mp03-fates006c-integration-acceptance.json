@@ -1,0 +1,151 @@
+{
+  "task": "MOIRAE-MP03-FATES006C-INTEGRATION-ACCEPTANCE-01",
+  "decision": "ACCEPTED",
+  "acceptedAt": "2026-09-12",
+  "candidate": {
+    "commit": "af2f22c1b29b22640b09a4280e0b06e27e140720",
+    "tree": "462115ab4ed183ae4c40bddfd0e7d1ade93b5055",
+    "parent": "cf9c6873cfe5812e965aa85c73aada3b4b60013f",
+    "subject": "feat(protocol): integrate accepted FATES-006C authority"
+  },
+  "acceptedFates006c": {
+    "tag": "ananke-fates-006c-trusted-recipient-admission-v0.1.0-protocol-1.4.0",
+    "tagObject": "4ecb4baddc92d01cabd43f9692966cbb70d703b0",
+    "peeledCommit": "7ce078863edde033d96a896d7e23e11a0a24292b",
+    "peeledTree": "d237005b96fc1c69818448d5a443a8bf7703f37f",
+    "implementationCommit": "e96f27008891b9a5d00cb77e4f2f0c1c87f77efb",
+    "implementationTree": "06639f5a27f7810cb10881631f2b0e9e5b10bf93",
+    "runtimeSha": "c89b83de40ed0275969fe3931220f440bf082aa3",
+    "annotated": true,
+    "productionEquivalentToImplementation": true,
+    "fates008aAncestorVerified": true
+  },
+  "provenance": {
+    "fates006b": {
+      "capability": "MP-03 administrative admission",
+      "commit": "6bf8902c55c4f3f7593a987582b50783c8a7b5a0",
+      "tree": "b8c0be1170df56471930c689b8e8b6f58fdd29bd"
+    },
+    "fates008a": {
+      "capability": "durable human approval",
+      "commit": "b888d61adf180d33e2ae2e61d276cb9b0f13bd12",
+      "tree": "ed5e268e6b3b0630a798b9131341a2c13ef9830f"
+    },
+    "fates006c": {
+      "capability": "trusted exact-recipient authority plus inherited durable approval",
+      "descendsFromFates008a": true
+    }
+  },
+  "diffCertification": {
+    "classification": "MOIRAE_FATES006C_INTEGRATION_DIFF_CERTIFIED",
+    "unexpectedFiles": false,
+    "packageFilesChanged": false,
+    "lockfileChanged": false,
+    "dependenciesChanged": false,
+    "providerExecutionChanged": false,
+    "queueOrRetrySemanticsChanged": false,
+    "mp04OrMp06SemanticsChanged": false,
+    "horaeChanged": false,
+    "frontendOrDeploymentChanged": false
+  },
+  "architecture": "UNIFIED_FATES006C_RUNTIME_SAFE",
+  "trustedConfiguration": {
+    "hostConfig": "Mp08bTrustedRecipientAuthorityConfig",
+    "moiraeConfig": "Mp03TrustedAdministrativeProfileConfig.appointmentDetailsRecipient",
+    "fatesConfig": "MoiraeAdministrativeProfileConfig.appointmentDetailsRecipient",
+    "hostOnly": true,
+    "policyMismatch": "TRUSTED_RECIPIENT_POLICY_MISMATCH",
+    "requestControlled": false,
+    "fallbackOrTranslation": false
+  },
+  "jointPath": {
+    "syntheticRecipient": "trusted-demo@example.test",
+    "mapping": "success",
+    "nativeRecipient": "trusted-demo@example.test",
+    "fatesDecision": "REQUIRE_APPROVAL",
+    "fatesStatus": "WAITING_FOR_APPROVAL",
+    "moiraeResult": "WAITING_FOR_APPROVAL",
+    "executorInvoked": false,
+    "effectExecuted": false
+  },
+  "binding": {
+    "recipientIdentityChainAccepted": true,
+    "actionRecipientHashBound": true,
+    "approvalPresentationBound": true,
+    "approvalForRecipientANotValidForB": true,
+    "noPostAdmissionSubstitution": true
+  },
+  "durableApproval": {
+    "fates008aBehaviorPreserved": true,
+    "pendingRecordDurable": true,
+    "actionHashReproduced": true,
+    "presentationBindingReproduced": true,
+    "exactSyntheticAuthorizationApplied": true,
+    "mismatchFailsClosed": true,
+    "approvalCreatesExecution": false
+  },
+  "compatibility": {
+    "adapterDoesNotCreateAuthority": true,
+    "denyRemainsDeny": true,
+    "boundaryFailureRemainsFailure": true,
+    "requireApprovalMapsToWaiting": true,
+    "legacyFixturePreserved": true,
+    "configuredLegacyFallback": false,
+    "otherAdministrativeActionsUnchanged": true
+  },
+  "validation": {
+    "focusedJoint": {
+      "filesPassed": 4,
+      "testsPassed": 80,
+      "testsFailed": 0
+    },
+    "realAcceptedFates": {
+      "filesPassed": 3,
+      "testsPassed": 49,
+      "testsFailed": 0
+    },
+    "canonicalMoiraeCheck": {
+      "typecheck": "passed",
+      "lint": "passed",
+      "format": "passed",
+      "build": "passed",
+      "testFilesPassed": 24,
+      "testsPassed": 425,
+      "testsSkipped": 9,
+      "testsFailed": 0
+    },
+    "gitDiffCheck": true,
+    "knownAnankeBaseline": "12 stale-clock replay failures remain unrelated accepted debt and were not modified"
+  },
+  "providerBoundary": {
+    "noProviderInvocation": true,
+    "noAwsCall": true,
+    "noSesCall": true,
+    "noExternalEffect": true,
+    "provider02bWorktreePreserved": true,
+    "provider02bResumed": false
+  },
+  "privacy": {
+    "syntheticTestRecipientsOnly": true,
+    "noRealRecipientOrSenderCommitted": true,
+    "noAwsAccountIdCommitted": true,
+    "noCredentialCommitted": true,
+    "noSessionMaterialCommitted": true,
+    "noVerificationUrlCommitted": true
+  },
+  "classification": [
+    "MOIRAE_MP03_FATES006C_INTEGRATION_ACCEPTED",
+    "ACCEPTED_FATES006C_AUTHORITY_BOUND_TO_MOIRAE",
+    "REAL_JOINT_REQUIRE_APPROVAL_ACCEPTED",
+    "RECIPIENT_IDENTITY_CHAIN_ACCEPTED",
+    "ACTION_RECIPIENT_HASH_BOUND",
+    "APPROVAL_PRESENTATION_BOUND",
+    "DURABLE_APPROVAL_COMPATIBILITY_ACCEPTED",
+    "APPROVAL_FOR_RECIPIENT_A_NOT_VALID_FOR_B",
+    "NO_RECIPIENT_TRANSLATION",
+    "NO_POLICY_SELF_AUTHORIZATION",
+    "NO_EXTERNAL_EFFECT",
+    "PROVIDER_02B_AUTHORITY_BLOCKER_RESOLVED",
+    "PROVIDER_02B_NOT_RESUMED"
+  ]
+}
