@@ -3,9 +3,9 @@
 import { existsSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 
-const ANANKE_TAG = "ananke-fates-007a-claim-aware-execution-v0.1.0-protocol-1.4.0";
-const ANANKE_TAG_OBJECT = "9fb9fc4d8183db64aa37f0a4e167fdf41ca856e5";
-const ANANKE_SHA = "114063e03332af3389fe805193e88a62111d9323";
+const ANANKE_TAG = "ananke-fates-006c-trusted-recipient-admission-v0.1.0-protocol-1.4.0";
+const ANANKE_TAG_OBJECT = "4ecb4baddc92d01cabd43f9692966cbb70d703b0";
+const ANANKE_SHA = "7ce078863edde033d96a896d7e23e11a0a24292b";
 const HORAE_TAG = "horae-fates-007a-claim-aware-execution-v0.1.0-protocol-1.4.0";
 const HORAE_TAG_OBJECT = "59763d34644567c59d1041b3acef24efc5a1d072";
 const HORAE_SHA = "aa296b420fbcf578089ca66dc03f6d09d9b06f00";

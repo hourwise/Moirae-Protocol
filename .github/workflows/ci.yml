@@ -27,7 +27,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: hourwise/Project-Ananke
-          ref: ananke-fates-007a-claim-aware-execution-v0.1.0-protocol-1.4.0
+          ref: ananke-fates-006c-trusted-recipient-admission-v0.1.0-protocol-1.4.0
           path: .fates/ananke
           fetch-depth: 0
       - name: Checkout sealed Horae
@@ -102,6 +102,9 @@ jobs:
           fetch-depth: 0
       - name: Install and build accepted Ananke
         working-directory: .fates/mp05-ananke
+        run: npm ci && npm run build
+      - name: Install and build accepted Horae
+        working-directory: .fates/mp05-horae
         run: npm ci && npm run build
       - name: Verify public MP-05 dependency set
         run: npm run verify:mp05:fates-dependency
