@@ -1,0 +1,184 @@
+{
+  "schemaVersion": "mp08b-execution-02a-acceptance-v1",
+  "classification": "MOIRAE_MP08B_EXECUTION_02A_ACCEPTED",
+  "candidate": {
+    "repository": "D:/Users/fleur/Moirae Protocol",
+    "worktree": "D:/Users/fleur/Moirae Protocol/.worktrees/mp08b-execution-02a-trusted-recipient-boundary",
+    "branch": "codex/mp08b-execution-02a-trusted-recipient-boundary",
+    "commit": "26590ae8919507c639b95a1141f73b79f8520232",
+    "tree": "e01c2a63f05e02a42b4300145f55d151b09b1f3d",
+    "parent": "5268b3b01d32488f7fc753da1ec4613e0c1231a5",
+    "parentTree": "954a762a6142778f82a601bb899278d3abff69c4",
+    "commitsBeyondParent": 1,
+    "cleanBeforeAndAfter": true
+  },
+  "diff": {
+    "certified": true,
+    "unexpectedFiles": false,
+    "files": [
+      "apps/host/src/approval-runtime.ts",
+      "apps/host/src/provider-02b-runner.ts",
+      "docs/MP08B_EXECUTION_02A.md",
+      "docs/evidence/mp-08b-execution-02a-trusted-recipient-boundary.json",
+      "packages/execution-coordinator/src/index.ts",
+      "tests/mp08b-execution-02a-trusted-recipient-boundary.test.ts"
+    ],
+    "manifestsChanged": false,
+    "unrelatedImplementationChanged": false
+  },
+  "ownership": {
+    "residualBlocker": "MP04 execution coordinator accepted-argument guard",
+    "horaeIndependentRecipientFixture": false,
+    "runtimeContractsIndependentRecipientFixture": false,
+    "providerTranslation": false,
+    "policyMode": "REPLACE"
+  },
+  "trustedExecutionConfig": {
+    "type": "Mp04TrustedExecutionConfig",
+    "field": "appointmentDetailsRecipient",
+    "optionalAdditive": true,
+    "constructionOnly": true,
+    "exactOneRecipient": true,
+    "equalityGuardOnly": true,
+    "actionInputIsSource": true,
+    "syntheticRecipient": "trusted-demo@example.test"
+  },
+  "identityChain": {
+    "actionIntentRecipient": "trusted-demo@example.test",
+    "mp04NativeArgumentsRecipient": "trusted-demo@example.test",
+    "nativeFatesActionRecipient": "trusted-demo@example.test",
+    "approvedActionRecipient": "trusted-demo@example.test",
+    "horaeAuthorityRecipient": "trusted-demo@example.test",
+    "sesRequestRecipient": "trusted-demo@example.test",
+    "allEqual": true,
+    "noTranslation": true,
+    "noPostApprovalSubstitution": true,
+    "nativeHashRecipientSensitive": true,
+    "approvalPresentationRecipientBound": true
+  },
+  "behavior": {
+    "realLocalFatesDecision": "REQUIRE_APPROVAL",
+    "realLocalFatesStatus": "WAITING_FOR_APPROVAL",
+    "executorInvokedAtAdmission": false,
+    "effectExecutedAtAdmission": false,
+    "configuredRecipientDoesNotBecomeAllow": true,
+    "configuredRecipientMismatchFailsBeforeAuthority": true,
+    "approvalACannotExecuteB": true,
+    "legacyDefaultPreserved": true,
+    "unrelatedActionsUnchanged": true,
+    "oldAuthorizationNotReplayable": true
+  },
+  "recipientMismatchMatrix": {
+    "other-demo@example.test": "BOUNDARY_FAILURE_before_authority",
+    "trusted-demx@example.test": "BOUNDARY_FAILURE_before_authority",
+    "trusted-demo+other@example.test": "BOUNDARY_FAILURE_before_authority",
+    "same-domain@example.test": "BOUNDARY_FAILURE_before_authority",
+    "alex@example.test": "BOUNDARY_FAILURE_before_authority"
+  },
+  "tests": {
+    "focused": {
+      "file": "tests/mp08b-execution-02a-trusted-recipient-boundary.test.ts",
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0
+    },
+    "boundedMoiraeRegression": {
+      "files": [
+        "tests/mp03-fates006c-integration-01.test.ts",
+        "tests/mp04-durable-execution.test.ts",
+        "tests/mp08b-provider-02b-r3-preparation.test.ts"
+      ],
+      "passed": 18,
+      "failed": 0,
+      "skipped": 6
+    },
+    "realMp04FatesHorae": {
+      "file": "tests/mp04-durable-execution.test.ts",
+      "passed": 13,
+      "failed": 0,
+      "skipped": 0
+    },
+    "acceptedFates008a": {
+      "files": [
+        "packages/runtime-core/src/action-approval-store.test.ts",
+        "packages/runtime-core/src/approval-dispatch-boundary.test.ts",
+        "packages/runtime-core/src/admission.test.ts"
+      ],
+      "passed": 31,
+      "failed": 0,
+      "skipped": 0
+    },
+    "canonicalCheck": {
+      "command": "npm.cmd run check",
+      "typecheck": "passed",
+      "lint": "passed",
+      "formatCheck": "passed",
+      "build": "passed",
+      "filesPassed": 24,
+      "filesSkipped": 2,
+      "passed": 417,
+      "failed": 0,
+      "skipped": 31,
+      "classification": "FULL_SUITE_BASELINE_GUARDED_SKIPS_CANDIDATE_NEUTRAL"
+    },
+    "guardedSkipComparison": {
+      "files": [
+        "tests/mp05-human-approval.test.ts",
+        "tests/mp04-durable-execution.test.ts",
+        "tests/mp08b-approval-01-durable-host-context.test.ts",
+        "tests/mp08b-queue-01-durable-worker.test.ts",
+        "tests/mp08b-execution-01-mp04-horae-reconciliation.test.ts"
+      ],
+      "candidate": { "passed": 79, "failed": 0, "skipped": 31 },
+      "parent": { "passed": 79, "failed": 0, "skipped": 31 },
+      "sameSet": true
+    },
+    "provenanceScripts": {
+      "verify:sealed-fates": "passed",
+      "verify:mp05:fates-dependency": "passed",
+      "validate:env": "unavailable_not_declared",
+      "verify:adrasteia-source": "unavailable_not_declared",
+      "gitDiffCheck": "passed"
+    }
+  },
+  "provenance": {
+    "anankeFates007a": "114063e03332af3389fe805193e88a62111d9323",
+    "horaeFates007a": "aa296b420fbcf578089ca66dc03f6d09d9b06f00",
+    "adrasteia": "a1c01bf9e6f9d6a126cfdcc1acfacd488b214210",
+    "fates008hEvidence": "cc889456dc16a908041d8d70425438ad56d483c8",
+    "packageJsonBlob": "83e0929ec5d7464ca5486d6b50a6d5ac444c99bd",
+    "packageLockBlob": "3abda7ef393cd7dc14ebcab88d8d231c3caa51e8"
+  },
+  "protectedState": {
+    "r3Commit": "5268b3b01d32488f7fc753da1ec4613e0c1231a5",
+    "r3Tree": "954a762a6142778f82a601bb899278d3abff69c4",
+    "attemptId": "Attempt-001",
+    "attemptState": "PREPARED",
+    "providerInvocationCount": 0,
+    "automaticRetryCount": 0,
+    "sendStarted": false,
+    "providerOperationPresent": false,
+    "reconciliationPresent": false,
+    "newApprovalCreated": false,
+    "r2WorktreeTouched": false
+  },
+  "privacy": {
+    "changedFileEmailTokens": 15,
+    "nonSyntheticEmailTokens": 0,
+    "realRecipientCommitted": false,
+    "awsAccountIdCommitted": false,
+    "credentialCommitted": false,
+    "secretMarkerFiles": []
+  },
+  "externalState": {
+    "pushed": false,
+    "merged": false,
+    "taggedBeforeEvidence": false,
+    "awsCall": false,
+    "sesCall": false,
+    "providerResume": false,
+    "externalEffect": false,
+    "deployment": false,
+    "moiraeChangeOutsideCandidate": false
+  }
+}
