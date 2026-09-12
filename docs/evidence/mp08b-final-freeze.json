@@ -1,0 +1,101 @@
+{
+  "schemaVersion": "mp08b-final-freeze-v1",
+  "acceptedR6": {
+    "tag": "mp-08b-provider-02b-r6-fresh-attempt-accepted-v1",
+    "tagObject": "35df7a3756b2d38b04527de1f6ae5aaf45c0c5fe",
+    "commit": "5af4084ee96c04350966c7ce583f2c22d9323223",
+    "tree": "255e2f3b2405a8dd6f46a7dcd1ba86e37583e943",
+    "implementationCommit": "7a1add07bbcf9242098445a021683780143139e2"
+  },
+  "evidenceLineage": {
+    "liveCommit": "90add9c100ed81e2eb1a825f894dd966fd5cc52c",
+    "observationCommit": "e7e7cb281ab7c234bf92dc3474d839e31b4e7cb5",
+    "observationTree": "8e7960d3d6e72c852d36bd997955897fd91d375e",
+    "observationDescendsFromLive": true,
+    "postR6ProviderSourceChanges": false
+  },
+  "truthMatrix": {
+    "providerInvocationOccurred": true,
+    "providerInvocationCount": 1,
+    "sdkSendAttemptCount": 1,
+    "automaticRetryCount": 0,
+    "providerOperationIdReturned": false,
+    "independentSesObservation": false,
+    "externalEffectConfirmed": false,
+    "horaeResult": "UNKNOWN",
+    "mp06Completed": false,
+    "mp06Result": "RECONCILIATION_REQUIRED",
+    "mp07HandledAutomatically": false,
+    "mp07Result": "BLOCKED",
+    "resend": "PROHIBITED"
+  },
+  "attempt002": {
+    "attemptId": "MP08B-PROVIDER-02B-ATTEMPT-002",
+    "durableState": "RECONCILED",
+    "sendStarted": true,
+    "permanentlyConsumed": true,
+    "secondSendRefused": true,
+    "duplicateCreateFreshRefused": true,
+    "approvalRebindExecutable": false,
+    "legacyHydrationExecutable": false
+  },
+  "attempt001": {
+    "historicalPreSendBoundaryFailure": true,
+    "safeRearmProven": false,
+    "historyRetrofitted": false,
+    "permanentlyPreserved": true,
+    "protectedHashesUnchanged": true
+  },
+  "acceptedArchitecture": [
+    "MODEL_PROPOSAL_NOT_AUTHORITY",
+    "DETERMINISTIC_ACTION_INTENT",
+    "MP03_FATES006C_REQUIRE_APPROVAL",
+    "DURABLE_HUMAN_APPROVAL",
+    "MP06_WORK_DELIVERY_CLAIM",
+    "MP04_EXECUTION_BOUNDARY",
+    "DURABLE_SEND_STARTED",
+    "EXACTLY_ONE_GOVERNED_SES_INVOCATION",
+    "INDEPENDENT_OBSERVATION",
+    "HORAE_UNKNOWN",
+    "MP06_RECONCILIATION_REQUIRED",
+    "MP07_BLOCKED"
+  ],
+  "submissionSafeClaim": "Moirae made exactly one governed provider invocation. No independently correlated SES event was observed, so Horae classified the effect as UNKNOWN. Moirae therefore refused to mark the work completed or retry the effect.",
+  "privacy": {
+    "realSenderCommitted": false,
+    "realRecipientCommitted": false,
+    "awsAccountIdCommitted": false,
+    "credentialCommitted": false,
+    "sessionMaterialCommitted": false,
+    "sensitiveApprovalOrClaimIdCommitted": false,
+    "authorizationPhraseCommitted": false,
+    "rawCorrelationMaterialCommitted": false
+  },
+  "freezeOperations": {
+    "sourceChanges": 0,
+    "testChanges": 0,
+    "dependencyChanges": 0,
+    "awsMutations": 0,
+    "sesSendEmailCalls": 0,
+    "providerInvocations": 0,
+    "newAttempts": 0,
+    "newApprovals": 0,
+    "deployments": 0,
+    "publications": 0
+  },
+  "classification": [
+    "MOIRAE_MP08B_FINAL_ACCEPTED",
+    "MP08B_SUBMISSION_STATE_FROZEN",
+    "EXACTLY_ONE_PROVIDER_INVOCATION",
+    "ATTEMPT_002_PERMANENTLY_CONSUMED",
+    "NO_SECOND_SEND",
+    "NO_INDEPENDENT_EFFECT_EVIDENCE",
+    "HORAE_UNKNOWN",
+    "MP06_RECONCILIATION_REQUIRED",
+    "MP07_NOT_HANDLED_AUTOMATICALLY",
+    "ATTEMPT_001_PERMANENTLY_PRESERVED",
+    "NO_HISTORY_RETROFIT",
+    "PROVIDER_02B_ENGINEERING_COMPLETE_FOR_SUBMISSION",
+    "SUBMISSION_CLAIMS_BOUND_TO_EVIDENCE"
+  ]
+}
