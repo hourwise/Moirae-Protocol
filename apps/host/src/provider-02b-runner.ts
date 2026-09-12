@@ -62,8 +62,17 @@ import {
 
 export const MP08B_PROVIDER_02B_VERSION = "mp08b-provider-02b-r3-v1" as const;
 export const MP08B_PROVIDER_02B_ATTEMPT_ID = "MP08B-PROVIDER-02B-ATTEMPT-001" as const;
+export const MP08B_PROVIDER_02B_ATTEMPT_002_ID = "MP08B-PROVIDER-02B-ATTEMPT-002" as const;
 export const PROVIDER_02B_LIVE_AUTHORIZATION = "AUTHORIZE PROVIDER-02B SEND NOW" as const;
 export const PROVIDER_02B_OFFLINE_AUTHORIZATION = "OFFLINE_DRY_RUN" as const;
+
+export type Provider02bAttemptId =
+  typeof MP08B_PROVIDER_02B_ATTEMPT_ID | typeof MP08B_PROVIDER_02B_ATTEMPT_002_ID;
+
+export type Provider02bAttemptIdentityV1 = Readonly<{
+  readonly attemptId: Provider02bAttemptId;
+  readonly lifecycle: "LEGACY_ATTEMPT_001" | "CREATE_FRESH" | "RESUME_EXISTING";
+}>;
 
 export type Provider02bAttemptState =
   | "UNUSED"
@@ -124,7 +133,7 @@ export type Provider02bPreparedApprovalBindingV1 = Readonly<{
 }>;
 
 export type Provider02bApprovalRebindInputV1 = Readonly<{
-  readonly attemptId: typeof MP08B_PROVIDER_02B_ATTEMPT_ID;
+  readonly attemptId: Provider02bAttemptId;
   readonly expectedApprovalId: string;
   readonly expectedApprovalBindingRevision: number;
   readonly replacement: Provider02bPreparedApprovalBindingV1;
@@ -132,7 +141,7 @@ export type Provider02bApprovalRebindInputV1 = Readonly<{
 }>;
 
 export type Provider02bLegacyIdentityHydrationInputV1 = Readonly<{
-  readonly attemptId: typeof MP08B_PROVIDER_02B_ATTEMPT_ID;
+  readonly attemptId: Provider02bAttemptId;
   readonly expectedApprovalId: string;
   readonly expectedApprovalBindingRevision: number;
   readonly reconstructed: Provider02bPreparedApprovalBindingV1;
@@ -146,7 +155,7 @@ export type Provider02bLegacyIdentityHydrationRequestV1 = Readonly<{
 
 export type Provider02bAttemptLedgerV1 = Readonly<{
   readonly schemaVersion: typeof MP08B_PROVIDER_02B_VERSION;
-  readonly attemptId: typeof MP08B_PROVIDER_02B_ATTEMPT_ID;
+  readonly attemptId: Provider02bAttemptId;
   readonly state: Provider02bAttemptState;
   readonly updatedAt: string;
   readonly bindings?: Provider02bAttemptBindingsV1;
@@ -200,6 +209,8 @@ export type Provider02bRunnerOptions = Readonly<{
   readonly observe: Provider02bObserver;
   readonly trustedTime: { now(): string };
   readonly workerId: string;
+  /** Trusted host construction only. Request/model/browser data never selects an attempt. */
+  readonly attemptIdentity?: Provider02bAttemptIdentityV1;
 }>;
 
 export type Provider02bPreparedRunV1 = Readonly<{
@@ -252,10 +263,40 @@ function requireAbsoluteLedgerPath(value: string): string {
   return resolve(value);
 }
 
-function initialLedger(now: string): Provider02bAttemptLedgerV1 {
+function validateAttemptIdentity(
+  value: Provider02bAttemptIdentityV1 | undefined,
+): Provider02bAttemptIdentityV1 {
+  const identity =
+    value ??
+    ({
+      attemptId: MP08B_PROVIDER_02B_ATTEMPT_ID,
+      lifecycle: "LEGACY_ATTEMPT_001",
+    } as const);
+  if (
+    identity.attemptId !== MP08B_PROVIDER_02B_ATTEMPT_ID &&
+    identity.attemptId !== MP08B_PROVIDER_02B_ATTEMPT_002_ID
+  )
+    throw new Provider02bRunnerError("Provider-02B attempt identity is not trusted.");
+  if (
+    (identity.lifecycle === "LEGACY_ATTEMPT_001") !==
+    (identity.attemptId === MP08B_PROVIDER_02B_ATTEMPT_ID)
+  )
+    throw new Provider02bRunnerError(
+      "Historical Attempt-001 and fresh-attempt construction modes cannot cross-bind.",
+    );
+  if (
+    identity.lifecycle !== "LEGACY_ATTEMPT_001" &&
+    identity.lifecycle !== "CREATE_FRESH" &&
+    identity.lifecycle !== "RESUME_EXISTING"
+  )
+    throw new Provider02bRunnerError("Provider-02B attempt lifecycle is invalid.");
+  return clone(identity);
+}
+
+function initialLedger(now: string, attemptId: Provider02bAttemptId): Provider02bAttemptLedgerV1 {
   return {
     schemaVersion: MP08B_PROVIDER_02B_VERSION,
-    attemptId: MP08B_PROVIDER_02B_ATTEMPT_ID,
+    attemptId,
     state: "UNUSED",
     updatedAt: now,
     providerInvocationCount: 0,
@@ -265,13 +306,16 @@ function initialLedger(now: string): Provider02bAttemptLedgerV1 {
   };
 }
 
-function parseLedger(value: unknown): Provider02bAttemptLedgerV1 {
+function parseLedger(
+  value: unknown,
+  expectedAttemptId: Provider02bAttemptId,
+): Provider02bAttemptLedgerV1 {
   if (typeof value !== "object" || value === null || Array.isArray(value))
     throw new Provider02bRunnerError("Provider-02B attempt ledger is malformed.");
   const record = value as Record<string, unknown>;
   if (
     record.schemaVersion !== MP08B_PROVIDER_02B_VERSION ||
-    record.attemptId !== MP08B_PROVIDER_02B_ATTEMPT_ID ||
+    record.attemptId !== expectedAttemptId ||
     typeof record.state !== "string" ||
     !(record.state in stateOrder) ||
     typeof record.updatedAt !== "string" ||
@@ -388,20 +432,26 @@ function atomicWrite(path: string, value: unknown): void {
  */
 export class Provider02bAttemptLedger {
   private readonly path: string;
+  private readonly identity: Provider02bAttemptIdentityV1;
 
-  constructor(path: string) {
+  constructor(path: string, identity?: Provider02bAttemptIdentityV1) {
     this.path = requireAbsoluteLedgerPath(path);
+    this.identity = validateAttemptIdentity(identity);
   }
 
   read(now = new Date().toISOString()): Provider02bAttemptLedgerV1 {
-    if (!existsSync(this.path)) return initialLedger(now);
+    if (!existsSync(this.path)) {
+      if (this.identity.lifecycle === "RESUME_EXISTING")
+        throw new Provider02bRunnerError("The existing Provider-02B attempt ledger is absent.");
+      return initialLedger(now, this.identity.attemptId);
+    }
     let raw: unknown;
     try {
       raw = JSON.parse(readFileSync(this.path, "utf8")) as unknown;
     } catch {
       throw new Provider02bRunnerError("Provider-02B attempt ledger is unreadable.");
     }
-    return parseLedger(raw);
+    return parseLedger(raw, this.identity.attemptId);
   }
 
   private withExclusiveLock<T>(operation: () => T): T {
@@ -413,7 +463,7 @@ export class Provider02bAttemptLedger {
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === "EEXIST")
         throw new Provider02bRunnerError(
-          "Attempt-001 durable update is concurrently locked; refusing last-write-wins behavior.",
+          "Provider-02B attempt durable update is concurrently locked; refusing last-write-wins behavior.",
         );
       throw error;
     } finally {
@@ -432,7 +482,7 @@ export class Provider02bAttemptLedger {
     now: string,
     mutate: (current: Provider02bAttemptLedgerV1) => Provider02bAttemptLedgerV1,
   ): Provider02bAttemptLedgerV1 {
-    const next = parseLedger(mutate(this.read(now)));
+    const next = parseLedger(mutate(this.read(now)), this.identity.attemptId);
     atomicWrite(this.path, next);
     return next;
   }
@@ -445,10 +495,19 @@ export class Provider02bAttemptLedger {
   }
 
   prepare(bindings: Provider02bAttemptBindingsV1, now: string): Provider02bAttemptLedgerV1 {
-    return this.update(now, (current) => {
+    return this.withExclusiveLock(() => {
+      if (this.identity.lifecycle === "RESUME_EXISTING")
+        throw new Provider02bRunnerError("An existing attempt cannot be created again.");
+      if (this.identity.lifecycle === "CREATE_FRESH" && existsSync(this.path))
+        throw new Provider02bRunnerError(
+          "FRESH_ATTEMPT_CREATE_ONLY: the fresh attempt ledger already exists.",
+        );
+      const current = this.read(now);
       if (current.state !== "UNUSED")
-        throw new Provider02bRunnerError("Attempt-001 is already prepared or consumed.");
-      return {
+        throw new Provider02bRunnerError(
+          "The Provider-02B attempt is already prepared or consumed.",
+        );
+      const next: Provider02bAttemptLedgerV1 = {
         ...current,
         state: "PREPARED",
         updatedAt: now,
@@ -463,6 +522,9 @@ export class Provider02bAttemptLedger {
           },
         ],
       };
+      const parsed = parseLedger(next, this.identity.attemptId);
+      atomicWrite(this.path, parsed);
+      return parsed;
     });
   }
 
@@ -476,8 +538,8 @@ export class Provider02bAttemptLedger {
     input: Provider02bLegacyIdentityHydrationInputV1,
   ): Provider02bAttemptLedgerV1 {
     return this.withExclusiveLock(() => {
-      const current = parseLedger(this.read(input.now));
-      if (input.attemptId !== MP08B_PROVIDER_02B_ATTEMPT_ID)
+      const current = this.read(input.now);
+      if (this.identity.lifecycle !== "LEGACY_ATTEMPT_001" || input.attemptId !== current.attemptId)
         throw new Provider02bRunnerError(
           "Legacy identity hydration targeted a different attempt identity.",
         );
@@ -592,15 +654,15 @@ export class Provider02bAttemptLedger {
           hydratedAt: input.now,
         },
       };
-      atomicWrite(this.path, parseLedger(next));
-      return parseLedger(next);
+      atomicWrite(this.path, parseLedger(next, this.identity.attemptId));
+      return parseLedger(next, this.identity.attemptId);
     });
   }
 
   rebindPreparedApproval(input: Provider02bApprovalRebindInputV1): Provider02bAttemptLedgerV1 {
     return this.withExclusiveLock(() => {
-      const current = parseLedger(this.read(input.now));
-      if (input.attemptId !== MP08B_PROVIDER_02B_ATTEMPT_ID)
+      const current = this.read(input.now);
+      if (input.attemptId !== current.attemptId)
         throw new Provider02bRunnerError("Approval rebind targeted a different attempt identity.");
       if (
         current.state !== "PREPARED" ||
@@ -691,8 +753,8 @@ export class Provider02bAttemptLedger {
           },
         ],
       };
-      atomicWrite(this.path, parseLedger(next));
-      return parseLedger(next);
+      atomicWrite(this.path, parseLedger(next, this.identity.attemptId));
+      return parseLedger(next, this.identity.attemptId);
     });
   }
 
@@ -752,7 +814,7 @@ export class Provider02bAttemptLedger {
     return this.update(input.now, (current) => {
       if (stateOrder[current.state] >= stateOrder.SEND_STARTED)
         throw new Provider02bRunnerError(
-          "Attempt-001 is consumed; a second provider call is forbidden.",
+          "The Provider-02B attempt is consumed; a second provider call is forbidden.",
         );
       if (current.state !== "APPROVED" || !current.bindings?.claimId)
         throw new Provider02bRunnerError("SEND_STARTED requires approved claimed work.");
@@ -831,8 +893,13 @@ function requestFingerprint(intent: ActionIntentV1, config: SesProviderConfigV1)
   });
 }
 
-function correlationFor(workId: string, claimId: string, generation: number): string {
-  return `provider-02b-r3-${hash({ attemptId: MP08B_PROVIDER_02B_ATTEMPT_ID, claimId, generation, workId }).slice(0, 32)}`;
+function correlationFor(
+  attemptId: Provider02bAttemptId,
+  workId: string,
+  claimId: string,
+  generation: number,
+): string {
+  return `provider-02b-${hash({ attemptId, claimId, generation, workId }).slice(0, 32)}`;
 }
 
 function claimDigest(claim: SchedulingClaimV1): string {
@@ -995,11 +1062,13 @@ function createHoraeRecord(input: {
  */
 export class Provider02bRunner {
   private readonly ledger: Provider02bAttemptLedger;
+  private readonly attemptIdentity: Provider02bAttemptIdentityV1;
   private lastExecution?: ReturnType<typeof createMp04ExecutionCoordinator>;
   private lastClaim?: SchedulingClaimV1;
 
   constructor(private readonly options: Provider02bRunnerOptions) {
-    this.ledger = new Provider02bAttemptLedger(options.ledgerPath);
+    this.attemptIdentity = validateAttemptIdentity(options.attemptIdentity);
+    this.ledger = new Provider02bAttemptLedger(options.ledgerPath, this.attemptIdentity);
   }
 
   readLedger(): Provider02bAttemptLedgerV1 {
@@ -1056,7 +1125,7 @@ export class Provider02bRunner {
       this.options.providerConfig,
     );
     return this.ledger.hydrateLegacyPreparedIdentity({
-      attemptId: MP08B_PROVIDER_02B_ATTEMPT_ID,
+      attemptId: this.attemptIdentity.attemptId,
       expectedApprovalId: input.expectedApprovalId,
       expectedApprovalBindingRevision: input.expectedApprovalBindingRevision,
       reconstructed,
@@ -1083,7 +1152,7 @@ export class Provider02bRunner {
       current.bindings?.correlationId !== undefined
     )
       throw new Provider02bRunnerError(
-        "JIT approval rebind requires an unconsumed PREPARED Attempt-001.",
+        "JIT approval rebind requires an unconsumed PREPARED attempt.",
       );
     if (!current.bindings || current.bindings.approvalId !== input.expectedApprovalId)
       throw new Provider02bRunnerError(
@@ -1116,7 +1185,7 @@ export class Provider02bRunner {
       replacement.binding.approvalId === input.expectedApprovalId
     )
       throw new Provider02bRunnerError(
-        "JIT approval rebind replacement is not a fresh waiting approval for Attempt-001.",
+        "JIT approval rebind replacement is not a fresh waiting approval for this attempt.",
       );
     const replacementBinding = this.options.approvalRuntime.getApprovalBinding(
       replacement.binding.approvalId,
@@ -1152,7 +1221,7 @@ export class Provider02bRunner {
       );
 
     return this.ledger.rebindPreparedApproval({
-      attemptId: MP08B_PROVIDER_02B_ATTEMPT_ID,
+      attemptId: this.attemptIdentity.attemptId,
       expectedApprovalId: input.expectedApprovalId,
       expectedApprovalBindingRevision: input.expectedApprovalBindingRevision,
       replacement: replacementPreparedBinding,
@@ -1166,7 +1235,7 @@ export class Provider02bRunner {
   }): Promise<Mp05ApprovalOutcomeV1> {
     const current = this.readLedger();
     if (current.state !== "PREPARED" || current.bindings?.approvalId !== input.approvalId)
-      throw new Provider02bRunnerError("Human decision is not bound to the prepared Attempt-001.");
+      throw new Provider02bRunnerError("Human decision is not bound to the prepared attempt.");
     const outcome = await this.options.approvalRuntime.submitDecision(input);
     const observation = await this.options.approvalRuntime.readApproval(input.approvalId);
     if (observation.state === "APPROVED" || observation.state === "REJECTED")
@@ -1183,7 +1252,7 @@ export class Provider02bRunner {
       throw new Provider02bRunnerError("Provider-02B queue runtime is required after approval.");
     const current = this.readLedger();
     if (current.state !== "APPROVED" || !current.bindings?.approvalId)
-      throw new Provider02bRunnerError("Queue admission requires a durably approved Attempt-001.");
+      throw new Provider02bRunnerError("Queue admission requires a durably approved attempt.");
     const enqueue = await this.options.queueRuntime.enqueueApproved(current.bindings.approvalId);
     const claim = await this.options.queueRuntime.claim({
       deliveryId: enqueue.work.deliveryId,
@@ -1197,6 +1266,7 @@ export class Provider02bRunner {
       claimId: claim.claim.claimId,
       claimGeneration: claim.claim.generation,
       correlationId: correlationFor(
+        this.attemptIdentity.attemptId,
         enqueue.work.workId,
         claim.claim.claimId,
         claim.claim.generation,
@@ -1231,7 +1301,7 @@ export class Provider02bRunner {
       !current.bindings.logicalWorkId ||
       !current.bindings.correlationId
     )
-      throw new Provider02bRunnerError("Execution requires approved claimed Attempt-001 state.");
+      throw new Provider02bRunnerError("Execution requires approved claimed attempt state.");
 
     const approvedBindings = {
       ...current.bindings,
@@ -1243,7 +1313,7 @@ export class Provider02bRunner {
     };
 
     const binding = this.options.approvalRuntime.getApprovalBinding(approvedBindings.approvalId);
-    if (!binding) throw new Provider02bRunnerError("Attempt-001 execution binding is unavailable.");
+    if (!binding) throw new Provider02bRunnerError("Attempt execution binding is unavailable.");
     const claim = this.lastClaim;
     let invocation: SesProviderInvocationResultV1 | undefined;
     let reconciliation: SesHoraeReconciliationInputV1 | undefined;
@@ -1254,7 +1324,7 @@ export class Provider02bRunner {
         const before = this.readLedger();
         if (stateOrder[before.state] >= stateOrder.SEND_STARTED)
           throw new Provider02bRunnerError(
-            "Attempt-001 is consumed; refusing a second provider call.",
+            "The Provider-02B attempt is consumed; refusing a second provider call.",
           );
         const authority = isRecord(input.authority) ? input.authority : undefined;
         const durableExecutionId = authority?.durableExecutionId;
@@ -1270,7 +1340,7 @@ export class Provider02bRunner {
           decisionId: approvedBindings.decisionId,
           claimGeneration: approvedBindings.claimGeneration ?? 0,
           executionId: durableExecutionId,
-          attemptId: MP08B_PROVIDER_02B_ATTEMPT_ID,
+          attemptId: this.attemptIdentity.attemptId,
           correlationId: approvedBindings.correlationId,
         } as const;
         const prepared = prepareSesAppointmentDetailsRequest({

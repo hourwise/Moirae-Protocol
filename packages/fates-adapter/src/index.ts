@@ -170,6 +170,7 @@ export interface FatesAdmissionGateway {
  */
 export type Mp03TrustedAdministrativeProfileConfig = Readonly<{
   readonly appointmentDetailsRecipient?: string;
+  readonly appointmentDetailsSourceRequestId?: string;
 }>;
 
 export interface FatesOperation {
@@ -328,23 +329,26 @@ const trustedRecipientConfigSchema = z
         "Recipient must not contain surrounding whitespace",
       )
       .refine((value) => !value.includes("*"), "Recipient must be one exact address"),
+    appointmentDetailsSourceRequestId: identifierSchema,
   })
   .partial()
   .strict();
 
-function effectiveAppointmentDetailsRecipient(
+function effectiveAppointmentDetailsConfig(
   config: Mp03TrustedAdministrativeProfileConfig | undefined,
-): string {
+): Readonly<{ recipient: string; sourceRequestId: string }> {
   const parsed = trustedRecipientConfigSchema.safeParse(config === undefined ? {} : config);
   if (!parsed.success) {
     throw new TypeError(
-      "MP-03 trusted recipient configuration must contain one exact email address.",
+      "MP-03 trusted administrative configuration must contain exact bounded values.",
     );
   }
-  return (
-    parsed.data.appointmentDetailsRecipient ??
-    acceptedArgs.SEND_APPOINTMENT_DETAILS.recipientAddress
-  );
+  return {
+    recipient:
+      parsed.data.appointmentDetailsRecipient ??
+      acceptedArgs.SEND_APPOINTMENT_DETAILS.recipientAddress,
+    sourceRequestId: parsed.data.appointmentDetailsSourceRequestId ?? "REQUEST-MP02-DETAILS-001",
+  };
 }
 
 function exactJson(left: unknown, right: unknown): boolean {
@@ -378,7 +382,11 @@ type MappingResult =
     }
   | { ok: false; reason: "fixture_profile_mismatch" | "unsupported_action"; detail: string };
 
-function mapIntent(intent: ActionIntentV1, appointmentDetailsRecipient: string): MappingResult {
+function mapIntent(
+  intent: ActionIntentV1,
+  appointmentDetailsRecipient: string,
+  appointmentDetailsSourceRequestId: string,
+): MappingResult {
   const action = intent.action as Mp03Action;
   if (!Object.hasOwn(MP03_PROFILE, action)) {
     return {
@@ -399,7 +407,13 @@ function mapIntent(intent: ActionIntentV1, appointmentDetailsRecipient: string):
         : acceptedArgs.SEND_APPOINTMENT_DETAILS.recipientAddress,
       "verified requester address",
     ],
-    [intent.sourceRequestId, "REQUEST-MP02-DETAILS-001", "source request"],
+    [
+      intent.sourceRequestId,
+      action === "SEND_APPOINTMENT_DETAILS"
+        ? appointmentDetailsSourceRequestId
+        : "REQUEST-MP02-DETAILS-001",
+      "source request",
+    ],
     [intent.contextTimestamp, MP03_CONTEXT_TIMESTAMP, "context timestamp"],
   ] as const;
   for (const [actual, expected, label] of commonChecks) {
@@ -812,6 +826,7 @@ async function admitWithGateway(
   gateway: FatesAdmissionGateway,
   provenance: Mp03DependencyProvenance,
   appointmentDetailsRecipient: string,
+  appointmentDetailsSourceRequestId: string,
   input: AdmitActionIntentInput,
 ): Promise<MoiraeAdmissionResultV1> {
   if (!exactJson(provenance, MP03_DEPENDENCY_PROVENANCE)) {
@@ -847,7 +862,7 @@ async function admitWithGateway(
     );
   }
 
-  const mapped = mapIntent(intent, appointmentDetailsRecipient);
+  const mapped = mapIntent(intent, appointmentDetailsRecipient, appointmentDetailsSourceRequestId);
   if (!mapped.ok) return boundaryFailure(mapped.reason, mapped.detail);
 
   const contextResult = Mp03AuthenticatedContextSchema.safeParse(
@@ -930,10 +945,16 @@ export function createMp03AdmissionAdapter(
   if (!gateway || typeof gateway.admit !== "function") {
     throw new TypeError("MP-03 requires an injected native Fates admission gateway.");
   }
-  const appointmentDetailsRecipient = effectiveAppointmentDetailsRecipient(trustedConfig);
+  const appointmentDetailsConfig = effectiveAppointmentDetailsConfig(trustedConfig);
   return {
     admitActionIntent: (input) =>
-      admitWithGateway(gateway, provenance, appointmentDetailsRecipient, input),
+      admitWithGateway(
+        gateway,
+        provenance,
+        appointmentDetailsConfig.recipient,
+        appointmentDetailsConfig.sourceRequestId,
+        input,
+      ),
   };
 }
 

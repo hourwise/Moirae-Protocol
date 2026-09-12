@@ -1,0 +1,126 @@
+{
+  "schemaVersion": "mp08b-provider-02b-r6-evidence-v1",
+  "classification": "MOIRAE_MP08B_PROVIDER_02B_R6_CANDIDATE",
+  "acceptedBase": {
+    "tag": "mp-08b-provider-02b-r4c-legacy-hydration-accepted-v1",
+    "tagObject": "8bf34b9fad798987e175295394a51048f4478073",
+    "commit": "5a8aa18a526b2b1e8d543279a9015a721d52ea5c",
+    "tree": "de632359b939463d8d8e39df8f47b114eccaa0a8"
+  },
+  "audit": {
+    "acceptedR4cCreatesIndependentAttempt002WithoutSourceChange": false,
+    "hardCodedAssumptions": [
+      "ledger attempt identity",
+      "MP-03 appointment-details source request identity"
+    ],
+    "rejectedR5aUsedAsAuthority": false
+  },
+  "freshIdentity": {
+    "attemptId": "MP08B-PROVIDER-02B-ATTEMPT-002",
+    "allowedAttemptIds": ["MP08B-PROVIDER-02B-ATTEMPT-001", "MP08B-PROVIDER-02B-ATTEMPT-002"],
+    "constructionBoundary": "TRUSTED_HOST_ONLY",
+    "createOnly": true,
+    "existingLedgerOverwrite": false,
+    "resumeRequiresExactEmbeddedIdentity": true,
+    "currentSchema": "mp08b-provider-02b-r3-v1",
+    "legacyHydrationRequired": false,
+    "rearmRequired": false,
+    "recoverySemanticsAdded": false
+  },
+  "identityIsolation": {
+    "newSourceRequestIdentity": true,
+    "newAttemptIdentity": true,
+    "newActionDigest": true,
+    "newIdempotencyIdentity": true,
+    "newApprovalIdentity": true,
+    "newDecisionIdentity": true,
+    "newLogicalWorkIdentity": true,
+    "newDeliveryIdentity": true,
+    "newClaimIdentity": true,
+    "newCorrelationIdentity": true,
+    "attempt001AuthorityAccepted": false,
+    "freshActionNotAttempt001Retry": true
+  },
+  "trustedSourcePolicy": {
+    "api": "Mp03TrustedAdministrativeProfileConfig.appointmentDetailsSourceRequestId",
+    "legacyDefaultPreserved": true,
+    "actionIntentCanConfigure": false,
+    "modelCanConfigure": false,
+    "browserCanConfigure": false,
+    "providerCanConfigure": false,
+    "fatesAuthorityUnchanged": true
+  },
+  "realFatesSyntheticFlow": {
+    "recipientClassification": "SYNTHETIC_TEST_ADDRESS",
+    "decision": "REQUIRE_APPROVAL",
+    "status": "WAITING_FOR_APPROVAL",
+    "freshApproval": true,
+    "freshDecision": true,
+    "queueStatus": "READY_FOR_MP04",
+    "providerInvocationCount": 0,
+    "sendStarted": false,
+    "providerInvoked": false,
+    "externalEffect": false
+  },
+  "collisionAndExactlyOnce": {
+    "duplicateCreationRefused": true,
+    "concurrentCreateSuccesses": 1,
+    "attempt001FreshConstructionRefused": true,
+    "crossAttemptLedgerReadRefused": true,
+    "crossAttemptApprovalRefused": true,
+    "secondSendStartRefusedAfterSyntheticRestart": true,
+    "transportCalls": 0
+  },
+  "approvalPolicy": {
+    "validityWindowMinutes": 5,
+    "changedByR6": false,
+    "expensivePreflightRequiredBeforeFutureLiveApproval": true
+  },
+  "protectedAttempt001": {
+    "permanentlyNonExecutable": true,
+    "historyRetrofit": false,
+    "mutated": false,
+    "preAndPostHashesMatch": true,
+    "sha256": {
+      "attemptLedger": "9f95a23b42ef26a364a9b5aeb5016bebd5c6c4c8053321207cccff186376fc14",
+      "queue": "bcfa7f922e62cfff638bfeeebcc280b1dc8385f4c5591d36f025ef2cb37fa2d4",
+      "activity": "c6b319fb7b679f225422fa83b448e1cd71fe4ce4ccd21307d155057b06492ee9",
+      "approvalStore": "879eb69091b7ea69248c237729651f8b866d5b6b029259e453843e52415fa5e8"
+    }
+  },
+  "tests": {
+    "focused": { "passed": 7, "failed": 0, "skipped": 0 },
+    "boundedRegression": { "passed": 128, "failed": 0, "skipped": 3 },
+    "canonical": { "passed": 456, "failed": 0, "skipped": 22 }
+  },
+  "validation": {
+    "typecheck": "passed",
+    "eslint": "passed",
+    "prettier": "passed",
+    "tests": "passed",
+    "build": "passed",
+    "diffCheck": "passed",
+    "dependencyFetch": false
+  },
+  "privacy": {
+    "realRecipientCommitted": false,
+    "realSenderCommitted": false,
+    "awsAccountIdCommitted": false,
+    "credentialCommitted": false,
+    "tokenCommitted": false,
+    "realApprovalIdCommitted": false
+  },
+  "externalState": [
+    "NOT_PUSHED",
+    "NOT_MERGED",
+    "NOT_TAGGED",
+    "NO_DEPLOYMENT",
+    "NO_AWS_CALL",
+    "NO_SES_CALL",
+    "NO_PROVIDER_INVOCATION",
+    "NO_REAL_SEND_STARTED",
+    "NO_LIVE_SEND",
+    "NO_EXTERNAL_EFFECT"
+  ],
+  "candidateCommitRecordedInFinalReport": true
+}
