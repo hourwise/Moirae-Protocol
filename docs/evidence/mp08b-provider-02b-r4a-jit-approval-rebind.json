@@ -1,0 +1,80 @@
+{
+  "schemaVersion": "mp08b-provider-02b-r4a-evidence-v1",
+  "classification": "MOIRAE_MP08B_PROVIDER_02B_R4A_CANDIDATE",
+  "base": {
+    "tag": "mp-08b-execution-02a-accepted-v1",
+    "commit": "0c58b52f9e5911fc9c25b3654b247c4219f9fdba",
+    "tree": "69816160660dd15465888e9aa6f8152adc6113c3"
+  },
+  "scope": {
+    "attemptId": "MP08B-PROVIDER-02B-ATTEMPT-001",
+    "state": "PREPARED_ONLY_BEFORE_SEND",
+    "operation": "APPROVAL_BINDING_REFRESH",
+    "realAttemptMutated": false,
+    "externalEffect": false,
+    "awsCalled": false,
+    "sesCalled": false,
+    "providerInvoked": false,
+    "sendStarted": false
+  },
+  "invariants": [
+    "ATTEMPT_IDENTITY_IMMUTABLE",
+    "ACTION_IDENTITY_IMMUTABLE",
+    "EXPIRED_APPROVAL_NOT_REVIVED",
+    "SUPERSEDED_APPROVAL_CANNOT_DECIDE_ATTEMPT",
+    "JIT_APPROVAL_REBIND_CAS_PROTECTED",
+    "OLD_AUTHORIZATION_NOT_REPLAYABLE",
+    "NO_APPROVAL_REBIND_AFTER_SEND_STARTED",
+    "ATTEMPT_001_REAL_STATE_UNTOUCHED"
+  ],
+  "approvalBindingHistory": {
+    "old": "approval-E",
+    "oldStatus": "SUPERSEDED_EXPIRED",
+    "replacement": "approval-F",
+    "replacementStatus": "CURRENT",
+    "revision": 1,
+    "identifiersAreSynthetic": true
+  },
+  "tests": {
+    "focusedFile": {
+      "path": "tests/mp08b-provider-02b-r4a-jit-approval-rebind.test.ts",
+      "passed": 14,
+      "failed": 0,
+      "skipped": 0
+    },
+    "boundedRegressionFiles": [
+      "tests/mp08b-provider-02b-r3-preparation.test.ts",
+      "tests/mp08b-execution-02a-trusted-recipient-boundary.test.ts",
+      "tests/mp03-fates006c-integration-01.test.ts",
+      "tests/mp05-human-approval.test.ts",
+      "tests/mp06c-concurrency-crash-retry-hardening.test.ts"
+    ],
+    "boundedRegressionObserved": {
+      "passed": 108,
+      "failed": 0,
+      "skipped": 3
+    },
+    "canonicalCheck": {
+      "typecheck": "passed",
+      "lint": "passed",
+      "formatCheck": "passed",
+      "fullSuite": {
+        "passed": 431,
+        "failed": 0,
+        "skipped": 31
+      },
+      "build": "passed"
+    }
+  },
+  "externalState": [
+    "NOT_PUSHED",
+    "NOT_MERGED",
+    "NOT_TAGGED",
+    "NO_AWS_CALL",
+    "NO_SES_CALL",
+    "NO_REAL_APPROVAL",
+    "NO_PROVIDER_INVOCATION",
+    "NO_SEND_STARTED",
+    "NO_EXTERNAL_EFFECT"
+  ]
+}

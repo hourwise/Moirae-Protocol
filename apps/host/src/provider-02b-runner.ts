@@ -7,6 +7,7 @@ import {
   openSync,
   readFileSync,
   renameSync,
+  unlinkSync,
   writeFileSync,
 } from "node:fs";
 import { dirname, isAbsolute, resolve } from "node:path";
@@ -21,6 +22,7 @@ import {
   type Mp04EffectAdapterIdentityV1,
   type Mp04ExecutionResultV1,
   type Mp04HoraePort,
+  type Mp04OperationV1,
 } from "../../../packages/execution-coordinator/src/index.js";
 import type {
   Mp03AuthenticatedContext,
@@ -78,6 +80,12 @@ export type Provider02bAttemptBindingsV1 = Readonly<{
   readonly actionIntentIdempotencyKey: string;
   readonly approvalId: string;
   readonly decisionId?: string;
+  readonly actionBindingDigest?: string;
+  readonly nativeActionHash?: string;
+  readonly operation?: Mp04OperationV1;
+  readonly recipientAddress?: string;
+  readonly contextDigest?: string;
+  readonly presentationInputDigest?: string;
   readonly logicalWorkId?: string;
   readonly deliveryId?: string;
   readonly claimId?: string;
@@ -87,12 +95,43 @@ export type Provider02bAttemptBindingsV1 = Readonly<{
   readonly requestFingerprint: string;
 }>;
 
+export type Provider02bApprovalBindingHistoryEntryV1 = Readonly<{
+  readonly revision: number;
+  readonly approvalId: string;
+  readonly status: "CURRENT" | "SUPERSEDED_EXPIRED";
+  readonly recordedAt: string;
+  readonly supersededAt?: string;
+}>;
+
+export type Provider02bPreparedApprovalBindingV1 = Readonly<{
+  readonly approvalId: string;
+  readonly actionIntentDigest: string;
+  readonly actionIntentIdempotencyKey: string;
+  readonly requestFingerprint: string;
+  readonly actionBindingDigest: string;
+  readonly nativeActionHash?: string;
+  readonly operation?: Mp04OperationV1;
+  readonly recipientAddress?: string;
+  readonly contextDigest: string;
+  readonly presentationInputDigest: string;
+}>;
+
+export type Provider02bApprovalRebindInputV1 = Readonly<{
+  readonly attemptId: typeof MP08B_PROVIDER_02B_ATTEMPT_ID;
+  readonly expectedApprovalId: string;
+  readonly expectedApprovalBindingRevision: number;
+  readonly replacement: Provider02bPreparedApprovalBindingV1;
+  readonly now: string;
+}>;
+
 export type Provider02bAttemptLedgerV1 = Readonly<{
   readonly schemaVersion: typeof MP08B_PROVIDER_02B_VERSION;
   readonly attemptId: typeof MP08B_PROVIDER_02B_ATTEMPT_ID;
   readonly state: Provider02bAttemptState;
   readonly updatedAt: string;
   readonly bindings?: Provider02bAttemptBindingsV1;
+  readonly approvalBindingRevision: number;
+  readonly approvalBindingHistory: readonly Provider02bApprovalBindingHistoryEntryV1[];
   readonly sendStartedAt?: string;
   readonly providerOperationId?: string;
   readonly providerInvocationCount: number;
@@ -147,6 +186,12 @@ export type Provider02bPreparedRunV1 = Readonly<{
   readonly ledger: Provider02bAttemptLedgerV1;
 }>;
 
+export type Provider02bJitApprovalRebindRequestV1 = Readonly<{
+  readonly expectedApprovalId: string;
+  readonly expectedApprovalBindingRevision: number;
+  readonly replacement: Mp08bPreparedApprovalV1;
+}>;
+
 export type Provider02bClaimedRunV1 = Readonly<{
   readonly approval: Mp05ApprovalObservationV1;
   readonly enqueue: Mp08bQueueEnqueueResultV1;
@@ -194,6 +239,8 @@ function initialLedger(now: string): Provider02bAttemptLedgerV1 {
     updatedAt: now,
     providerInvocationCount: 0,
     automaticRetryCount: 0,
+    approvalBindingRevision: 0,
+    approvalBindingHistory: [],
   };
 }
 
@@ -219,7 +266,61 @@ function parseLedger(value: unknown): Provider02bAttemptLedgerV1 {
     (typeof record.bindings !== "object" || record.bindings === null)
   )
     throw new Provider02bRunnerError("Provider-02B attempt ledger lost its governed bindings.");
-  return clone(record as unknown as Provider02bAttemptLedgerV1);
+  const bindings = record.bindings as Provider02bAttemptBindingsV1 | undefined;
+  const rawHistory = record.approvalBindingHistory;
+  const history =
+    rawHistory === undefined
+      ? record.state === "UNUSED" || !bindings
+        ? []
+        : [
+            {
+              revision: 0,
+              approvalId: bindings.approvalId,
+              status: "CURRENT" as const,
+              recordedAt: record.updatedAt as string,
+            },
+          ]
+      : parseApprovalBindingHistory(rawHistory);
+  const revisionValue = record.approvalBindingRevision;
+  const revision = revisionValue === undefined ? (history.at(-1)?.revision ?? 0) : revisionValue;
+  if (typeof revision !== "number" || !Number.isInteger(revision) || revision < 0)
+    throw new Provider02bRunnerError("Provider-02B approval binding revision is invalid.");
+  if (history.length > 0 && history.at(-1)?.revision !== revision)
+    throw new Provider02bRunnerError("Provider-02B approval binding history is not current.");
+  if (record.state !== "UNUSED" && bindings && history.at(-1)?.approvalId !== bindings.approvalId)
+    throw new Provider02bRunnerError("Provider-02B approval binding history lost its current ID.");
+  return clone({
+    ...(record as unknown as Provider02bAttemptLedgerV1),
+    approvalBindingRevision: revision,
+    approvalBindingHistory: history,
+  });
+}
+
+function parseApprovalBindingHistory(value: unknown): Provider02bApprovalBindingHistoryEntryV1[] {
+  if (!Array.isArray(value))
+    throw new Provider02bRunnerError("Provider-02B approval binding history is invalid.");
+  return value.map((entry) => {
+    if (typeof entry !== "object" || entry === null || Array.isArray(entry))
+      throw new Provider02bRunnerError("Provider-02B approval binding history entry is invalid.");
+    const record = entry as Record<string, unknown>;
+    if (
+      !Number.isInteger(record.revision) ||
+      (record.revision as number) < 0 ||
+      typeof record.approvalId !== "string" ||
+      record.approvalId.trim().length === 0 ||
+      (record.status !== "CURRENT" && record.status !== "SUPERSEDED_EXPIRED") ||
+      typeof record.recordedAt !== "string" ||
+      (record.supersededAt !== undefined && typeof record.supersededAt !== "string")
+    )
+      throw new Provider02bRunnerError("Provider-02B approval binding history entry is invalid.");
+    return {
+      revision: record.revision as number,
+      approvalId: record.approvalId,
+      status: record.status,
+      recordedAt: record.recordedAt,
+      ...(record.supersededAt ? { supersededAt: record.supersededAt } : {}),
+    };
+  });
 }
 
 function atomicWrite(path: string, value: unknown): void {
@@ -258,7 +359,31 @@ export class Provider02bAttemptLedger {
     return parseLedger(raw);
   }
 
-  private update(
+  private withExclusiveLock<T>(operation: () => T): T {
+    const lockPath = `${this.path}.lock`;
+    let descriptor: number | undefined;
+    try {
+      descriptor = openSync(lockPath, "wx");
+      return operation();
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "EEXIST")
+        throw new Provider02bRunnerError(
+          "Attempt-001 durable update is concurrently locked; refusing last-write-wins behavior.",
+        );
+      throw error;
+    } finally {
+      if (descriptor !== undefined) closeSync(descriptor);
+      if (descriptor !== undefined) {
+        try {
+          unlinkSync(lockPath);
+        } catch {
+          // A failed cleanup leaves the lock visible and fails closed next time.
+        }
+      }
+    }
+  }
+
+  private updateUnlocked(
     now: string,
     mutate: (current: Provider02bAttemptLedgerV1) => Provider02bAttemptLedgerV1,
   ): Provider02bAttemptLedgerV1 {
@@ -267,11 +392,131 @@ export class Provider02bAttemptLedger {
     return next;
   }
 
+  private update(
+    now: string,
+    mutate: (current: Provider02bAttemptLedgerV1) => Provider02bAttemptLedgerV1,
+  ): Provider02bAttemptLedgerV1 {
+    return this.withExclusiveLock(() => this.updateUnlocked(now, mutate));
+  }
+
   prepare(bindings: Provider02bAttemptBindingsV1, now: string): Provider02bAttemptLedgerV1 {
     return this.update(now, (current) => {
       if (current.state !== "UNUSED")
         throw new Provider02bRunnerError("Attempt-001 is already prepared or consumed.");
-      return { ...current, state: "PREPARED", updatedAt: now, bindings: clone(bindings) };
+      return {
+        ...current,
+        state: "PREPARED",
+        updatedAt: now,
+        bindings: clone(bindings),
+        approvalBindingRevision: 0,
+        approvalBindingHistory: [
+          {
+            revision: 0,
+            approvalId: bindings.approvalId,
+            status: "CURRENT",
+            recordedAt: now,
+          },
+        ],
+      };
+    });
+  }
+
+  rebindPreparedApproval(input: Provider02bApprovalRebindInputV1): Provider02bAttemptLedgerV1 {
+    return this.withExclusiveLock(() => {
+      const current = parseLedger(this.read(input.now));
+      if (input.attemptId !== MP08B_PROVIDER_02B_ATTEMPT_ID)
+        throw new Provider02bRunnerError("Approval rebind targeted a different attempt identity.");
+      if (
+        current.state !== "PREPARED" ||
+        current.providerInvocationCount !== 0 ||
+        current.sendStartedAt !== undefined ||
+        current.providerOperationId !== undefined ||
+        current.reconciliationStatus !== undefined ||
+        current.queueOutcome !== undefined ||
+        current.bindings?.decisionId !== undefined ||
+        current.bindings?.logicalWorkId !== undefined ||
+        current.bindings?.deliveryId !== undefined ||
+        current.bindings?.claimId !== undefined ||
+        current.bindings?.durableExecutionId !== undefined ||
+        current.bindings?.correlationId !== undefined
+      )
+        throw new Provider02bRunnerError(
+          "Approval rebind is allowed only for an unconsumed PREPARED attempt.",
+        );
+      if (!current.bindings)
+        throw new Provider02bRunnerError("Approval rebind requires the current durable binding.");
+      if (current.bindings.approvalId !== input.expectedApprovalId)
+        throw new Provider02bRunnerError(
+          "Approval rebind expected a different current approval ID.",
+        );
+      if (current.approvalBindingRevision !== input.expectedApprovalBindingRevision)
+        throw new Provider02bRunnerError(
+          "Approval rebind revision is stale; refusing last-write-wins.",
+        );
+      if (input.replacement.approvalId === input.expectedApprovalId)
+        throw new Provider02bRunnerError(
+          "Approval rebind requires a different replacement approval.",
+        );
+      if (
+        current.bindings.actionIntentDigest !== input.replacement.actionIntentDigest ||
+        current.bindings.actionIntentIdempotencyKey !==
+          input.replacement.actionIntentIdempotencyKey ||
+        current.bindings.requestFingerprint !== input.replacement.requestFingerprint ||
+        (current.bindings.actionBindingDigest ?? undefined) !==
+          (input.replacement.actionBindingDigest ?? undefined) ||
+        (current.bindings.nativeActionHash ?? undefined) !==
+          (input.replacement.nativeActionHash ?? undefined) ||
+        (current.bindings.recipientAddress ?? undefined) !==
+          (input.replacement.recipientAddress ?? undefined) ||
+        (current.bindings.contextDigest ?? undefined) !==
+          (input.replacement.contextDigest ?? undefined) ||
+        (current.bindings.presentationInputDigest ?? undefined) !==
+          (input.replacement.presentationInputDigest ?? undefined) ||
+        hash(current.bindings.operation ?? null) !== hash(input.replacement.operation ?? null)
+      )
+        throw new Provider02bRunnerError(
+          "Approval rebind replacement does not describe the exact prepared action.",
+        );
+      const currentHistory = current.approvalBindingHistory;
+      const currentHistoryEntry = currentHistory.at(-1);
+      if (!currentHistoryEntry || currentHistoryEntry.status !== "CURRENT")
+        throw new Provider02bRunnerError("Approval rebind history has no current binding.");
+      const nextRevision = current.approvalBindingRevision + 1;
+      const next: Provider02bAttemptLedgerV1 = {
+        ...current,
+        updatedAt: input.now,
+        bindings: {
+          ...current.bindings,
+          approvalId: input.replacement.approvalId,
+          actionBindingDigest: input.replacement.actionBindingDigest,
+          ...(input.replacement.nativeActionHash
+            ? { nativeActionHash: input.replacement.nativeActionHash }
+            : {}),
+          ...(input.replacement.operation ? { operation: input.replacement.operation } : {}),
+          ...(input.replacement.recipientAddress
+            ? { recipientAddress: input.replacement.recipientAddress }
+            : {}),
+          contextDigest: input.replacement.contextDigest,
+          presentationInputDigest: input.replacement.presentationInputDigest,
+        },
+        approvalBindingRevision: nextRevision,
+        approvalBindingHistory: [
+          ...currentHistory.slice(0, -1),
+          {
+            ...currentHistoryEntry,
+            status: "SUPERSEDED_EXPIRED",
+            supersededAt: input.now,
+          },
+          {
+            revision: nextRevision,
+            approvalId: input.replacement.approvalId,
+            status: "CURRENT",
+            recordedAt: input.now,
+          },
+        ],
+      };
+      atomicWrite(this.path, parseLedger(next));
+      return parseLedger(next);
     });
   }
 
@@ -422,6 +667,92 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+function presentationInputDigestForBinding(
+  binding: Mp08bApprovalBindingV1,
+  operation: unknown,
+  nativeActionHash: string | undefined,
+): string {
+  return hash({
+    intent: binding.intent,
+    authenticatedContext: binding.authenticatedContext,
+    ...(operation !== undefined ? { operation } : {}),
+    ...(nativeActionHash !== undefined ? { nativeActionHash } : {}),
+  });
+}
+
+function actionIdentityForBinding(
+  binding: Mp08bApprovalBindingV1,
+  requestFingerprintValue: string,
+): Record<string, unknown> {
+  const waiting = isRecord(binding.waitingAdmission) ? binding.waitingAdmission : {};
+  const parameters: Record<string, unknown> = isRecord(binding.intent.parameters)
+    ? binding.intent.parameters
+    : {};
+  const operation = isRecord(waiting.operation) ? waiting.operation : undefined;
+  const nativeActionHash =
+    typeof waiting.nativeActionHash === "string" ? waiting.nativeActionHash : undefined;
+  const recipientAddress = parameters["recipientAddress"];
+  return {
+    actionIntentDigest: binding.intent.canonicalDigest,
+    actionIntentIdempotencyKey: binding.intent.idempotencyKey,
+    action: binding.intent.action,
+    parameters,
+    target: binding.intent.target,
+    authenticatedContext: binding.authenticatedContext,
+    ...(operation !== undefined ? { operation } : {}),
+    ...(nativeActionHash !== undefined ? { nativeActionHash } : {}),
+    ...(recipientAddress !== undefined ? { recipientAddress } : {}),
+    presentationInputDigest: presentationInputDigestForBinding(
+      binding,
+      operation,
+      nativeActionHash,
+    ),
+    requestFingerprint: requestFingerprintValue,
+  };
+}
+
+function preparedApprovalBinding(
+  prepared: Mp08bPreparedApprovalV1,
+  config: SesProviderConfigV1,
+): Provider02bPreparedApprovalBindingV1 {
+  const binding = prepared.binding;
+  const requestFingerprintValue = requestFingerprint(binding.intent, config);
+  const actionIdentity = actionIdentityForBinding(binding, requestFingerprintValue);
+  const waiting = isRecord(binding.waitingAdmission) ? binding.waitingAdmission : {};
+  const parameters: Record<string, unknown> = isRecord(binding.intent.parameters)
+    ? binding.intent.parameters
+    : {};
+  const operation = isRecord(waiting.operation)
+    ? (waiting.operation as unknown as Mp04OperationV1)
+    : undefined;
+  const nativeActionHash =
+    typeof waiting.nativeActionHash === "string" ? waiting.nativeActionHash : undefined;
+  const recipientAddress =
+    typeof parameters["recipientAddress"] === "string" ? parameters["recipientAddress"] : undefined;
+  const contextDigest = hash(binding.authenticatedContext);
+  const presentationInputDigest = presentationInputDigestForBinding(
+    binding,
+    operation,
+    nativeActionHash,
+  );
+  return {
+    approvalId: binding.approvalId,
+    actionIntentDigest: binding.intent.canonicalDigest,
+    actionIntentIdempotencyKey: binding.intent.idempotencyKey,
+    requestFingerprint: requestFingerprintValue,
+    actionBindingDigest: hash({
+      ...actionIdentity,
+      contextDigest,
+      presentationInputDigest,
+    }),
+    ...(nativeActionHash ? { nativeActionHash } : {}),
+    ...(operation ? { operation } : {}),
+    ...(recipientAddress ? { recipientAddress } : {}),
+    contextDigest,
+    presentationInputDigest,
+  };
+}
+
 function createHoraeRecord(input: {
   readonly authority: Record<string, unknown>;
   readonly owner: string;
@@ -506,14 +837,106 @@ export class Provider02bRunner {
       throw new Provider02bRunnerError(
         "Provider-02B requires the real SEND_APPOINTMENT_DETAILS REQUIRE_APPROVAL path.",
       );
-    const bindings: Provider02bAttemptBindingsV1 = {
-      actionIntentDigest: prepared.binding.intent.canonicalDigest,
-      actionIntentIdempotencyKey: prepared.binding.intent.idempotencyKey,
-      approvalId: prepared.binding.approvalId,
-      requestFingerprint: requestFingerprint(prepared.binding.intent, this.options.providerConfig),
-    };
+    const preparedBinding = preparedApprovalBinding(prepared, this.options.providerConfig);
+    const bindings: Provider02bAttemptBindingsV1 = preparedBinding;
     const ledger = this.ledger.prepare(bindings, this.options.trustedTime.now());
     return { prepared, ledger };
+  }
+
+  async rebindPreparedApproval(
+    input: Provider02bJitApprovalRebindRequestV1,
+  ): Promise<Provider02bAttemptLedgerV1> {
+    const current = this.readLedger();
+    if (
+      current.state !== "PREPARED" ||
+      current.providerInvocationCount !== 0 ||
+      current.sendStartedAt !== undefined ||
+      current.providerOperationId !== undefined ||
+      current.reconciliationStatus !== undefined ||
+      current.queueOutcome !== undefined ||
+      current.bindings?.decisionId !== undefined ||
+      current.bindings?.logicalWorkId !== undefined ||
+      current.bindings?.deliveryId !== undefined ||
+      current.bindings?.claimId !== undefined ||
+      current.bindings?.durableExecutionId !== undefined ||
+      current.bindings?.correlationId !== undefined
+    )
+      throw new Provider02bRunnerError(
+        "JIT approval rebind requires an unconsumed PREPARED Attempt-001.",
+      );
+    if (!current.bindings || current.bindings.approvalId !== input.expectedApprovalId)
+      throw new Provider02bRunnerError(
+        "JIT approval rebind expected the current approval binding.",
+      );
+    if (current.approvalBindingRevision !== input.expectedApprovalBindingRevision)
+      throw new Provider02bRunnerError("JIT approval rebind revision is stale.");
+
+    const oldBinding = this.options.approvalRuntime.getApprovalBinding(input.expectedApprovalId);
+    if (!oldBinding)
+      throw new Provider02bRunnerError("The current approval binding is not durably available.");
+    const oldObservation = await this.options.approvalRuntime.readApproval(
+      input.expectedApprovalId,
+    );
+    if (oldObservation.state !== "EXPIRED" && oldObservation.state !== "REVOKED")
+      throw new Provider02bRunnerError(
+        "JIT approval rebind requires a durable reread proving the current approval is expired or revoked.",
+      );
+    if (oldObservation.decisionId !== undefined || current.bindings.decisionId !== undefined)
+      throw new Provider02bRunnerError(
+        "JIT approval rebind cannot replace an approval with a decision.",
+      );
+
+    const replacement = input.replacement;
+    if (
+      replacement.composition.status !== "COMPOSED" ||
+      replacement.composition.actionIntent.action !== "SEND_APPOINTMENT_DETAILS" ||
+      replacement.composition.admission.status !== "WAITING_FOR_APPROVAL" ||
+      replacement.composition.admission.approvalId !== replacement.binding.approvalId ||
+      replacement.binding.approvalId === input.expectedApprovalId
+    )
+      throw new Provider02bRunnerError(
+        "JIT approval rebind replacement is not a fresh waiting approval for Attempt-001.",
+      );
+    const replacementBinding = this.options.approvalRuntime.getApprovalBinding(
+      replacement.binding.approvalId,
+    );
+    if (!replacementBinding || hash(replacementBinding) !== hash(replacement.binding))
+      throw new Provider02bRunnerError(
+        "JIT approval rebind replacement is not the trusted durable host binding.",
+      );
+    const replacementObservation = await this.options.approvalRuntime.readApproval(
+      replacement.binding.approvalId,
+    );
+    if (
+      replacementObservation.state !== "PENDING" ||
+      replacementObservation.decisionId !== undefined
+    )
+      throw new Provider02bRunnerError(
+        "JIT approval rebind requires a fresh pending replacement approval.",
+      );
+
+    const oldRequestFingerprint = current.bindings.requestFingerprint;
+    const oldIdentity = actionIdentityForBinding(oldBinding, oldRequestFingerprint);
+    const replacementPreparedBinding = preparedApprovalBinding(
+      replacement,
+      this.options.providerConfig,
+    );
+    const replacementIdentity = actionIdentityForBinding(
+      replacementBinding,
+      replacementPreparedBinding.requestFingerprint,
+    );
+    if (hash(oldIdentity) !== hash(replacementIdentity))
+      throw new Provider02bRunnerError(
+        "JIT approval rebind replacement does not bind the exact same action identity.",
+      );
+
+    return this.ledger.rebindPreparedApproval({
+      attemptId: MP08B_PROVIDER_02B_ATTEMPT_ID,
+      expectedApprovalId: input.expectedApprovalId,
+      expectedApprovalBindingRevision: input.expectedApprovalBindingRevision,
+      replacement: replacementPreparedBinding,
+      now: this.options.trustedTime.now(),
+    });
   }
 
   async submitHumanDecision(input: {
