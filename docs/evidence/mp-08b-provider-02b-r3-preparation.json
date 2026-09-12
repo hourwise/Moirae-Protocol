@@ -1,0 +1,162 @@
+{
+  "schemaVersion": "mp08b-provider-02b-r3-preparation-v1",
+  "classification": "MOIRAE_MP08B_PROVIDER_02B_R3_PREP_COMPLETE",
+  "scope": {
+    "provider02b": "PREPARED_ONLY",
+    "mp08b": "NOT_DEPLOYED_AND_NOT_ACCEPTED",
+    "mp09": "NOT_ACCEPTED"
+  },
+  "startingCandidate": {
+    "branch": "codex/mp08b-provider-02b-r3-reprepare-live-effect",
+    "commit": "0c7cf24778e3091ebdcad24c45cc34be1614e4c9",
+    "tree": "68b91817880b0df54c33a9fee0ef7ae726c7902e",
+    "clean": true,
+    "registeredWorktreePath": "D:\\Users\\fleur\\Moirae Protocol\\.worktrees\\mp08b-provider-02b-r3-reprepare-live-effect",
+    "operatorPromptPathExists": false,
+    "worktreeRecreated": false
+  },
+  "acceptedAuthority": {
+    "moiraeTag": "mp-03-fates-006c-integration-accepted-v1",
+    "moiraeCommit": "0c7cf24778e3091ebdcad24c45cc34be1614e4c9",
+    "moiraeTree": "68b91817880b0df54c33a9fee0ef7ae726c7902e",
+    "fatesRepository": "https://github.com/hourwise/Project-Ananke.git",
+    "fatesTag": "ananke-fates-006c-trusted-recipient-admission-v0.1.0-protocol-1.4.0",
+    "fatesCommit": "7ce078863edde033d96a896d7e23e11a0a24292b",
+    "fatesTree": "d237005b96fc1c69818448d5a443a8bf7703f37f",
+    "durableApprovalAncestor": "b888d61adf180d33e2ae2e61d276cb9b0f13bd12",
+    "runtimeSha": "c89b83de40ed0275969fe3931220f440bf082aa3",
+    "verifiedBy": "tests/mp03-fates006c-integration-01.test.ts"
+  },
+  "awsReadOnlyReadiness": {
+    "profile": "moirae-dev",
+    "operatorIdentityGate": "PASS",
+    "principalClass": "philip-admin",
+    "accountIdentifierPrinted": false,
+    "sesSandboxHealthy": true,
+    "configurationSetReady": true,
+    "eventDestinationReady": true,
+    "templateReady": true,
+    "twoIdentitiesVerified": true,
+    "iamTrustValidated": true,
+    "iamInlineSendOnly": true,
+    "iamAttachedPolicies": 0,
+    "observationQueueReadable": true,
+    "observationQueueApproxVisibleMessages": 1,
+    "snsTopicReadable": true,
+    "snsActiveSqsSubscriptionCount": 1,
+    "sqsPolicySourceRestricted": true,
+    "mutatingAwsCalls": 0,
+    "sesSendCalls": 0
+  },
+  "trustedPolicy": {
+    "source": "ephemeral validated IAM conditions",
+    "recipientValueCommitted": false,
+    "senderValueCommitted": false,
+    "exactSingleRecipientBinding": true,
+    "configurationSet": "moirae-mp08b-demo",
+    "region": "eu-west-2"
+  },
+  "fatesAndApproval": {
+    "action": "SEND_APPOINTMENT_DETAILS",
+    "nativeDecision": "REQUIRE_APPROVAL",
+    "approvalIdRecovered": true,
+    "durableApprovalPrepared": true,
+    "executorInvoked": false,
+    "effectExecuted": false
+  },
+  "attempt001": {
+    "state": "PREPARED",
+    "providerInvocationCount": 0,
+    "automaticRetryCount": 0,
+    "sendStartedRecorded": false,
+    "providerOperationRecorded": false,
+    "reconciliationRecorded": false,
+    "queueOutcomeRecorded": false,
+    "liveAuthorizationConsumed": false,
+    "unconsumed": true
+  },
+  "dryRunAndGuards": {
+    "exactActionIntentRecipientPreserved": true,
+    "exactDryRunSesRequestBound": true,
+    "sesTransportInvoked": false,
+    "sdkMaxAttempts": 1,
+    "automaticRetriesDisabled": true,
+    "offlineHarnessOneFakeInvocation": true,
+    "offlineHarnessSecondSendRefusedAfterRestart": true,
+    "liveAuthorizationPhraseRequiredExactly": "AUTHORIZE PROVIDER-02B SEND NOW"
+  },
+  "observationBaseline": {
+    "eventDestinationActive": true,
+    "queueBaselineVisibleMessages": 1,
+    "visibleMessageClassification": "known setup-validation residue",
+    "applicationEffectAttempt": false,
+    "observationOrReconciliationDryRun": true,
+    "mp07ProjectionDryRun": true
+  },
+  "validation": {
+    "focusedFiles": [
+      "tests/mp08b-provider-01b-ses-offline-adapter.test.ts",
+      "tests/mp08b-projection-01-trusted-native-state.test.ts",
+      "tests/mp03-fates006c-integration-01.test.ts",
+      "tests/mp08b-provider-02b-r3-preparation.test.ts"
+    ],
+    "focusedTestFilesPassed": 4,
+    "focusedTestsPassed": 40,
+    "focusedTestsFailed": 0,
+    "fullTestFilesPassed": 25,
+    "fullTestsPassed": 430,
+    "fullTestsSkipped": 9,
+    "fullTestsFailed": 0,
+    "typecheck": "passed",
+    "lint": "passed",
+    "formatCheck": "passed",
+    "build": "passed",
+    "canonicalCheck": "passed",
+    "diffCheck": "passed",
+    "npmCiIgnoreScripts": "passed",
+    "npmAudit": {
+      "status": "completed",
+      "moderateFindings": 2,
+      "package": "@vitest/mocker",
+      "fixApplied": false
+    }
+  },
+  "packageIntegrity": {
+    "packageJsonBlob": "83e0929ec5d7464ca5486d6b50a6d5ac444c99bd",
+    "packageLockBlob": "3abda7ef393cd7dc14ebcab88d8d231c3caa51e8",
+    "changed": false
+  },
+  "sourceChanges": {
+    "files": [
+      "apps/host/src/provider-02b-runner.ts",
+      "scripts/provider-02b-r3-prepare.mjs",
+      "tests/mp08b-provider-02b-r3-preparation.test.ts",
+      "docs/MP08B_PROVIDER_02B_R3.md",
+      "docs/evidence/mp-08b-provider-02b-r3-preparation.json"
+    ],
+    "r2WorktreeModified": false,
+    "anankeModified": false,
+    "horaeModified": false,
+    "dependenciesModified": false,
+    "deploymentModified": false
+  },
+  "privacyAndEffects": {
+    "realRecipientCommitted": false,
+    "awsAccountIdCommitted": false,
+    "credentialsCommitted": false,
+    "liveSesTransportInvocations": 0,
+    "emailsSent": 0,
+    "externalEffects": 0,
+    "deployment": false,
+    "push": false,
+    "merge": false,
+    "tag": false
+  },
+  "boundaries": {
+    "horae": "HORAE_NOT_REQUIRED_UNTIL_POST_APPROVAL_EXECUTION",
+    "mnemosyne": "MNEMOSYNE_NOT_REQUIRED_FOR_MP05",
+    "modelBoundary": "SOL_FRONTEND_LUNA_BACKEND_PRESERVED",
+    "provider02b": "ATTEMPT_001_UNCONSUMED",
+    "nextAction": "READY_FOR_EXPLICIT_PROVIDER_02B_AUTHORIZATION"
+  }
+}
