@@ -272,6 +272,8 @@ describeReal("MP-08B EXECUTION-02A trusted exact recipient at MP-04", () => {
           executionId: result.durableExecutionId!,
           attemptId: "offline-attempt",
           correlationId: "offline-correlation",
+          transportMode: "OFFLINE_TEST",
+          sendStartedAt: NOW,
         },
         approvedBinding: {
           approvalId: fixture.approved.binding.approvalId,

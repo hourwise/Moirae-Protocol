@@ -210,10 +210,8 @@ describe("MP-08B FATES-01 fail-closed materialization", () => {
     ).rejects.toThrow(/does not exist/);
   });
 
-  it("rejects an available but wrong Ananke checkpoint", async () => {
-    if (!ANANKE_ROOT) {
-      throw new Error("FATES_ANANKE_ROOT is required for the wrong-checkpoint fixture.");
-    }
+  it.skipIf(!ANANKE_ROOT)("rejects an available but wrong Ananke checkpoint", async () => {
+    const acceptedRoot = ANANKE_ROOT!;
 
     const temporaryRoot = mkdtempSync(join(tmpdir(), "moirae-fates-wrong-checkpoint-"));
     const wrongCheckout = join(temporaryRoot, "ananke");
@@ -221,7 +219,7 @@ describe("MP-08B FATES-01 fail-closed materialization", () => {
       execFileSync("git", ["-c", "safe.directory=*", "-C", root, ...args], {
         encoding: "utf8",
       }).trim();
-    const git = (args: string[]) => gitAt(ANANKE_ROOT, args);
+    const git = (args: string[]) => gitAt(acceptedRoot, args);
     const wrongRevision = git(["rev-parse", "HEAD^"]);
     let worktreeAdded = false;
 
@@ -232,7 +230,7 @@ describe("MP-08B FATES-01 fail-closed materialization", () => {
           "-c",
           "safe.directory=*",
           "-C",
-          ANANKE_ROOT,
+          acceptedRoot,
           "worktree",
           "add",
           "--detach",
@@ -260,7 +258,7 @@ describe("MP-08B FATES-01 fail-closed materialization", () => {
             "-c",
             "safe.directory=*",
             "-C",
-            ANANKE_ROOT,
+            acceptedRoot,
             "worktree",
             "remove",
             "--force",

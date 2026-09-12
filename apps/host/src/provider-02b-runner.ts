@@ -1342,6 +1342,8 @@ export class Provider02bRunner {
           executionId: durableExecutionId,
           attemptId: this.attemptIdentity.attemptId,
           correlationId: approvedBindings.correlationId,
+          transportMode: this.options.transportMode,
+          sendStartedAt: input.now,
         } as const;
         const prepared = prepareSesAppointmentDetailsRequest({
           intent: binding.intent,
@@ -1353,7 +1355,14 @@ export class Provider02bRunner {
             actionIntentDigest: approvedBindings.actionIntentDigest,
           },
         });
-        this.ledger.sendStarted({ durableExecutionId, now: input.now });
+        const startedLedger = this.ledger.sendStarted({ durableExecutionId, now: input.now });
+        if (
+          !startedLedger.sendStartedAt ||
+          Date.parse(startedLedger.sendStartedAt) !== Date.parse(prepared.identity.sendStartedAt)
+        )
+          throw new Provider02bRunnerError(
+            "The SES execution identity is not bound to the durable SEND_STARTED timestamp.",
+          );
         invocation = await invokePreparedSesRequest(prepared, this.options.transport, input.now);
         this.ledger.sendReturned({
           providerOperationId: invocation.providerOperationId,

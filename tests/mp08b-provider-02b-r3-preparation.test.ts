@@ -365,6 +365,8 @@ describe("MP-08B Provider-02B-R3 preparation and one-attempt guard", () => {
         executionId: "fates-execution:provider-02b-r3",
         attemptId: MP08B_PROVIDER_02B_ATTEMPT_ID,
         correlationId: "correlation-provider-02b-r3",
+        transportMode: "OFFLINE_TEST",
+        sendStartedAt: NOW,
       },
       approvedBinding: {
         approvalId: "approval-provider-02b-r3",

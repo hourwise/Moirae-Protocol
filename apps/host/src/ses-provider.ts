@@ -51,6 +51,10 @@ const executionIdentitySchema = z
     executionId: z.string().trim().min(1).max(200),
     attemptId: z.string().trim().min(1).max(200),
     correlationId: z.string().trim().min(1).max(200),
+    /** Trusted runtime mode; request/model/browser data never selects this. */
+    transportMode: z.enum(["OFFLINE_TEST", "LIVE"]),
+    /** Durable point-of-no-return timestamp bound to the execution identity. */
+    sendStartedAt: timestampSchema,
   })
   .strict();
 
@@ -320,6 +324,34 @@ export function reconcileSesObservation(input: {
       reason:
         "SES observation is not bound to the exact execution, recipient, or provider operation.",
     };
+
+  if (input.prepared.identity.transportMode === "LIVE") {
+    if (observation.source !== "SES_EVENT_DESTINATION")
+      return {
+        ...base,
+        status: "UNKNOWN",
+        reconciliationRequired: true,
+        providerOperationId: input.invocation.providerOperationId,
+        reason: "Live SES reconciliation requires SES event-destination evidence.",
+        observation,
+      };
+
+    const sendStartedAt = Date.parse(input.prepared.identity.sendStartedAt);
+    const observedAt = Date.parse(observation.observedAt);
+    if (
+      !Number.isFinite(sendStartedAt) ||
+      !Number.isFinite(observedAt) ||
+      observedAt < sendStartedAt
+    )
+      return {
+        ...base,
+        status: "UNKNOWN",
+        reconciliationRequired: true,
+        providerOperationId: input.invocation.providerOperationId,
+        reason: "Live SES observation predates the durable SEND_STARTED boundary.",
+        observation,
+      };
+  }
 
   if (observation.outcome === "DELIVERED")
     return {

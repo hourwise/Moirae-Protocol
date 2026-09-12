@@ -65,6 +65,8 @@ The primary live characterization command is `npm run mp01:live`. It uses the ac
 - MP-05 durable human approval is accepted and promoted to main.
 - MP-06 background work, retries, crash recovery, and approval integration are accepted and promoted to main.
 - MP-07 human product readiness, deterministic read model, local dashboard/approval interaction, and hardening are accepted and promoted to main.
+- MP-09 focused adversarial testing is accepted.
+- MP-08B is frozen after exactly one governed Provider-02B invocation. No independently correlated SES observation arrived, so Horae is `UNKNOWN`, MP-06 is `RECONCILIATION_REQUIRED`, and MP-07 is `BLOCKED`; no resend was permitted. The bounded live evidence is documented separately in [the MP-08B final freeze](docs/MP08B_FINAL_FREEZE.md).
 
 ### AWS readiness
 
@@ -131,7 +133,7 @@ The Fates are not a model fallback, the queue is not an approval system, and the
 
 ## What is live versus synthetic
 
-The accepted repository contains real Strands/Bedrock integration code and a bounded live smoke command, but the current AWS model-use-case blocker means successful live inference is not claimed here. The local product demo and effect counters use synthetic fixtures and bounded local seams. They demonstrate the control-plane and human-product behavior without claiming a real provider effect.
+The accepted repository contains real Strands/Bedrock integration code and a bounded live smoke command, but the current AWS model-use-case blocker means successful live inference is not claimed here. The default/local product demo and effect counters use synthetic fixtures and bounded local seams; they do not perform a real external effect. They demonstrate the control-plane and human-product behavior without claiming delivery or a confirmed provider effect. The bounded MP-08B live evidence is documented separately.
 
 The three primary request fixtures are:
 

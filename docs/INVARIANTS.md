@@ -4,6 +4,7 @@ These invariants were frozen as design requirements for MP-00. MP-02 provides im
 evidence for the deterministic compiler rows below, MP-03 provides authority-admission evidence,
 and MP-04 provides bounded synthetic durable-execution evidence. No production effect is included.
 
+<!-- prettier-ignore -->
 | ID     | Invariant                                                                                               |
 | ------ | ------------------------------------------------------------------------------------------------------- |
 | MP-I01 | LLM/Strands output is always untrusted input.                                                           |
@@ -33,7 +34,7 @@ and MP-04 provides bounded synthetic durable-execution evidence. No production e
 | MP-I32 | Re-approval does not create a second durable effect identity.                                           |
 | MP-I33 | Queue delivery, visibility, worker claims, retry eligibility, and activity records are not authority.   |
 | MP-I34 | A prior MP-03 admission or human approval cannot authorize a mutated or stale ActionIntent.             |
-| MP-I35 | Queue redelivery and worker concurrency cannot multiply an effect; MP-04 remains the effect-once owner. |
+| MP-I35 | Queue redelivery and worker concurrency cannot multiply an effect; Provider-02B effect-once protection is supplied by the durable attempt ledger, queue/action identity binding, and point-of-no-return rules. MP-04/Horae remain authority and truth boundaries, not the sole durable replay barrier across a fresh coordinator instance. |
 | MP-I36 | MP-04 UNKNOWN/recovery state blocks blind redispatch and requires native reconciliation.                |
 | MP-I37 | Sol is the user-facing model and Luna is backend/internal; neither may bypass MP/Fates governance.      |
 

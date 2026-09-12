@@ -58,7 +58,11 @@ function intentFor(action: Mp03Action = "SEND_APPOINTMENT_DETAILS"): ActionInten
   return result.actionIntent;
 }
 
-function identityFor(intent: ActionIntentV1): SesExecutionIdentityV1 {
+function identityFor(
+  intent: ActionIntentV1,
+  transportMode: SesExecutionIdentityV1["transportMode"] = "OFFLINE_TEST",
+  sendStartedAt = NOW,
+): SesExecutionIdentityV1 {
   return {
     logicalWorkId: "work:provider-01b",
     actionIntentDigest: intent.canonicalDigest,
@@ -69,6 +73,8 @@ function identityFor(intent: ActionIntentV1): SesExecutionIdentityV1 {
     executionId: "fates-execution:provider-01b",
     attemptId: "attempt:provider-01b-1",
     correlationId: "correlation:provider-01b",
+    transportMode,
+    sendStartedAt,
   };
 }
 
@@ -321,6 +327,53 @@ describe("MP-08B PROVIDER-01B governed SES adapter", () => {
     });
     expect(mismatched.status).toBe("UNKNOWN");
     expect(mismatched.reconciliationRequired).toBe(true);
+  });
+
+  it("requires live SES source and post-SEND_STARTED freshness", async () => {
+    const intent = intentFor();
+    const liveStartedAt = NOW;
+    const prepared = prepareSesAppointmentDetailsRequest({
+      intent,
+      config: CONFIG,
+      identity: identityFor(intent, "LIVE", liveStartedAt),
+      approvedBinding: bindingFor(intent, identityFor(intent, "LIVE", liveStartedAt)),
+    });
+    const { transport } = fakeTransport();
+    const invocation = await invokePreparedSesRequest(prepared, transport, NOW);
+    const exact = {
+      schemaVersion: "ses-observation-v1" as const,
+      source: "SES_EVENT_DESTINATION" as const,
+      outcome: "DELIVERED" as const,
+      providerOperationId: invocation.providerOperationId,
+      recipientAddress: prepared.expectedRecipient,
+      executionId: prepared.identity.executionId,
+      correlationId: prepared.correlationId,
+      observedAt: NOW,
+    };
+
+    const offline = reconcileSesObservation({
+      prepared,
+      invocation,
+      observation: { ...exact, source: "OFFLINE_FIXTURE" },
+    });
+    expect(offline.status).toBe("UNKNOWN");
+    expect(offline.reconciliationRequired).toBe(true);
+
+    const stale = reconcileSesObservation({
+      prepared,
+      invocation,
+      observation: { ...exact, observedAt: "2026-09-10T11:59:59.999Z" },
+    });
+    expect(stale.status).toBe("UNKNOWN");
+    expect(stale.reconciliationRequired).toBe(true);
+
+    const confirmed = reconcileSesObservation({
+      prepared,
+      invocation,
+      observation: exact,
+    });
+    expect(confirmed.status).toBe("CONFIRMED");
+    expect(confirmed.reconciliationRequired).toBe(false);
   });
 
   it("preserves ABSENT and AMBIGUOUS as non-success reconciliation states", async () => {
