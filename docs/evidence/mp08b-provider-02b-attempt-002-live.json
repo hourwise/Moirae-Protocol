@@ -1,0 +1,86 @@
+{
+  "schemaVersion": "mp08b-provider-02b-attempt-002-live-evidence-v1",
+  "acceptedAuthority": {
+    "tag": "mp-08b-provider-02b-r6-fresh-attempt-accepted-v1",
+    "tagObject": "35df7a3756b2d38b04527de1f6ae5aaf45c0c5fe",
+    "commit": "5af4084ee96c04350966c7ce583f2c22d9323223",
+    "tree": "255e2f3b2405a8dd6f46a7dcd1ba86e37583e943"
+  },
+  "attempt": {
+    "attemptId": "MP08B-PROVIDER-02B-ATTEMPT-002",
+    "lifecycle": "CREATE_FRESH",
+    "sourceRequestHash": "860eca71bad5ac13c499da8e24bfa516311bb808be6836a74611e3a97b53d714",
+    "freshActionNotAttempt001Retry": true,
+    "freshDurableApprovalUsed": true,
+    "freshHumanDecisionUsed": true,
+    "freshOperatorAuthorizationUsed": true,
+    "sendStarted": true,
+    "consumed": true
+  },
+  "authority": {
+    "fatesDecision": "REQUIRE_APPROVAL",
+    "fatesStatus": "WAITING_FOR_APPROVAL",
+    "recipientIdentityChainExact": true,
+    "recipientTranslated": false
+  },
+  "provider": {
+    "invocationCount": 1,
+    "automaticRetryCount": 0,
+    "sdkMaxAttempts": 1,
+    "invocationStatus": "UNKNOWN",
+    "providerOperationIdPresent": false,
+    "secondSendRefused": true,
+    "duplicateCreateFreshRefused": true
+  },
+  "observation": {
+    "baselineReady": true,
+    "correlationFieldsRequired": [
+      "moirae-execution-id",
+      "moirae-correlation-id",
+      "moirae-idempotency-key"
+    ],
+    "correlatedEventCount": 0,
+    "correlatedEventTypes": [],
+    "horaeStatus": "UNKNOWN"
+  },
+  "finalState": {
+    "mp06Status": "RECONCILIATION_REQUIRED",
+    "mp06Outcome": "RECONCILIATION_REQUIRED",
+    "mp07Category": "BLOCKED",
+    "independentEffectConfirmed": false,
+    "resendPermitted": false
+  },
+  "protectedAttempt001": {
+    "unchanged": true,
+    "attemptLedgerSha256": "9F95A23B42EF26A364A9B5AEB5016BEBD5C6C4C8053321207CCCFF186376FC14",
+    "queueSha256": "BCFA7F922E62CFFF638BFEEEBCC280B1DC8385F4C5591D36F025EF2CB37FA2D4",
+    "activitySha256": "C6B319FB7B679F225422FA83B448E1CD71FE4CE4CCD21307D155057B06492EE9",
+    "approvalStoreSha256": "879EB69091B7EA69248C237729651F8B866D5B6B029259E453843E52415FA5E8"
+  },
+  "validation": {
+    "preApprovalFocusedTestFilesPassed": 5,
+    "preApprovalTestsPassed": 52,
+    "preApprovalTestsFailed": 0,
+    "preApprovalBuildPassed": true,
+    "broadTestsRunAfterApproval": false
+  },
+  "privacy": {
+    "realSenderCommitted": false,
+    "realRecipientCommitted": false,
+    "awsAccountIdCommitted": false,
+    "credentialCommitted": false,
+    "sessionMaterialCommitted": false,
+    "authorizationPhraseCommitted": false
+  },
+  "classification": [
+    "MOIRAE_MP08B_PROVIDER_02B_ATTEMPT_002_OBSERVATION_INCOMPLETE",
+    "EXACTLY_ONE_PROVIDER_INVOCATION",
+    "ATTEMPT_002_CONSUMED",
+    "NO_SECOND_SEND",
+    "HORAE_UNKNOWN",
+    "MP07_NOT_HANDLED_AUTOMATICALLY",
+    "OBSERVATION_ONLY_RECOVERY_REQUIRED",
+    "ATTEMPT_001_PERMANENTLY_PRESERVED"
+  ],
+  "completedAt": "2026-09-12T17:39:54.901Z"
+}
